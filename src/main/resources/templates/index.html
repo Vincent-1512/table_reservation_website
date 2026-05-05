@@ -23,6 +23,10 @@
             <!-- Hiển thị khi đã đăng nhập -->
             <div sec:authorize="isAuthenticated()" style="display:flex; align-items:center; gap:20px;">
                 <span style="color: var(--primary);">Xin chào, [[${#authentication.name}]]</span>
+                
+                <a sec:authorize="hasAnyAuthority('ROLE_ADMIN', 'ROLE_STAFF')" href="/staff/orders" style="color: #fff;">Phục vụ (Staff)</a>
+                <a sec:authorize="hasAuthority('ROLE_ADMIN')" href="/admin/menu" style="color: #fff;">Quản trị (Admin)</a>
+
                 <form th:action="@{/logout}" method="post" style="margin:0;">
                     <button type="submit" style="background:none; border:none; color:white; cursor:pointer; font-family:inherit; font-weight:500;">Đăng xuất</button>
                 </form>
