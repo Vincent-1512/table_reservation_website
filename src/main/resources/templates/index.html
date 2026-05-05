@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lumina - Nhà Hàng Sang Trọng & Đẳng Cấp</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+</head>
+<body>
+    <nav class="navbar">
+        <a href="/" class="logo">Lumina</a>
+        <div class="nav-links">
+            <a href="/">Trang chủ</a>
+            <a href="/menu">Thực đơn</a>
+            <a href="/reservation">Đặt bàn</a>
+            
+            <!-- Hiển thị khi chưa đăng nhập -->
+            <div sec:authorize="!isAuthenticated()">
+                <a th:href="@{/login}">Đăng nhập</a>
+            </div>
+
+            <!-- Hiển thị khi đã đăng nhập -->
+            <div sec:authorize="isAuthenticated()" style="display:flex; align-items:center; gap:20px;">
+                <span style="color: var(--primary);">Xin chào, [[${#authentication.name}]]</span>
+                <form th:action="@{/logout}" method="post" style="margin:0;">
+                    <button type="submit" style="background:none; border:none; color:white; cursor:pointer; font-family:inherit; font-weight:500;">Đăng xuất</button>
+                </form>
+            </div>
+        </div>
+    </nav>
+
+    <section class="hero">
+        <div class="hero-content">
+            <h1>Trải Nghiệm <span>Ẩm Thực</span> Đỉnh Cao</h1>
+            <p>Khám phá không gian sang trọng cùng thực đơn đa dạng được chế biến bởi các đầu bếp hàng đầu. Đặt bàn ngay hôm nay để tận hưởng.</p>
+            <div style="margin-top: 30px;">
+                <a href="/reservation" class="btn-solid">Đặt Bàn Ngay</a>
+                <a href="/menu" class="btn-outline">Xem Thực Đơn</a>
+            </div>
+        </div>
+    </section>
+</body>
+</html>

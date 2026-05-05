@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Đặt Bàn - Lumina</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+</head>
+<body class="auth-body">
+    <nav class="navbar">
+        <a href="/" class="logo">Lumina</a>
+        <div class="nav-links">
+            <a href="/">Trang chủ</a>
+            <a href="/menu">Thực đơn</a>
+            <a href="/reservation" style="color:var(--primary);">Đặt bàn</a>
+        </div>
+    </nav>
+
+    <div class="auth-container" style="max-width: 600px; margin-top:100px;">
+        <div class="auth-header">
+            <h2>Đặt Bàn</h2>
+            <p>Vui lòng chọn thông tin để giữ chỗ</p>
+        </div>
+
+        <div th:if="${error}" class="alert alert-error" th:text="${error}"></div>
+        <div th:if="${success}" class="alert alert-success" th:text="${success}"></div>
+
+        <!-- Lưu ý: Form gửi về /reservation -->
+        <form th:action="@{/reservation}" method="post">
+            <div style="display:flex; gap:20px;">
+                <div class="form-group" style="flex:1;">
+                    <label>Ngày đặt</label>
+                    <input type="date" name="reservationDate" class="form-control" required>
+                </div>
+                <div class="form-group" style="flex:1;">
+                    <label>Giờ đặt</label>
+                    <input type="time" name="reservationTime" class="form-control" required>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label>Số lượng khách</label>
+                <input type="number" name="numberOfGuests" class="form-control" value="2" min="1" required>
+            </div>
+
+            <div class="form-group">
+                <label>Chọn Bàn</label>
+                <select name="tableId" class="form-control" required>
+                    <option value="">-- Bàn trống --</option>
+                    <option th:each="table : ${tables}" th:if="${table.status.name() == 'AVAILABLE'}"
+                            th:value="${table.id}" 
+                            th:text="${table.tableName} + ' (' + ${table.area.name} + ' - ' + ${table.capacity} + ' ghế)'"></option>
+                </select>
+                <small style="color:#aaa; display:block; margin-top:5px;">Hệ thống chống kẹt bàn tự động kích hoạt. Nếu bàn bạn chọn bị người khác đặt trước vài giây, hệ thống sẽ báo lỗi để bạn chọn lại.</small>
+            </div>
+
+            <div class="form-group">
+                <label>Ghi chú thêm</label>
+                <textarea name="note" class="form-control" rows="3" placeholder="Yêu cầu đặc biệt (Ghế em bé, trang trí sinh nhật...)"></textarea>
+            </div>
+
+            <button type="submit" class="btn-primary" style="margin-top:20px; font-size:18px;">Xác nhận Đặt Bàn</button>
+            <p style="text-align:center; color:#aaa; font-size:13px; margin-top:15px;">Các món ăn bạn đã lưu trong Giỏ hàng sẽ được tự động đính kèm vào mã Đặt bàn này!</p>
+        </form>
+    </div>
+</body>
+</html>

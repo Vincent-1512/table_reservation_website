@@ -1,0 +1,136 @@
+/* Admin Dashboard Styles */
+body {
+    background-color: #f4f7f6;
+    color: #333;
+    font-family: 'Outfit', sans-serif;
+    margin: 0;
+}
+
+.admin-layout {
+    display: flex;
+    min-height: 100vh;
+}
+
+.sidebar {
+    width: 250px;
+    background: #1a1a2e;
+    color: #fff;
+    padding: 20px;
+    flex-shrink: 0;
+}
+
+.sidebar h2 {
+    color: #cba876;
+    text-align: center;
+    margin-bottom: 30px;
+}
+
+.sidebar a {
+    display: block;
+    color: #a0a0a0;
+    text-decoration: none;
+    padding: 12px 15px;
+    margin-bottom: 10px;
+    border-radius: 8px;
+    transition: 0.3s;
+}
+
+.sidebar a:hover, .sidebar a.active {
+    background: #16213e;
+    color: #fff;
+}
+
+.main-content {
+    flex-grow: 1;
+    padding: 30px;
+}
+
+.card {
+    background: #fff;
+    border-radius: 12px;
+    padding: 25px;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.05);
+    margin-bottom: 30px;
+}
+
+.card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+    border-bottom: 1px solid #eee;
+    padding-bottom: 15px;
+}
+
+.card-header h3 {
+    margin: 0;
+    color: #1a1a2e;
+}
+
+.btn {
+    padding: 10px 20px;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-weight: 500;
+    text-decoration: none;
+    display: inline-block;
+    transition: 0.3s;
+}
+
+.btn-primary {
+    background: #cba876;
+    color: #1a1a2e;
+}
+.btn-primary:hover { background: #b18e5b; }
+
+.btn-danger {
+    background: #ff4757;
+    color: #fff;
+}
+.btn-danger:hover { background: #ff6b81; }
+
+.table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.table th, .table td {
+    padding: 12px 15px;
+    text-align: left;
+    border-bottom: 1px solid #eee;
+}
+
+.table th {
+    background: #f8f9fa;
+    color: #555;
+    font-weight: 600;
+}
+
+.table tbody tr:hover {
+    background: #fdfdfd;
+}
+
+/* Forms */
+.form-group {
+    margin-bottom: 20px;
+}
+.form-group label {
+    display: block;
+    margin-bottom: 8px;
+    color: #555;
+    font-weight: 500;
+}
+.form-control {
+    width: 100%;
+    padding: 10px 15px;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    font-size: 15px;
+    font-family: inherit;
+}
+.form-control:focus {
+    border-color: #cba876;
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(203, 168, 118, 0.2);
+}

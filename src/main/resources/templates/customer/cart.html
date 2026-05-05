@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Giỏ hàng - Lumina</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+    <style>
+        .cart-container { max-width: 900px; margin: 120px auto 50px auto; padding: 40px; background: var(--glass-bg); border-radius: 15px; border: 1px solid var(--glass-border); }
+        .cart-item { display: flex; align-items: center; padding: 20px 0; border-bottom: 1px solid rgba(255,255,255,0.1); }
+        .cart-item img { width: 80px; height: 80px; border-radius: 8px; object-fit: cover; margin-right: 20px; }
+        .item-info { flex: 1; }
+        .item-name { font-size: 18px; font-weight: 600; color: #fff; }
+        .item-price { color: var(--primary); }
+        .qty-input { width: 60px; padding: 8px; border-radius: 5px; border: 1px solid rgba(255,255,255,0.2); background: transparent; color: #fff; text-align: center; }
+        .total-box { margin-top: 30px; text-align: right; font-size: 24px; font-weight: 600; }
+    </style>
+</head>
+<body>
+    <nav class="navbar">
+        <a href="/" class="logo">Lumina</a>
+        <div class="nav-links">
+            <a href="/">Trang chủ</a>
+            <a href="/menu">Thực đơn</a>
+            <a href="/reservation">Đặt bàn</a>
+        </div>
+    </nav>
+
+    <div class="cart-container">
+        <h2 style="margin-bottom: 30px; text-align:center;">Giỏ Món Tạm Tính</h2>
+
+        <div th:if="${#lists.isEmpty(cartItems)}" style="text-align:center; padding: 50px 0; color:#aaa;">
+            <p>Giỏ hàng của bạn đang trống.</p>
+            <a href="/menu" class="btn-solid" style="margin-top:20px;">Xem Thực Đơn</a>
+        </div>
+
+        <div th:unless="${#lists.isEmpty(cartItems)}">
+            <div class="cart-item" th:each="item : ${cartItems}">
+                <img th:src="${item.imageUrl != null ? item.imageUrl : '/images/restaurant_bg.png'}">
+                <div class="item-info">
+                    <div class="item-name" th:text="${item.name}">Tên món</div>
+                    <div class="item-price" th:text="${#numbers.formatDecimal(item.price, 0, 'COMMA', 0, 'POINT')} + ' VNĐ'">Giá</div>
+                </div>
+                
+                <form th:action="@{/cart/update}" method="post" style="display:flex; align-items:center; gap:15px;">
+                    <input type="hidden" name="menuItemId" th:value="${item.menuItemId}">
+                    <input type="number" name="quantity" class="qty-input" th:value="${item.quantity}" min="1">
+                    <button type="submit" class="btn-primary" style="padding:8px; width:auto;">Cập nhật</button>
+                </form>
+
+                <a th:href="@{'/cart/remove/' + ${item.menuItemId}}" style="color:#ff4757; text-decoration:none; margin-left:30px; font-weight:500;">Xóa</a>
+            </div>
+
+            <div class="total-box">
+                Tổng cộng: <span style="color:var(--primary);" th:text="${#numbers.formatDecimal(totalAmount, 0, 'COMMA', 0, 'POINT')} + ' VNĐ'"></span>
+            </div>
+
+            <div style="display:flex; justify-content:space-between; margin-top:40px;">
+                <a href="/menu" class="btn-outline">Gọi thêm món</a>
+                <a href="/reservation" class="btn-solid">Chuyển sang Đặt Bàn</a>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

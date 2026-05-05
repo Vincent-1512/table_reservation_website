@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Quản lý Bàn và Khu vực - Lumina Admin</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" th:href="@{/css/admin.css}">
+</head>
+<body>
+    <div class="admin-layout">
+        <!-- Sidebar -->
+        <div class="sidebar">
+            <h2>Lumina Admin</h2>
+            <a th:href="@{/admin/menu}">Quản lý Thực đơn</a>
+            <a th:href="@{/admin/tables}" class="active">Quản lý Bàn/Khu vực</a>
+            <a href="#">Quản lý Đơn hàng</a>
+            <a href="#">Thống kê</a>
+            <a href="/" style="margin-top: 50px;">Về Trang chủ</a>
+        </div>
+
+        <!-- Main Content -->
+        <div class="main-content">
+            
+            <!-- Quản lý Khu vực -->
+            <div class="card">
+                <div class="card-header">
+                    <h3>Danh sách Khu vực (Areas)</h3>
+                    <a th:href="@{/admin/tables/area/add}" class="btn btn-primary">+ Thêm Khu vực</a>
+                </div>
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Tên Khu vực</th>
+                            <th>Mô tả</th>
+                            <th>Hành động</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr th:each="area : ${areas}">
+                            <td th:text="${area.id}">1</td>
+                            <td th:text="${area.name}">Sân vườn</td>
+                            <td th:text="${area.description}">Ngoài trời, thoáng mát</td>
+                            <td>
+                                <a th:href="@{'/admin/tables/area/edit/' + ${area.id}}" class="btn btn-primary" style="padding: 5px 10px; font-size: 13px;">Sửa</a>
+                                <a th:href="@{'/admin/tables/area/delete/' + ${area.id}}" class="btn btn-danger" style="padding: 5px 10px; font-size: 13px;" onclick="return confirm('Xóa khu vực này sẽ xóa toàn bộ bàn thuộc khu vực đó. Bạn có chắc chắn?');">Xóa</a>
+                            </td>
+                        </tr>
+                        <tr th:if="${#lists.isEmpty(areas)}">
+                            <td colspan="4" style="text-align:center;">Chưa có khu vực nào.</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Quản lý Bàn ăn -->
+            <div class="card">
+                <div class="card-header">
+                    <h3>Danh sách Bàn ăn (Dining Tables)</h3>
+                    <a th:href="@{/admin/tables/add}" class="btn btn-primary">+ Thêm Bàn ăn</a>
+                </div>
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Khu vực</th>
+                            <th>Tên/Số Bàn</th>
+                            <th>Số ghế</th>
+                            <th>Trạng thái</th>
+                            <th>Hành động</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr th:each="table : ${tables}">
+                            <td th:text="${table.id}">1</td>
+                            <td th:text="${table.area.name}">Tầng 1</td>
+                            <td th:text="${table.tableName}">Bàn 01</td>
+                            <td th:text="${table.capacity}">4</td>
+                            <td>
+                                <span th:if="${table.status.name() == 'AVAILABLE'}" style="color: green; font-weight: 500;">Trống</span>
+                                <span th:if="${table.status.name() == 'OCCUPIED'}" style="color: red; font-weight: 500;">Có khách</span>
+                                <span th:if="${table.status.name() == 'RESERVED'}" style="color: orange; font-weight: 500;">Đã đặt</span>
+                                <span th:if="${table.status.name() == 'MAINTENANCE'}" style="color: gray; font-weight: 500;">Bảo trì</span>
+                            </td>
+                            <td>
+                                <a th:href="@{'/admin/tables/edit/' + ${table.id}}" class="btn btn-primary" style="padding: 5px 10px; font-size: 13px;">Sửa</a>
+                                <a th:href="@{'/admin/tables/delete/' + ${table.id}}" class="btn btn-danger" style="padding: 5px 10px; font-size: 13px;" onclick="return confirm('Bạn có chắc chắn muốn xóa?');">Xóa</a>
+                            </td>
+                        </tr>
+                        <tr th:if="${#lists.isEmpty(tables)}">
+                            <td colspan="6" style="text-align:center;">Chưa có bàn nào.</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+        </div>
+    </div>
+</body>
+</html>

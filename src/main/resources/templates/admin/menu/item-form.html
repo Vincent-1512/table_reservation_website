@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Thêm/Sửa Món Ăn</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" th:href="@{/css/admin.css}">
+</head>
+<body>
+    <div class="admin-layout">
+        <!-- Sidebar -->
+        <div class="sidebar">
+            <h2>Lumina Admin</h2>
+            <a th:href="@{/admin/menu}" class="active">Quản lý Thực đơn</a>
+        </div>
+
+        <!-- Main Content -->
+        <div class="main-content">
+            <div class="card" style="max-width: 600px; margin: 0 auto;">
+                <div class="card-header">
+                    <h3 th:text="${menuItem.id != null ? 'Chỉnh sửa Món ăn' : 'Thêm mới Món ăn'}"></h3>
+                </div>
+                
+                <form th:action="@{/admin/menu/item/save}" th:object="${menuItem}" method="post">
+                    <input type="hidden" th:field="*{id}" />
+
+                    <div class="form-group">
+                        <label>Chọn Danh mục</label>
+                        <select th:field="*{category.id}" class="form-control" required>
+                            <option value="">-- Chọn danh mục --</option>
+                            <option th:each="cat : ${categories}" 
+                                    th:value="${cat.id}" 
+                                    th:text="${cat.name}"></option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Tên Món Ăn</label>
+                        <input type="text" th:field="*{name}" class="form-control" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Giá tiền (VNĐ)</label>
+                        <input type="number" th:field="*{price}" class="form-control" required min="0" step="1000">
+                    </div>
+
+                    <div class="form-group">
+                        <label>Link hình ảnh (URL)</label>
+                        <input type="text" th:field="*{imageUrl}" class="form-control" placeholder="https://example.com/image.jpg">
+                    </div>
+
+                    <div class="form-group">
+                        <label>Mô tả món ăn</label>
+                        <textarea th:field="*{description}" class="form-control" rows="3"></textarea>
+                    </div>
+
+                    <div class="form-group">
+                        <label style="display:flex; align-items:center; gap:10px; cursor:pointer;">
+                            <input type="checkbox" th:field="*{isAvailable}" style="width:18px; height:18px;">
+                            Còn hàng / Đang phục vụ
+                        </label>
+                    </div>
+
+                    <div style="display:flex; gap:10px; margin-top:30px;">
+                        <button type="submit" class="btn btn-primary">Lưu Món Ăn</button>
+                        <a th:href="@{/admin/menu}" class="btn" style="background:#eee; color:#333;">Hủy bỏ</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

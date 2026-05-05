@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Thêm/Sửa Danh Mục</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" th:href="@{/css/admin.css}">
+</head>
+<body>
+    <div class="admin-layout">
+        <!-- Sidebar -->
+        <div class="sidebar">
+            <h2>Lumina Admin</h2>
+            <a th:href="@{/admin/menu}" class="active">Quản lý Thực đơn</a>
+        </div>
+
+        <!-- Main Content -->
+        <div class="main-content">
+            <div class="card" style="max-width: 600px; margin: 0 auto;">
+                <div class="card-header">
+                    <h3 th:text="${category.id != null ? 'Chỉnh sửa Danh mục' : 'Thêm mới Danh mục'}"></h3>
+                </div>
+                
+                <form th:action="@{/admin/menu/category/save}" th:object="${category}" method="post">
+                    <!-- Hidden field for ID (update) -->
+                    <input type="hidden" th:field="*{id}" />
+
+                    <div class="form-group">
+                        <label>Tên Danh mục</label>
+                        <input type="text" th:field="*{name}" class="form-control" required placeholder="Ví dụ: Món Khai Vị">
+                    </div>
+
+                    <div class="form-group">
+                        <label>Mô tả chi tiết</label>
+                        <textarea th:field="*{description}" class="form-control" rows="4" placeholder="Mô tả về danh mục..."></textarea>
+                    </div>
+
+                    <div style="display:flex; gap:10px; margin-top:30px;">
+                        <button type="submit" class="btn btn-primary">Lưu Danh Mục</button>
+                        <a th:href="@{/admin/menu}" class="btn" style="background:#eee; color:#333;">Hủy bỏ</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

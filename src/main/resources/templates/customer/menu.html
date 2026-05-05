@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+    <meta charset="UTF-8">
+    <title>Thực Đơn - Lumina</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+    <style>
+        .menu-container { max-width: 1200px; margin: 100px auto 50px auto; padding: 0 20px; }
+        .menu-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 30px; margin-top: 40px; }
+        .menu-item { background: var(--glass-bg); border: 1px solid var(--glass-border); border-radius: 15px; overflow: hidden; transition: 0.3s; }
+        .menu-item:hover { transform: translateY(-5px); box-shadow: 0 10px 20px rgba(0,0,0,0.5); border-color: var(--primary); }
+        .menu-img { width: 100%; height: 200px; object-fit: cover; }
+        .menu-info { padding: 20px; }
+        .menu-name { font-size: 20px; font-weight: 600; margin-bottom: 10px; color: #fff; }
+        .menu-price { color: var(--primary); font-size: 18px; font-weight: 700; margin-bottom: 15px; }
+        .cart-float { position: fixed; bottom: 30px; right: 30px; background: var(--primary); color: #121212; width: 60px; height: 60px; border-radius: 50%; display: flex; justify-content: center; align-items: center; text-decoration: none; font-size: 24px; font-weight: bold; box-shadow: 0 5px 15px rgba(203, 168, 118, 0.4); z-index: 1000; transition: 0.3s; }
+        .cart-float:hover { transform: scale(1.1); }
+        .cart-badge { position: absolute; top: -5px; right: -5px; background: #ff4757; color: #fff; font-size: 12px; width: 22px; height: 22px; border-radius: 50%; display: flex; justify-content: center; align-items: center; }
+        .cat-title { color: var(--primary); margin-top: 40px; border-bottom: 1px solid var(--glass-border); padding-bottom: 10px; }
+    </style>
+</head>
+<body>
+    <nav class="navbar">
+        <a href="/" class="logo">Lumina</a>
+        <div class="nav-links">
+            <a href="/">Trang chủ</a>
+            <a href="/menu" style="color:var(--primary);">Thực đơn</a>
+            <a href="/reservation">Đặt bàn</a>
+            <div sec:authorize="!isAuthenticated()"><a th:href="@{/login}">Đăng nhập</a></div>
+            <div sec:authorize="isAuthenticated()" style="display:flex; align-items:center; gap:20px;">
+                <a href="/my-reservations" style="color:#aaa;">Lịch sử đặt bàn</a>
+                <form th:action="@{/logout}" method="post" style="margin:0;">
+                    <button type="submit" style="background:none; border:none; color:white; cursor:pointer; font-family:inherit; font-weight:500;">Đăng xuất</button>
+                </form>
+            </div>
+        </div>
+    </nav>
+
+    <div class="menu-container">
+        <h1 style="text-align:center; font-size:40px; margin-bottom:20px;">Thực Đơn <span style="color:var(--primary);">Đặc Biệt</span></h1>
+        
+        <div th:if="${success}" class="alert alert-success" th:text="${success}"></div>
+
+        <div th:each="cat : ${categories}">
+            <h2 class="cat-title" th:text="${cat.name}">Danh mục</h2>
+            <div class="menu-grid">
+                <div class="menu-item" th:each="item : ${menuItems}" th:if="${item.category.id == cat.id and item.isAvailable}">
+                    <!-- Ảnh placeholder nếu không có -->
+                    <img th:src="${item.imageUrl != null and !item.imageUrl.isEmpty() ? item.imageUrl : '/images/restaurant_bg.png'}" class="menu-img">
+                    <div class="menu-info">
+                        <div class="menu-name" th:text="${item.name}">Tên món</div>
+                        <div class="menu-price" th:text="${#numbers.formatDecimal(item.price, 0, 'COMMA', 0, 'POINT')} + ' VNĐ'">100,000 VNĐ</div>
+                        
+                        <form th:action="@{/cart/add}" method="post" style="display:flex; gap:10px;">
+                            <input type="hidden" name="menuItemId" th:value="${item.id}">
+                            <input type="number" name="quantity" value="1" min="1" style="width:60px; padding:5px; border-radius:5px; border:none; text-align:center; background:rgba(255,255,255,0.1); color:#fff;">
+                            <button type="submit" class="btn-primary" style="padding:8px 15px;">Thêm</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Giỏ hàng nổi (Floating Cart) -->
+    <a href="/cart" class="cart-float">
+        🛒
+        <span class="cart-badge" th:text="${cartCount}">0</span>
+    </a>
+</body>
+</html>

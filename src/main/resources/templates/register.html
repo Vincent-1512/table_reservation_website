@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Đăng ký - Restaurant System</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+</head>
+<body class="auth-body">
+    <div class="auth-container" style="max-width: 500px;">
+        <div class="auth-header">
+            <h2>Lumina</h2>
+            <p>Trở thành thành viên của nhà hàng</p>
+        </div>
+        
+        <div th:if="${error}" class="alert alert-error" th:text="${error}"></div>
+
+        <form th:action="@{/register}" th:object="${user}" method="post">
+            <div class="form-group">
+                <label for="fullName">Họ và tên</label>
+                <input type="text" id="fullName" th:field="*{fullName}" class="form-control" required>
+            </div>
+
+            <div class="form-group">
+                <label for="username">Tên đăng nhập</label>
+                <input type="text" id="username" th:field="*{username}" class="form-control" required>
+            </div>
+            
+            <div class="form-group">
+                <label for="password">Mật khẩu</label>
+                <input type="password" id="password" th:field="*{password}" class="form-control" required>
+            </div>
+
+            <div class="form-group">
+                <label for="phone">Số điện thoại</label>
+                <input type="tel" id="phone" th:field="*{phone}" class="form-control">
+            </div>
+            
+            <button type="submit" class="btn-primary">Đăng Ký</button>
+        </form>
+        
+        <div class="auth-links">
+            Đã có tài khoản? <a th:href="@{/login}">Đăng nhập</a>
+        </div>
+    </div>
+</body>
+</html>

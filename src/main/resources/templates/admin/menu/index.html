@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Quản lý Thực đơn - Lumina Admin</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" th:href="@{/css/admin.css}">
+</head>
+<body>
+    <div class="admin-layout">
+        <!-- Sidebar -->
+        <div class="sidebar">
+            <h2>Lumina Admin</h2>
+            <a th:href="@{/admin/menu}" class="active">Quản lý Thực đơn</a>
+            <a href="#">Quản lý Bàn/Khu vực</a>
+            <a href="#">Quản lý Đơn hàng</a>
+            <a href="#">Thống kê</a>
+            <a href="/" style="margin-top: 50px;">Về Trang chủ</a>
+        </div>
+
+        <!-- Main Content -->
+        <div class="main-content">
+            
+            <!-- Quản lý Danh mục -->
+            <div class="card">
+                <div class="card-header">
+                    <h3>Danh mục Món ăn (Categories)</h3>
+                    <a th:href="@{/admin/menu/category/add}" class="btn btn-primary">+ Thêm Danh mục</a>
+                </div>
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Tên Danh Mục</th>
+                            <th>Mô tả</th>
+                            <th>Hành động</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr th:each="cat : ${categories}">
+                            <td th:text="${cat.id}">1</td>
+                            <td th:text="${cat.name}">Khai vị</td>
+                            <td th:text="${cat.description}">Các món ăn nhẹ</td>
+                            <td>
+                                <a th:href="@{'/admin/menu/category/edit/' + ${cat.id}}" class="btn btn-primary" style="padding: 5px 10px; font-size: 13px;">Sửa</a>
+                                <a th:href="@{'/admin/menu/category/delete/' + ${cat.id}}" class="btn btn-danger" style="padding: 5px 10px; font-size: 13px;" onclick="return confirm('Bạn có chắc chắn muốn xóa?');">Xóa</a>
+                            </td>
+                        </tr>
+                        <tr th:if="${#lists.isEmpty(categories)}">
+                            <td colspan="4" style="text-align:center;">Chưa có danh mục nào.</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Quản lý Món ăn -->
+            <div class="card">
+                <div class="card-header">
+                    <h3>Danh sách Món ăn (Menu Items)</h3>
+                    <a th:href="@{/admin/menu/item/add}" class="btn btn-primary">+ Thêm Món ăn</a>
+                </div>
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Hình ảnh</th>
+                            <th>Tên món</th>
+                            <th>Danh mục</th>
+                            <th>Giá (VNĐ)</th>
+                            <th>Trạng thái</th>
+                            <th>Hành động</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr th:each="item : ${menuItems}">
+                            <td>
+                                <img th:if="${item.imageUrl}" th:src="${item.imageUrl}" alt="Ảnh" style="width:50px; height:50px; object-fit:cover; border-radius:4px;">
+                                <span th:unless="${item.imageUrl}">Không có</span>
+                            </td>
+                            <td th:text="${item.name}">Bò Wagyu</td>
+                            <td th:text="${item.category.name}">Món chính</td>
+                            <td th:text="${#numbers.formatDecimal(item.price, 0, 'COMMA', 0, 'POINT')}">500,000</td>
+                            <td th:text="${item.isAvailable ? 'Còn hàng' : 'Hết hàng'}" th:style="${item.isAvailable ? 'color:green;' : 'color:red;'}">Còn hàng</td>
+                            <td>
+                                <a th:href="@{'/admin/menu/item/edit/' + ${item.id}}" class="btn btn-primary" style="padding: 5px 10px; font-size: 13px;">Sửa</a>
+                                <a th:href="@{'/admin/menu/item/delete/' + ${item.id}}" class="btn btn-danger" style="padding: 5px 10px; font-size: 13px;" onclick="return confirm('Bạn có chắc chắn muốn xóa?');">Xóa</a>
+                            </td>
+                        </tr>
+                        <tr th:if="${#lists.isEmpty(menuItems)}">
+                            <td colspan="6" style="text-align:center;">Chưa có món ăn nào.</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+        </div>
+    </div>
+</body>
+</html>

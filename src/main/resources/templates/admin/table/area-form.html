@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Thêm/Sửa Khu vực</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" th:href="@{/css/admin.css}">
+</head>
+<body>
+    <div class="admin-layout">
+        <div class="sidebar">
+            <h2>Lumina Admin</h2>
+            <a th:href="@{/admin/tables}" class="active">Quản lý Bàn/Khu vực</a>
+        </div>
+
+        <div class="main-content">
+            <div class="card" style="max-width: 600px; margin: 0 auto;">
+                <div class="card-header">
+                    <h3 th:text="${area.id != null ? 'Chỉnh sửa Khu vực' : 'Thêm mới Khu vực'}"></h3>
+                </div>
+                
+                <form th:action="@{/admin/tables/area/save}" th:object="${area}" method="post">
+                    <input type="hidden" th:field="*{id}" />
+
+                    <div class="form-group">
+                        <label>Tên Khu vực</label>
+                        <input type="text" th:field="*{name}" class="form-control" required placeholder="Ví dụ: Tầng 1, Sân Vườn, VIP...">
+                    </div>
+
+                    <div class="form-group">
+                        <label>Mô tả chi tiết</label>
+                        <textarea th:field="*{description}" class="form-control" rows="4" placeholder="Không gian, tầm nhìn, phong cách..."></textarea>
+                    </div>
+
+                    <div style="display:flex; gap:10px; margin-top:30px;">
+                        <button type="submit" class="btn btn-primary">Lưu Khu vực</button>
+                        <a th:href="@{/admin/tables}" class="btn" style="background:#eee; color:#333;">Hủy bỏ</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

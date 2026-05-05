@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Chi tiết Phục vụ - Lumina</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" th:href="@{/css/admin.css}">
+    <style>
+        .split-layout {
+            display: flex;
+            gap: 30px;
+        }
+        .left-col { flex: 2; }
+        .right-col { flex: 1; }
+    </style>
+</head>
+<body>
+    <div class="admin-layout">
+        <div class="sidebar">
+            <h2>Lumina Staff</h2>
+            <a th:href="@{/staff/orders}" class="active">Sơ đồ Bàn & Phục vụ</a>
+            <a href="/">Về Trang chủ</a>
+        </div>
+
+        <div class="main-content">
+            <div class="split-layout">
+                <!-- Cột trái: Form gọi món & Danh sách món đã gọi -->
+                <div class="left-col">
+                    <div class="card">
+                        <div class="card-header">
+                            <h3>Gọi món thêm</h3>
+                        </div>
+                        <form th:action="@{'/staff/orders/' + ${order.id} + '/add-item'}" method="post" style="display:flex; gap:15px; align-items:flex-end;">
+                            <div class="form-group" style="flex:2; margin:0;">
+                                <label>Chọn món</label>
+                                <select name="menuItemId" class="form-control" required>
+                                    <option value="">-- Chọn món --</option>
+                                    <option th:each="item : ${menuItems}" th:if="${item.isAvailable}"
+                                            th:value="${item.id}" 
+                                            th:text="${item.name} + ' - ' + ${#numbers.formatDecimal(item.price, 0, 'COMMA', 0, 'POINT')} + 'đ'"></option>
+                                </select>
+                            </div>
+                            <div class="form-group" style="flex:1; margin:0;">
+                                <label>Số lượng</label>
+                                <input type="number" name="quantity" class="form-control" value="1" min="1" required>
+                            </div>
+                            <div class="form-group" style="flex:2; margin:0;">
+                                <label>Ghi chú</label>
+                                <input type="text" name="note" class="form-control" placeholder="Ít cay, không hành...">
+                            </div>
+                            <button type="submit" class="btn btn-primary" style="height:42px;">Thêm</button>
+                        </form>
+                    </div>
+
+                    <div class="card">
+                        <div class="card-header">
+                            <h3>Danh sách món ăn đã gọi</h3>
+                        </div>
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th>Tên món</th>
+                                    <th>Số lượng</th>
+                                    <th>Đơn giá</th>
+                                    <th>Thành tiền</th>
+                                    <th>Ghi chú</th>
+                                    <th>Hủy</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr th:each="item : ${orderItems}">
+                                    <td th:text="${item.menuItem.name}">Gà rán</td>
+                                    <td th:text="${item.quantity}">2</td>
+                                    <td th:text="${#numbers.formatDecimal(item.priceAtTime, 0, 'COMMA', 0, 'POINT')}">50,000</td>
+                                    <td th:text="${#numbers.formatDecimal(item.priceAtTime * item.quantity, 0, 'COMMA', 0, 'POINT')}">100,000</td>
+                                    <td th:text="${item.note}"></td>
+                                    <td>
+                                        <a th:href="@{'/staff/orders/' + ${order.id} + '/delete-item/' + ${item.id}}" 
+                                           class="btn btn-danger" style="padding:4px 8px; font-size:12px;"
+                                           onclick="return confirm('Hủy món này?');">Xóa</a>
+                                    </td>
+                                </tr>
+                                <tr th:if="${#lists.isEmpty(orderItems)}">
+                                    <td colspan="6" style="text-align:center;">Chưa gọi món nào.</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Cột phải: Tổng quan hóa đơn & Thanh toán -->
+                <div class="right-col">
+                    <div class="card">
+                        <div class="card-header">
+                            <h3>Thông tin Hóa Đơn</h3>
+                        </div>
+                        <div style="font-size:16px; margin-bottom:20px; line-height:2;">
+                            <div><strong>Bàn:</strong> <span th:text="${order.table.tableName}">Bàn 01</span></div>
+                            <div><strong>Nhân viên:</strong> <span th:text="${order.user.fullName}">Nguyễn Văn A</span></div>
+                            <div><strong>Giờ vào:</strong> <span th:text="${#temporals.format(order.createdAt, 'HH:mm dd/MM/yyyy')}">10:00</span></div>
+                            <hr style="margin:15px 0; border-top:1px dashed #ccc;">
+                            <div style="font-size:24px; color:#cba876; text-align:center;">
+                                <strong>Tổng cộng:</strong><br>
+                                <span th:text="${#numbers.formatDecimal(order.totalAmount, 0, 'COMMA', 0, 'POINT')} + ' VNĐ'">0 VNĐ</span>
+                            </div>
+                        </div>
+
+                        <form th:action="@{'/staff/orders/' + ${order.id} + '/checkout'}" method="post">
+                            <button type="submit" class="btn btn-primary" style="width:100%; font-size:18px; padding:15px;"
+                                    onclick="return confirm('Xác nhận thanh toán và đóng bàn?');">Thanh Toán & Đóng Bàn</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

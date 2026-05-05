@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Thêm/Sửa Bàn</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" th:href="@{/css/admin.css}">
+</head>
+<body>
+    <div class="admin-layout">
+        <div class="sidebar">
+            <h2>Lumina Admin</h2>
+            <a th:href="@{/admin/tables}" class="active">Quản lý Bàn/Khu vực</a>
+        </div>
+
+        <div class="main-content">
+            <div class="card" style="max-width: 600px; margin: 0 auto;">
+                <div class="card-header">
+                    <h3 th:text="${diningTable.id != null ? 'Chỉnh sửa Bàn' : 'Thêm mới Bàn ăn'}"></h3>
+                </div>
+                
+                <form th:action="@{/admin/tables/save}" th:object="${diningTable}" method="post">
+                    <input type="hidden" th:field="*{id}" />
+
+                    <div class="form-group">
+                        <label>Khu vực</label>
+                        <select th:field="*{area.id}" class="form-control" required>
+                            <option value="">-- Chọn khu vực --</option>
+                            <option th:each="area : ${areas}" 
+                                    th:value="${area.id}" 
+                                    th:text="${area.name}"></option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Tên / Mã Bàn</label>
+                        <input type="text" th:field="*{tableName}" class="form-control" required placeholder="Ví dụ: Bàn 01">
+                    </div>
+
+                    <div class="form-group">
+                        <label>Số lượng khách (Sức chứa)</label>
+                        <input type="number" th:field="*{capacity}" class="form-control" required min="1" max="50">
+                    </div>
+
+                    <div class="form-group">
+                        <label>Trạng thái hiện tại</label>
+                        <select th:field="*{status}" class="form-control" required>
+                            <option th:each="status : ${statuses}" 
+                                    th:value="${status}" 
+                                    th:text="${status}"></option>
+                        </select>
+                    </div>
+
+                    <div style="display:flex; gap:10px; margin-top:30px;">
+                        <button type="submit" class="btn btn-primary">Lưu Bàn</button>
+                        <a th:href="@{/admin/tables}" class="btn" style="background:#eee; color:#333;">Hủy bỏ</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
