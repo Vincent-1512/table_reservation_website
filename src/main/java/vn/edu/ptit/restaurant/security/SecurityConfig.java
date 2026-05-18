@@ -37,11 +37,10 @@ public class SecurityConfig {
         http
             .authorizeHttpRequests(authorize -> authorize
                 .requestMatchers("/", "/login", "/register", "/css/**", "/js/**", "/images/**").permitAll()
+                // Public customer-facing routes - accessible without login
+                .requestMatchers("/menu", "/cart/**", "/reservation", "/my-reservations").authenticated()
                 .requestMatchers("/admin/**").hasRole("ADMIN")
-                // .requestMatchers("/staff/**").hasAnyRole("ADMIN", "STAFF")
-                .requestMatchers("/staff/**").hasAnyRole("STAFF")
-                // .requestMatchers("/customer/**").hasAnyRole("ADMIN", "STAFF", "CUSTOMER")
-                .requestMatchers("/customer/**").hasAnyRole("CUSTOMER")
+                .requestMatchers("/staff/**").hasAnyRole("ADMIN", "STAFF")
                 .anyRequest().authenticated()
             )
             .formLogin(form -> form

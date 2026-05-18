@@ -75,7 +75,11 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public void deleteById(Long id) {
-        userRepository.deleteById(id);
+        // Soft delete: set deleted flag instead of physical removal
+        User user = findById(id);
+        user.setDeleted(true);
+        userRepository.save(user);
+
     }
 
     @Override
