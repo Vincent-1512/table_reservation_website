@@ -3,7 +3,23 @@
 <head>
     <meta charset="UTF-8">
     <title>Chi tiết hóa đơn - Lumina Admin</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" th:href="@{/css/admin.css}">
+    <style>
+        .detail-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 30px; margin-bottom: 30px; }
+        .info-item { margin-bottom: 12px; }
+        .info-item strong { color: #666; font-size: 13px; text-transform: uppercase; letter-spacing: 0.5px; }
+        .info-item p { margin: 4px 0 0 0; font-size: 16px; font-weight: 500; }
+        .status-badge { padding: 4px 12px; border-radius: 20px; font-size: 12px; font-weight: 600; }
+        .status-PENDING    { background: #fff3cd; color: #856404; }
+        .status-CONFIRMED  { background: #cff4fc; color: #055160; }
+        .status-SERVING    { background: #d1e7dd; color: #0a3622; }
+        .status-COMPLETED  { background: #d1e7dd; color: #0a3622; }
+        .status-CANCELLED  { background: #f8d7da; color: #842029; }
+        .payment-info { background: #f0fdf4; border: 1px solid #86efac; border-radius: 12px; padding: 20px; margin-top: 10px; }
+        .payment-info h4 { color: #16a34a; margin: 0 0 12px 0; }
+        .total-amount { font-size: 28px; font-weight: 700; color: #cba876; }
+    </style>
 </head>
 <body>
 <div class="admin-layout">
@@ -11,10 +27,11 @@
         <h2>Lumina Admin</h2>
         <a th:href="@{/admin/menu}">Quản lý Thực đơn</a>
         <a th:href="@{/admin/tables}">Quản lý Bàn/Khu vực</a>
-        <a th:href="@{/admin/reservations}">Lịch sử Đặt bàn</a>
+        <a th:href="@{/admin/reservations}">Quản lý Đặt bàn</a>
         <a th:href="@{/admin/users}">Quản lý Người dùng</a>
         <a th:href="@{/admin/orders}" class="active">Lịch sử Hóa đơn</a>
-        <a th:href="@{/admin/reports}">Thống kê & Báo cáo</a>
+        <a th:href="@{/admin/payments}">Quản lý Thanh toán</a>
+        <a th:href="@{/admin/reports}">Thống kê &amp; Báo cáo</a>
         <a th:href="@{/}" style="margin-top: 50px;">Về Trang chủ</a>
     </div>
 
@@ -22,29 +39,76 @@
         <div class="card">
             <div class="card-header">
                 <h3 th:text="'Chi tiết hóa đơn #' + ${order.id}">Chi tiết hóa đơn</h3>
-                <a th:href="@{/admin/orders}" class="btn btn-secondary">Quay lại</a>
+                <a th:href="@{/admin/orders}" class="btn btn-secondary">← Quay lại</a>
             </div>
 
-            <div style="margin-bottom: 20px;">
-                <p><strong>Bàn:</strong>
-                    <span th:text="${order.table != null ? order.table.tableName : 'Không có'}"></span>
-                </p>
+            <div class="detail-grid">
+                <!-- Thông tin cơ bản -->
+                <div>
+                    <div class="info-item">
+                        <strong>Bàn</strong>
+                        <p th:text="${order.table != null ? order.table.tableName : 'Không có'}">Bàn 01</p>
+                    </div>
+                    <div class="info-item">
+                        <strong>Nhân viên phụ trách</strong>
+                        <p th:text="${order.user != null ? order.user.fullName : 'Không rõ'}">Nguyễn Văn A</p>
+                    </div>
+                    <div class="info-item">
+                        <strong>Thời gian tạo</strong>
+                        <p th:text="${#temporals.format(order.createdAt, 'HH:mm - dd/MM/yyyy')}">18:30 - 13/05/2026</p>
+                    </div>
+                    <div class="info-item">
+                        <strong>Trạng thái</strong>
+                        <p>
+                            <span class="status-badge" th:classappend="'status-' + ${order.status.name()}"
+                                  th:text="${order.status}">COMPLETED</span>
+                        </p>
+                    </div>
+                </div>
+                <!-- Tổng tiền & Thanh toán -->
+                <div>
+                    <div class="info-item">
+                        <strong>Tổng tiền</strong>
+                        <p class="total-amount"
+                           th:text="${#numbers.formatDecimal(order.totalAmount, 0, 'COMMA', 0, 'POINT')} + ' VNĐ'">
+                            250,000 VNĐ
+                        </p>
+                    </div>
 
-                <p><strong>Khách hàng:</strong>
-                    <span th:text="${order.reservation != null && order.reservation.user != null ? order.reservation.user.fullName : 'Khách lẻ'}"></span>
-                </p>
-
-                <p><strong>Thời gian tạo:</strong>
-                    <span th:text="${#temporals.format(order.createdAt, 'dd/MM/yyyy HH:mm')}"></span>
-                </p>
-
-                <p><strong>Trạng thái:</strong>
-                    <span th:text="${order.status}"></span>
-                </p>
-
-                <p><strong>Tổng tiền:</strong>
-                    <span th:text="${#numbers.formatDecimal(order.totalAmount, 0, 'COMMA', 0, 'POINT')} + ' VNĐ'"></span>
-                </p>
+                    <!-- Thông tin thanh toán nếu có -->
+                    <div class="payment-info" th:if="${payment != null}">
+                        <h4>✓ Đã thanh toán</h4>
+                        <div class="info-item">
+                            <strong>Phương thức</strong>
+                            <p>
+                                <span th:switch="${payment.method.name()}">
+                                    <span th:case="'CASH'">💵 Tiền mặt</span>
+                                    <span th:case="'CARD'">💳 Thẻ ngân hàng</span>
+                                    <span th:case="'E_WALLET'">📱 Ví điện tử</span>
+                                    <span th:case="'BANK_TRANSFER'">🏦 Chuyển khoản</span>
+                                </span>
+                            </p>
+                        </div>
+                        <div class="info-item">
+                            <strong>Mã thanh toán</strong>
+                            <p th:text="'#' + ${payment.id}"></p>
+                        </div>
+                        <div class="info-item">
+                            <strong>Thời gian thanh toán</strong>
+                            <p th:text="${#temporals.format(payment.createdAt, 'HH:mm - dd/MM/yyyy')}"></p>
+                        </div>
+                        <div class="info-item">
+                            <strong>Trạng thái</strong>
+                            <p>
+                                <span class="status-badge" th:classappend="'status-' + ${payment.status}"
+                                      th:text="${payment.status}"></span>
+                            </p>
+                        </div>
+                    </div>
+                    <div th:if="${payment == null}" style="color:#999; font-style:italic; margin-top:10px;">
+                        Chưa có thông tin thanh toán
+                    </div>
+                </div>
             </div>
 
             <h3>Danh sách món</h3>
@@ -54,28 +118,28 @@
                 <tr>
                     <th>Món ăn</th>
                     <th>Số lượng</th>
-                    <th>Giá tại thời điểm gọi</th>
+                    <th>Đơn giá</th>
                     <th>Thành tiền</th>
+                    <th>Ghi chú</th>
                 </tr>
                 </thead>
 
                 <tbody>
                 <tr th:each="item : ${orderItems}">
                     <td th:text="${item.menuItem.name}">Tên món</td>
-
                     <td th:text="${item.quantity}">1</td>
-
                     <td th:text="${#numbers.formatDecimal(item.priceAtTime, 0, 'COMMA', 0, 'POINT')} + ' VNĐ'">
                         100,000 VNĐ
                     </td>
-
-                    <td th:text="${#numbers.formatDecimal(item.priceAtTime.multiply(new java.math.BigDecimal(item.quantity)), 0, 'COMMA', 0, 'POINT')} + ' VNĐ'">
+                    <td th:text="${#numbers.formatDecimal(item.priceAtTime.multiply(new java.math.BigDecimal(item.quantity)), 0, 'COMMA', 0, 'POINT')} + ' VNĐ'"
+                        style="font-weight:600;">
                         100,000 VNĐ
                     </td>
+                    <td th:text="${item.note != null ? item.note : '-'}">-</td>
                 </tr>
 
                 <tr th:if="${#lists.isEmpty(orderItems)}">
-                    <td colspan="4" style="text-align:center;">
+                    <td colspan="5" style="text-align:center;">
                         Hóa đơn này chưa có món nào.
                     </td>
                 </tr>

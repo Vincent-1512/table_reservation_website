@@ -9,6 +9,7 @@ import vn.edu.ptit.restaurant.entity.Order;
 import vn.edu.ptit.restaurant.entity.enums.OrderStatus;
 import vn.edu.ptit.restaurant.service.OrderService;
 import vn.edu.ptit.restaurant.service.OrderItemService;
+import vn.edu.ptit.restaurant.service.PaymentService;
 
 import java.time.LocalDate;
 import org.springframework.data.domain.Page;
@@ -21,6 +22,7 @@ public class AdminOrderController {
 
     private final OrderService orderService;
     private final OrderItemService orderItemService;
+    private final PaymentService paymentService;
 
     @GetMapping
     public String index(
@@ -66,6 +68,7 @@ public class AdminOrderController {
 
         model.addAttribute("order", order);
         model.addAttribute("orderItems", orderItemService.findByOrderId(id));
+        model.addAttribute("payment", paymentService.findByOrderId(id).orElse(null));
 
         return "admin/order/detail";
     }

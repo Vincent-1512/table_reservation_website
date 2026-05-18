@@ -2,43 +2,39 @@ package vn.edu.ptit.restaurant.entity;
 
 import jakarta.persistence.*;
 import lombok.*;
-import vn.edu.ptit.restaurant.entity.enums.OrderStatus;
+import vn.edu.ptit.restaurant.entity.enums.PaymentMethod;
+import vn.edu.ptit.restaurant.entity.enums.PaymentStatus;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "orders")
+@Table(name = "payments")
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class Order {
+public class Payment {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "table_id", nullable = false)
-    private DiningTable table;
-
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "user_id", nullable = false)
-    private User user; // Người thực hiện order (Staff hoặc Customer)
-
     @OneToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "reservation_id")
-    private Reservation reservation; // Có thể null nếu đến trực tiếp
+    @JoinColumn(name = "order_id", nullable = false)
+    private Order order;
 
-    @Column(name = "total_amount", nullable = false, precision = 10, scale = 2)
-    @Builder.Default
-    private BigDecimal totalAmount = BigDecimal.ZERO;
+    @Column(nullable = false, precision = 10, scale = 2)
+    private BigDecimal amount;
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private PaymentMethod method;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     @Builder.Default
-    private OrderStatus status = OrderStatus.PENDING;
+    private PaymentStatus status = PaymentStatus.PENDING;
 
     @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt;
