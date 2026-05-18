@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Quản lý Đặt bàn - Lumina Admin</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" th:href="@{/css/admin.css}">
+</head>
+<body>
+<div class="admin-layout">
+    <div class="sidebar">
+        <h2>Lumina Admin</h2>
+        <a th:href="@{/admin/menu}">Quản lý Thực đơn</a>
+        <a th:href="@{/admin/tables}">Quản lý Bàn/Khu vực</a>
+        <a th:href="@{/admin/reservations}" class="active">Quản lý Đặt bàn</a>
+        <a th:href="@{/staff/orders}">Quản lý Đơn hàng</a>
+        <a th:href="@{/admin/orders}">Lịch sử Hóa đơn</a>
+        <a th:href="@{/admin/reports}">Thống kê & Báo cáo</a>
+        <a th:href="@{/admin/users}">Quản lý Người dùng</a>
+        <a href="/" style="margin-top: 50px;">Về Trang chủ</a>
+    </div>
+
+    <div class="main-content">
+        <div class="card">
+            <div class="card-header">
+                <h3>Danh sách đặt bàn</h3>
+            </div>
+
+            <form th:action="@{/admin/reservations}" method="get"
+                style="margin-bottom: 20px; display:flex; gap:12px; align-items:center; flex-wrap:wrap;">
+                <label for="status"><strong>Lọc theo trạng thái:</strong></label>
+
+                <select name="status" id="status"
+                        style="padding:10px 14px; border-radius:8px; border:1px solid #ddd;">
+                    <option value="">Tất cả</option>
+                    <option th:each="status : ${statuses}"
+                            th:value="${status}"
+                            th:text="${status}"
+                            th:selected="${selectedStatus != null && selectedStatus == status}">
+                    </option>
+                </select>
+
+                <button type="submit" class="btn btn-primary">Lọc</button>
+
+                <a th:href="@{/admin/reservations}" class="btn btn-secondary">Xóa lọc</a>
+            </form>
+
+            <table class="table">
+                <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Khách hàng</th>
+                    <th>SĐT</th>
+                    <th>Bàn</th>
+                    <th>Khu vực</th>
+                    <th>Số khách</th>
+                    <th>Thời gian đặt</th>
+                    <th>Trạng thái</th>
+                    <th>Ghi chú</th>
+                </tr>
+                </thead>
+
+                <tbody>
+                <tr th:each="reservation : ${reservations}">
+                    <td th:text="${reservation.id}">1</td>
+
+                    <td th:text="${reservation.user.fullName}">Nguyễn Văn A</td>
+
+                    <td th:text="${reservation.user.phone}">0123456789</td>
+
+                    <td th:text="${reservation.table.tableName}">Bàn 01</td>
+
+                    <td th:text="${reservation.table.area.name}">Tầng 1</td>
+
+                    <td th:text="${reservation.numberOfGuests}">4</td>
+
+                    <td th:text="${#temporals.format(reservation.reservationTime, 'dd/MM/yyyy HH:mm')}">
+                        13/05/2026 18:00
+                    </td>
+
+                    <td>
+                        <span th:if="${reservation.status.name() == 'PENDING'}"
+                              style="color: orange; font-weight: 600;">Chờ xác nhận</span>
+
+                        <span th:if="${reservation.status.name() == 'CONFIRMED'}"
+                              style="color: green; font-weight: 600;">Đã xác nhận</span>
+
+                        <span th:if="${reservation.status.name() == 'CANCELLED'}"
+                              style="color: red; font-weight: 600;">Đã hủy</span>
+
+                        <span th:if="${reservation.status.name() == 'COMPLETED'}"
+                              style="color: blue; font-weight: 600;">Hoàn thành</span>
+                    </td>
+
+                    <td th:text="${reservation.note}">Ghi chú</td>
+                </tr>
+
+                <tr th:if="${#lists.isEmpty(reservations)}">
+                    <td colspan="9" style="text-align: center;">Chưa có đơn đặt bàn nào.</td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+</body>
+</html>

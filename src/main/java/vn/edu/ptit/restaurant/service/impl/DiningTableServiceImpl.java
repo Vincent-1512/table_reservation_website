@@ -5,6 +5,7 @@ import org.springframework.stereotype.Service;
 import vn.edu.ptit.restaurant.entity.DiningTable;
 import vn.edu.ptit.restaurant.repository.DiningTableRepository;
 import vn.edu.ptit.restaurant.service.DiningTableService;
+import vn.edu.ptit.restaurant.entity.enums.TableStatus;
 
 import java.util.List;
 import java.util.Optional;
@@ -38,5 +39,15 @@ public class DiningTableServiceImpl implements DiningTableService {
     @Override
     public void deleteById(Long id) {
         diningTableRepository.deleteById(id);
+    }
+
+    @Override
+    public List<DiningTable> findByAreaIdAndStatus(Integer areaId, TableStatus status) {
+        return diningTableRepository.findByAreaIdAndStatus(areaId, status);
+    }
+
+    @Override
+    public List<DiningTable> findByStatus(TableStatus status) {
+        return diningTableRepository.findByStatus(status);
     }
 }

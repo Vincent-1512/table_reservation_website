@@ -38,8 +38,10 @@ public class SecurityConfig {
             .authorizeHttpRequests(authorize -> authorize
                 .requestMatchers("/", "/login", "/register", "/css/**", "/js/**", "/images/**").permitAll()
                 .requestMatchers("/admin/**").hasRole("ADMIN")
-                .requestMatchers("/staff/**").hasAnyRole("ADMIN", "STAFF")
-                .requestMatchers("/customer/**").hasAnyRole("ADMIN", "STAFF", "CUSTOMER")
+                // .requestMatchers("/staff/**").hasAnyRole("ADMIN", "STAFF")
+                .requestMatchers("/staff/**").hasAnyRole("STAFF")
+                // .requestMatchers("/customer/**").hasAnyRole("ADMIN", "STAFF", "CUSTOMER")
+                .requestMatchers("/customer/**").hasAnyRole("CUSTOMER")
                 .anyRequest().authenticated()
             )
             .formLogin(form -> form

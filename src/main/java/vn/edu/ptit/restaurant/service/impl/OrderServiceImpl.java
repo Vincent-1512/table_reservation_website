@@ -13,9 +13,19 @@ import vn.edu.ptit.restaurant.repository.OrderRepository;
 import vn.edu.ptit.restaurant.repository.UserRepository;
 import vn.edu.ptit.restaurant.service.OrderService;
 
+import java.time.LocalDate;
+
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.PageRequest;
+
 import java.math.BigDecimal;
 import java.util.List;
 import java.util.Optional;
+
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 
 @Service
 @RequiredArgsConstructor
@@ -89,5 +99,51 @@ public class OrderServiceImpl implements OrderService {
         diningTableRepository.save(table);
         
         orderRepository.save(order);
+    }
+
+    @Override
+    public Page<Order> findPaginated(int page, int size) {
+        Pageable pageable = PageRequest.of(page, size);
+        return orderRepository.findAll(pageable);
+    }
+
+    @Override
+    public Page<Order> findByStatusPaginated(OrderStatus status, int page, int size) {
+        Pageable pageable = PageRequest.of(page, size);
+        return orderRepository.findByStatus(status, pageable);
+    }
+
+    @Override
+    public Page<Order> filterOrders(
+            OrderStatus status,
+            LocalDate startDate,
+            LocalDate endDate,
+            int page,
+            int size
+    ) {
+        Pageable pageable = PageRequest.of(page, size);
+
+        if (status != null && startDate != null && endDate != null) {
+            return orderRepository.findByStatusAndCreatedAtBetween(
+                    status,
+                    startDate.atStartOfDay(),
+                    endDate.atTime(23,59,59),
+                    pageable
+            );
+        }
+
+        if (status != null) {
+            return orderRepository.findByStatus(status, pageable);
+        }
+
+        if (startDate != null && endDate != null) {
+            return orderRepository.findByCreatedAtBetween(
+                    startDate.atStartOfDay(),
+                    endDate.atTime(23,59,59),
+                    pageable
+            );
+        }
+
+        return orderRepository.findAll(pageable);
     }
 }

@@ -9,4 +9,7 @@ import java.util.List;
 @Repository
 public interface MenuItemRepository extends JpaRepository<MenuItem, Long> {
     List<MenuItem> findByCategoryId(Integer categoryId);
+    List<MenuItem> findByNameContainingIgnoreCase(String keyword);
+    List<MenuItem> findByIsAvailable(Boolean isAvailable);  
+    // List<MenuItem> findByIsAvailable(Boolean isAvailable);
 }

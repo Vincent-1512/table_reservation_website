@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Chi tiết hóa đơn - Lumina Admin</title>
+    <link rel="stylesheet" th:href="@{/css/admin.css}">
+</head>
+<body>
+<div class="admin-layout">
+    <div class="sidebar">
+        <h2>Lumina Admin</h2>
+        <a th:href="@{/admin/menu}">Quản lý Thực đơn</a>
+        <a th:href="@{/admin/tables}">Quản lý Bàn/Khu vực</a>
+        <a th:href="@{/admin/reservations}">Lịch sử Đặt bàn</a>
+        <a th:href="@{/admin/users}">Quản lý Người dùng</a>
+        <a th:href="@{/admin/orders}" class="active">Lịch sử Hóa đơn</a>
+        <a th:href="@{/admin/reports}">Thống kê & Báo cáo</a>
+        <a th:href="@{/}" style="margin-top: 50px;">Về Trang chủ</a>
+    </div>
+
+    <div class="main-content">
+        <div class="card">
+            <div class="card-header">
+                <h3 th:text="'Chi tiết hóa đơn #' + ${order.id}">Chi tiết hóa đơn</h3>
+                <a th:href="@{/admin/orders}" class="btn btn-secondary">Quay lại</a>
+            </div>
+
+            <div style="margin-bottom: 20px;">
+                <p><strong>Bàn:</strong>
+                    <span th:text="${order.table != null ? order.table.tableName : 'Không có'}"></span>
+                </p>
+
+                <p><strong>Khách hàng:</strong>
+                    <span th:text="${order.reservation != null && order.reservation.user != null ? order.reservation.user.fullName : 'Khách lẻ'}"></span>
+                </p>
+
+                <p><strong>Thời gian tạo:</strong>
+                    <span th:text="${#temporals.format(order.createdAt, 'dd/MM/yyyy HH:mm')}"></span>
+                </p>
+
+                <p><strong>Trạng thái:</strong>
+                    <span th:text="${order.status}"></span>
+                </p>
+
+                <p><strong>Tổng tiền:</strong>
+                    <span th:text="${#numbers.formatDecimal(order.totalAmount, 0, 'COMMA', 0, 'POINT')} + ' VNĐ'"></span>
+                </p>
+            </div>
+
+            <h3>Danh sách món</h3>
+
+            <table class="table">
+                <thead>
+                <tr>
+                    <th>Món ăn</th>
+                    <th>Số lượng</th>
+                    <th>Giá tại thời điểm gọi</th>
+                    <th>Thành tiền</th>
+                </tr>
+                </thead>
+
+                <tbody>
+                <tr th:each="item : ${orderItems}">
+                    <td th:text="${item.menuItem.name}">Tên món</td>
+
+                    <td th:text="${item.quantity}">1</td>
+
+                    <td th:text="${#numbers.formatDecimal(item.priceAtTime, 0, 'COMMA', 0, 'POINT')} + ' VNĐ'">
+                        100,000 VNĐ
+                    </td>
+
+                    <td th:text="${#numbers.formatDecimal(item.priceAtTime.multiply(new java.math.BigDecimal(item.quantity)), 0, 'COMMA', 0, 'POINT')} + ' VNĐ'">
+                        100,000 VNĐ
+                    </td>
+                </tr>
+
+                <tr th:if="${#lists.isEmpty(orderItems)}">
+                    <td colspan="4" style="text-align:center;">
+                        Hóa đơn này chưa có món nào.
+                    </td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+</body>
+</html>

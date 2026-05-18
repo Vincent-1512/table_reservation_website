@@ -5,94 +5,250 @@
     <title>Báo cáo & Thống kê - Lumina Admin</title>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" th:href="@{/css/admin.css}">
+
     <style>
-        .stat-grid {
+        body {
+            font-family: 'Outfit', sans-serif;
+            background: #f4f6fb;
+        }
+
+        .dashboard-header {
+            margin-bottom: 28px;
+        }
+
+        .dashboard-header h2 {
+            margin: 0;
+            font-size: 28px;
+            color: #1a1a2e;
+            font-weight: 700;
+        }
+
+        .dashboard-header p {
+            margin-top: 6px;
+            color: #777;
+            font-size: 15px;
+        }
+
+        .dashboard-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-            gap: 20px;
+            grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+            gap: 22px;
             margin-bottom: 30px;
         }
-        .stat-card {
-            background: #fff;
-            padding: 30px;
-            border-radius: 12px;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.05);
-            text-align: center;
-            border-bottom: 4px solid #cba876;
+
+        .dashboard-card {
+            background: #ffffff;
+            border-radius: 18px;
+            padding: 24px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.06);
+            border: 1px solid rgba(0, 0, 0, 0.04);
+            transition: 0.2s ease;
         }
-        .stat-card h3 {
-            color: #888;
-            font-size: 16px;
-            margin: 0 0 10px 0;
-            text-transform: uppercase;
-            letter-spacing: 1px;
+
+        .dashboard-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 14px 30px rgba(0, 0, 0, 0.09);
         }
-        .stat-card .number {
-            font-size: 36px;
+
+        .dashboard-card .label {
+            color: #777;
+            font-size: 14px;
+            font-weight: 600;
+            margin-bottom: 10px;
+        }
+
+        .dashboard-card .value {
+            font-size: 30px;
             font-weight: 700;
             color: #1a1a2e;
             margin: 0;
         }
+
+        .dashboard-card .sub {
+            font-size: 13px;
+            color: #999;
+            margin-top: 8px;
+        }
+
+        .card-icon {
+            width: 46px;
+            height: 46px;
+            border-radius: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 22px;
+            margin-bottom: 16px;
+        }
+
+        .icon-revenue { background: #fff3d8; }
+        .icon-order { background: #e6f0ff; }
+        .icon-reservation { background: #e8fff2; }
+        .icon-user { background: #f1e9ff; }
+        .icon-table { background: #fff0e8; }
+
+        .export-card {
+            background: #ffffff;
+            border-radius: 18px;
+            padding: 28px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.06);
+            margin-top: 10px;
+        }
+
+        .export-card h3 {
+            margin: 0 0 8px;
+            color: #1a1a2e;
+            font-size: 22px;
+        }
+
+        .export-card p {
+            color: #666;
+            margin-bottom: 22px;
+        }
+
         .export-actions {
             display: flex;
-            gap: 20px;
-            margin-top: 40px;
+            gap: 16px;
+            flex-wrap: wrap;
         }
-        .btn-excel { background: #207245; color: #fff; }
-        .btn-excel:hover { background: #175432; }
-        .btn-pdf { background: #e2504c; color: #fff; }
-        .btn-pdf:hover { background: #c63a36; }
+
+        .btn-export {
+            display: inline-block;
+            padding: 14px 22px;
+            border-radius: 12px;
+            text-decoration: none;
+            color: #fff;
+            font-weight: 600;
+            transition: 0.2s ease;
+        }
+
+        .btn-excel {
+            background: #207245;
+        }
+
+        .btn-excel:hover {
+            background: #175432;
+        }
+
+        .btn-pdf {
+            background: #e2504c;
+        }
+
+        .btn-pdf:hover {
+            background: #c63a36;
+        }
+
+        @media (max-width: 768px) {
+            .dashboard-card .value {
+                font-size: 26px;
+            }
+
+            .export-actions {
+                flex-direction: column;
+            }
+
+            .btn-export {
+                text-align: center;
+            }
+        }
     </style>
 </head>
+
 <body>
-    <div class="admin-layout">
-        <!-- Sidebar -->
-        <div class="sidebar">
-            <h2>Lumina Admin</h2>
-            <a th:href="@{/admin/menu}">Quản lý Thực đơn</a>
-            <a th:href="@{/admin/tables}">Quản lý Bàn/Khu vực</a>
-            <a th:href="@{/staff/orders}">Quản lý Đơn hàng</a>
-            <a th:href="@{/admin/reports}" class="active">Thống kê & Báo cáo</a>
-            <a href="/" style="margin-top: 50px;">Về Trang chủ</a>
+<div class="admin-layout">
+    <div class="sidebar">
+        <h2>Lumina Admin</h2>
+        <a th:href="@{/admin/menu}">Quản lý Thực đơn</a>
+        <a th:href="@{/admin/tables}">Quản lý Bàn/Khu vực</a>
+        <a th:href="@{/admin/reservations}">Lịch sử Đặt bàn</a>
+        <a th:href="@{/admin/users}">Quản lý Người dùng</a>
+        <a th:href="@{/admin/orders}">Lịch sử Hóa đơn</a>
+        <a th:href="@{/admin/reports}" class="active">Thống kê & Báo cáo</a>
+        <a th:href="@{/}" style="margin-top: 50px;">Về Trang chủ</a>
+    </div>
+
+    <div class="main-content">
+        <div class="dashboard-header">
+            <h2>Tổng quan hoạt động</h2>
+            <p>Theo dõi nhanh tình hình doanh thu, đặt bàn, hóa đơn và trạng thái bàn.</p>
         </div>
 
-        <!-- Main Content -->
-        <div class="main-content">
-            <h2 style="margin-bottom: 30px; color:#1a1a2e;">Tổng quan Hoạt động</h2>
-            
-            <div class="stat-grid">
-                <div class="stat-card">
-                    <h3>Tổng Doanh Thu</h3>
-                    <p class="number" th:text="${#numbers.formatDecimal(report.totalRevenue, 0, 'COMMA', 0, 'POINT')} + ' đ'">0 đ</p>
-                </div>
-                <div class="stat-card">
-                    <h3>Số Đơn Hoàn Thành</h3>
-                    <p class="number" th:text="${report.totalOrders}">0</p>
-                </div>
-                <div class="stat-card">
-                    <h3>Lượt Đặt Bàn (Tất cả)</h3>
-                    <p class="number" th:text="${report.totalReservations}">0</p>
-                </div>
+        <div class="dashboard-grid">
+            <div class="dashboard-card">
+                <div class="card-icon icon-revenue">💰</div>
+                <div class="label">Tổng doanh thu</div>
+                <p class="value"
+                   th:text="${#numbers.formatDecimal(report.totalRevenue, 0, 'COMMA', 0, 'POINT')} + ' đ'">
+                    0 đ
+                </p>
+                <div class="sub">Từ các hóa đơn đã hoàn thành</div>
             </div>
 
-            <div class="card">
-                <div class="card-header">
-                    <h3>Xuất Báo Cáo Định Kỳ</h3>
-                </div>
-                <p style="color:#666;">Tải xuống dữ liệu thô của hệ thống để tiến hành gửi báo cáo cho Quản lý hoặc dùng trong phân tích kế toán.</p>
-                
-                <div class="export-actions">
-                    <a th:href="@{/admin/reports/export/excel}" class="btn btn-excel" style="padding:15px 25px; font-size:16px;">
-                        📊 Tải Báo cáo Doanh thu (Excel)
-                    </a>
-                    
-                    <a th:href="@{/admin/reports/export/pdf}" class="btn btn-pdf" style="padding:15px 25px; font-size:16px;">
-                        📄 Tải Danh sách Đặt bàn (PDF)
-                    </a>
-                </div>
+            <div class="dashboard-card">
+                <div class="card-icon icon-order">🧾</div>
+                <div class="label">Tổng hóa đơn</div>
+                <p class="value" th:text="${totalOrders}">0</p>
+                <div class="sub">Tất cả hóa đơn trong hệ thống</div>
             </div>
 
+            <div class="dashboard-card">
+                <div class="card-icon icon-reservation">📅</div>
+                <div class="label">Tổng đặt bàn</div>
+                <p class="value" th:text="${totalReservations}">0</p>
+                <div class="sub">Bao gồm mọi trạng thái đặt bàn</div>
+            </div>
+
+            <div class="dashboard-card">
+                <div class="card-icon icon-user">👥</div>
+                <div class="label">Tổng người dùng</div>
+                <p class="value" th:text="${totalUsers}">0</p>
+                <div class="sub">Customer, Staff và Admin</div>
+            </div>
+
+            <div class="dashboard-card">
+                <div class="card-icon icon-table">🍽️</div>
+                <div class="label">Tổng số bàn</div>
+                <p class="value" th:text="${totalTables}">0</p>
+                <div class="sub">Toàn bộ bàn trong nhà hàng</div>
+            </div>
+
+            <div class="dashboard-card">
+                <div class="card-icon icon-table">✅</div>
+                <div class="label">Bàn trống</div>
+                <p class="value" th:text="${availableTables}">0</p>
+                <div class="sub">Có thể nhận khách</div>
+            </div>
+
+            <div class="dashboard-card">
+                <div class="card-icon icon-table">🔥</div>
+                <div class="label">Bàn đang dùng</div>
+                <p class="value" th:text="${occupiedTables}">0</p>
+                <div class="sub">Đang phục vụ tại nhà hàng</div>
+            </div>
+
+            <div class="dashboard-card">
+                <div class="card-icon icon-table">📌</div>
+                <div class="label">Bàn đã đặt</div>
+                <p class="value" th:text="${reservedTables}">0</p>
+                <div class="sub">Đã có khách đặt trước</div>
+            </div>
+        </div>
+
+        <div class="export-card">
+            <h3>Xuất báo cáo</h3>
+            <p>Tải dữ liệu hệ thống để gửi báo cáo hoặc phục vụ phân tích kế toán.</p>
+
+            <div class="export-actions">
+                <a th:href="@{/admin/reports/export/excel}" class="btn-export btn-excel">
+                    📊 Tải báo cáo doanh thu Excel
+                </a>
+
+                <a th:href="@{/admin/reports/export/pdf}" class="btn-export btn-pdf">
+                    📄 Tải danh sách đặt bàn PDF
+                </a>
+            </div>
         </div>
     </div>
+</div>
 </body>
 </html>

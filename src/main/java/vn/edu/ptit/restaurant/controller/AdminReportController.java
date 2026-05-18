@@ -28,6 +28,13 @@ public class AdminReportController {
     @GetMapping
     public String dashboard(Model model) {
         model.addAttribute("report", reportService.getGeneralReport());
+        model.addAttribute("totalOrders", reportService.countOrders());
+        model.addAttribute("totalReservations", reportService.countReservations());
+        model.addAttribute("totalUsers", reportService.countUsers());
+        model.addAttribute("totalTables", reportService.countTables());
+        model.addAttribute("availableTables", reportService.countAvailableTables());
+        model.addAttribute("occupiedTables", reportService.countOccupiedTables());
+        model.addAttribute("reservedTables", reportService.countReservedTables());
         return "admin/report/dashboard";
     }
 

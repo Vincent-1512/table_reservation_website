@@ -39,4 +39,30 @@ public class MenuItemServiceImpl implements MenuItemService {
     public void deleteById(Long id) {
         menuItemRepository.deleteById(id);
     }
+
+    @Override
+    public List<MenuItem> searchByName(String keyword) {
+        return menuItemRepository.findByNameContainingIgnoreCase(keyword);
+    }
+
+    @Override
+    public List<MenuItem> findByIsAvailable(Boolean isAvailable) {
+        return menuItemRepository.findByIsAvailable(isAvailable);
+    }
+
+    @Override
+    public void toggleAvailability(Long id) {
+        MenuItem item = menuItemRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy món ăn"));
+
+        Boolean currentStatus = item.getIsAvailable();
+
+        if (currentStatus == null) {
+            currentStatus = true;
+        }
+
+        item.setIsAvailable(!currentStatus);
+
+        menuItemRepository.save(item);
+    }
 }

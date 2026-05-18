@@ -89,6 +89,16 @@ public class ReservationServiceImpl implements ReservationService {
     }
 
     @Override
+    public List<Reservation> findByStatus(ReservationStatus status) {
+        return reservationRepository.findByStatus(status);
+    }
+    
+    @Override
+    public List<Reservation> findAll() {
+        return reservationRepository.findAll();
+    }
+
+    @Override
     @Transactional
     public void cancelReservation(Long reservationId, Long userId) {
         Reservation res = reservationRepository.findById(reservationId).orElseThrow();

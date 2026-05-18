@@ -13,8 +13,11 @@
             <h2>Lumina Admin</h2>
             <a th:href="@{/admin/menu}" class="active">Quản lý Thực đơn</a>
             <a th:href="@{/admin/tables}">Quản lý Bàn/Khu vực</a>
+            <a th:href="@{/admin/reservations}">Quản lý Đặt bàn</a>
             <a th:href="@{/staff/orders}">Quản lý Đơn hàng</a>
+            <a th:href="@{/admin/orders}">Lịch sử Hóa đơn</a>
             <a th:href="@{/admin/reports}">Thống kê & Báo cáo</a>
+            <a th:href="@{/admin/users}">Quản lý Người dùng</a>
             <a href="/" style="margin-top: 50px;">Về Trang chủ</a>
         </div>
 
@@ -59,6 +62,41 @@
                     <h3>Danh sách Món ăn (Menu Items)</h3>
                     <a th:href="@{/admin/menu/item/add}" class="btn btn-primary">+ Thêm Món ăn</a>
                 </div>
+                <form th:action="@{/admin/menu}" method="get"
+                    style="margin-bottom: 20px; display:flex; gap:12px; align-items:center; flex-wrap:wrap;">
+
+                    <input type="text"
+                        name="keyword"
+                        th:value="${keyword}"
+                        placeholder="Tìm món ăn theo tên..."
+                        style="padding:10px 14px; border-radius:8px; border:1px solid #ddd; min-width:240px;">
+
+                    <select name="categoryId"
+                            style="padding:10px 14px; border-radius:8px; border:1px solid #ddd; min-width:220px;">
+                        <option value="">Tất cả danh mục</option>
+
+                        <option th:each="category : ${categories}"
+                                th:value="${category.id}"
+                                th:text="${category.name}"
+                                th:selected="${selectedCategoryId != null && selectedCategoryId == category.id}">
+                        </option>
+                    </select>
+
+                    <select name="isAvailable"
+                            style="padding:10px 14px; border-radius:8px; border:1px solid #ddd; min-width:180px;">
+                        <option value="">Tất cả trạng thái</option>
+                        <option value="true" th:selected="${selectedAvailability != null && selectedAvailability == true}">
+                            Còn bán
+                        </option>
+                        <option value="false" th:selected="${selectedAvailability != null && selectedAvailability == false}">
+                            Đã ẩn
+                        </option>
+                    </select>
+
+                    <button type="submit" class="btn btn-primary">Lọc</button>
+
+                    <a th:href="@{/admin/menu}" class="btn btn-secondary">Xóa lọc</a>
+                </form>
                 <table class="table">
                     <thead>
                         <tr>
@@ -79,10 +117,28 @@
                             <td th:text="${item.name}">Bò Wagyu</td>
                             <td th:text="${item.category.name}">Món chính</td>
                             <td th:text="${#numbers.formatDecimal(item.price, 0, 'COMMA', 0, 'POINT')}">500,000</td>
-                            <td th:text="${item.isAvailable ? 'Còn hàng' : 'Hết hàng'}" th:style="${item.isAvailable ? 'color:green;' : 'color:red;'}">Còn hàng</td>
                             <td>
-                                <a th:href="@{'/admin/menu/item/edit/' + ${item.id}}" class="btn btn-primary" style="padding: 5px 10px; font-size: 13px;">Sửa</a>
-                                <a th:href="@{'/admin/menu/item/delete/' + ${item.id}}" class="btn btn-danger" style="padding: 5px 10px; font-size: 13px;" onclick="return confirm('Bạn có chắc chắn muốn xóa?');">Xóa</a>
+                                <span th:if="${item.isAvailable}" style="color: green; font-weight: 600;">
+                                    Còn bán
+                                </span>
+
+                                <span th:if="${!item.isAvailable}" style="color: red; font-weight: 600;">
+                                    Đã ẩn
+                                </span>
+                            </td>
+                            <td>
+                                <a th:href="@{'/admin/menu/items/' + ${item.id} + '/edit'}"
+                                class="btn btn-warning">
+                                    Sửa
+                                </a>
+
+                                <a th:href="@{'/admin/menu/' + ${item.id} + '/toggle-availability'}"
+                                class="btn"
+                                th:classappend="${item.isAvailable} ? ' btn-danger' : ' btn-success'"
+                                onclick="return confirm('Bạn có chắc muốn thay đổi trạng thái món này?')">
+
+                                    <span th:text="${item.isAvailable} ? 'Ẩn' : 'Hiện lại'"></span>
+                                </a>
                             </td>
                         </tr>
                         <tr th:if="${#lists.isEmpty(menuItems)}">

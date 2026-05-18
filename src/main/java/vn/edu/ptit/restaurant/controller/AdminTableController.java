@@ -9,6 +9,7 @@ import vn.edu.ptit.restaurant.entity.DiningTable;
 import vn.edu.ptit.restaurant.service.AreaService;
 import vn.edu.ptit.restaurant.service.DiningTableService;
 import vn.edu.ptit.restaurant.entity.enums.TableStatus;
+import java.util.List;
 
 @Controller
 @RequestMapping("/admin/tables")
@@ -19,10 +20,29 @@ public class AdminTableController {
     private final DiningTableService diningTableService;
 
     // Hiển thị danh sách Khu vực và Bàn
-    @GetMapping
-    public String index(Model model) {
+    @GetMapping()
+    public String index(@RequestParam(required = false) Integer areaId,
+                        @RequestParam(required = false) TableStatus status,
+                        Model model) {
+
+        List<DiningTable> tables;
+
+        if (areaId != null && status != null) {
+            tables = diningTableService.findByAreaIdAndStatus(areaId, status);
+        } else if (areaId != null) {
+            tables = diningTableService.findByAreaId(areaId);
+        } else if (status != null) {
+            tables = diningTableService.findByStatus(status);
+        } else {
+            tables = diningTableService.findAll();
+        }
+
+        model.addAttribute("tables", tables);
         model.addAttribute("areas", areaService.findAll());
-        model.addAttribute("tables", diningTableService.findAll());
+        model.addAttribute("statuses", TableStatus.values());
+        model.addAttribute("selectedAreaId", areaId);
+        model.addAttribute("selectedStatus", status);
+
         return "admin/table/index";
     }
 
