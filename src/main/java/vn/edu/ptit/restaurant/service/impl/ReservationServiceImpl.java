@@ -112,6 +112,12 @@ public class ReservationServiceImpl implements ReservationService {
         table.setStatus(TableStatus.AVAILABLE);
         diningTableRepository.save(table);
         
+        // Hủy luôn Order nếu có
+        orderRepository.findByReservationId(reservationId).ifPresent(order -> {
+            order.setStatus(OrderStatus.CANCELLED);
+            orderRepository.save(order);
+        });
+        
         reservationRepository.save(res);
     }
 
@@ -137,6 +143,13 @@ public class ReservationServiceImpl implements ReservationService {
         DiningTable table = res.getTable();
         table.setStatus(TableStatus.AVAILABLE);
         diningTableRepository.save(table);
+        
+        // Hủy luôn Order nếu có
+        orderRepository.findByReservationId(reservationId).ifPresent(order -> {
+            order.setStatus(OrderStatus.CANCELLED);
+            orderRepository.save(order);
+        });
+        
         reservationRepository.save(res);
     }
 

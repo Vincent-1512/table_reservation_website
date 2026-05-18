@@ -14,12 +14,14 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
 import java.util.List;
+import java.util.Optional;
 
 @Repository
 public interface OrderRepository extends JpaRepository<Order, Long> {
     List<Order> findByStatus(OrderStatus status);
     List<Order> findByTableIdAndStatus(Long tableId, OrderStatus status);
     Page<Order> findByStatus(OrderStatus status, Pageable pageable);
+    Optional<Order> findByReservationId(Long reservationId);
 
     Page<Order> findByCreatedAtBetween(
             LocalDateTime start,

@@ -34,6 +34,7 @@ public class OrderServiceImpl implements OrderService {
     private final OrderRepository orderRepository;
     private final DiningTableRepository diningTableRepository;
     private final UserRepository userRepository;
+    private final vn.edu.ptit.restaurant.repository.ReservationRepository reservationRepository;
 
     @Override
     public List<Order> findAll() {
@@ -92,6 +93,13 @@ public class OrderServiceImpl implements OrderService {
                 .orElseThrow(() -> new RuntimeException("Không tìm thấy hóa đơn"));
         
         order.setStatus(OrderStatus.COMPLETED);
+        
+        // Hoàn thành Đặt bàn nếu có
+        if (order.getReservation() != null) {
+            vn.edu.ptit.restaurant.entity.Reservation res = order.getReservation();
+            res.setStatus(vn.edu.ptit.restaurant.entity.enums.ReservationStatus.COMPLETED);
+            reservationRepository.save(res);
+        }
         
         // Giải phóng bàn
         DiningTable table = order.getTable();
