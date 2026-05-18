@@ -20,19 +20,21 @@
             box-shadow: 0 4px 10px rgba(0,0,0,0.05);
             border-top: 5px solid #ccc;
         }
-        .table-card h4 {
-            margin: 0 0 10px 0;
-            font-size: 20px;
+        .table-card h4 { margin: 0 0 8px 0; font-size: 18px; }
+        .table-card p { margin: 0 0 12px 0; color: #666; font-size: 13px; }
+        .status-AVAILABLE  { border-top-color: #51cf66; }
+        .status-OCCUPIED   { border-top-color: #ff6b6b; }
+        .status-RESERVED   { border-top-color: #fcc419; }
+        .status-MAINTENANCE{ border-top-color: #adb5bd; }
+        .alert {
+            padding: 12px 16px; border-radius: 8px; margin-bottom: 20px; font-weight: 500;
         }
-        .table-card p {
-            margin: 0 0 15px 0;
-            color: #666;
-            font-size: 14px;
-        }
-        .status-AVAILABLE { border-top-color: #51cf66; }
-        .status-OCCUPIED { border-top-color: #ff6b6b; }
-        .status-RESERVED { border-top-color: #fcc419; }
-        .status-MAINTENANCE { border-top-color: #adb5bd; }
+        .alert-success { background: #d1fae5; color: #065f46; border: 1px solid #a7f3d0; }
+        .alert-error   { background: #fee2e2; color: #991b1b; border: 1px solid #fca5a5; }
+        .status-badge { padding: 3px 10px; border-radius: 20px; font-size: 12px; font-weight: 600; }
+        .status-PENDING  { background: #fff3cd; color: #856404; }
+        .status-SERVING  { background: #d1e7dd; color: #0a3622; }
+        .status-COMPLETED{ background: #e2e3e5; color: #41464b; }
     </style>
 </head>
 <body>
@@ -40,39 +42,67 @@
         <!-- Sidebar -->
         <div class="sidebar">
             <h2>Lumina Staff</h2>
-            <a th:href="@{/staff/orders}" class="active">Sơ đồ Bàn & Phục vụ</a>
+            <a th:href="@{/staff/orders}" class="active">Sơ đồ Bàn &amp; Phục vụ</a>
             <a href="/">Về Trang chủ</a>
         </div>
 
         <!-- Main Content -->
         <div class="main-content">
-            
+
+            <!-- Flash messages -->
+            <div class="alert alert-success" th:if="${success}" th:text="${success}"></div>
+            <div class="alert alert-error"   th:if="${error}"   th:text="${error}"></div>
+
             <div class="card">
                 <div class="card-header">
-                    <h3>Sơ đồ Bàn ăn (Tạo Order mới)</h3>
+                    <h3>Sơ đồ Bàn ăn</h3>
                 </div>
-                
+
                 <div class="table-grid">
-                    <div th:each="table : ${tables}" class="table-card" th:classappend="'status-' + ${table.status.name()}">
+                    <div th:each="table : ${tables}"
+                         class="table-card"
+                         th:classappend="'status-' + ${table.status.name()}">
                         <h4 th:text="${table.tableName}">Bàn 01</h4>
-                        <p th:text="${table.area.name} + ' - ' + ${table.capacity} + ' người'">Tầng 1 - 4 người</p>
-                        
+                        <p th:text="${table.area.name} + ' · ' + ${table.capacity} + ' người'">Tầng 1 · 4 người</p>
+
+                        <!-- AVAILABLE: Mở bàn mới -->
                         <div th:if="${table.status.name() == 'AVAILABLE'}">
-                            <span style="color:#51cf66; font-weight:600; display:block; margin-bottom:10px;">Trống</span>
+                            <span style="color:#51cf66; font-weight:600; display:block; margin-bottom:10px;">⬤ Trống</span>
                             <form th:action="@{/staff/orders/create}" method="post">
                                 <input type="hidden" name="tableId" th:value="${table.id}" />
-                                <button type="submit" class="btn btn-primary" style="width:100%; padding:8px;">Mở Bàn</button>
+                                <button type="submit" class="btn btn-primary"
+                                        style="width:100%; padding:8px;">Mở Bàn</button>
                             </form>
                         </div>
 
+                        <!-- OCCUPIED: Link trực tiếp đến order đang mở -->
                         <div th:if="${table.status.name() == 'OCCUPIED'}">
-                            <span style="color:#ff6b6b; font-weight:600; display:block; margin-bottom:10px;">Đang phục vụ</span>
-                            <!-- Normally we find the active order for this table, for simple UI we just use the list below -->
-                            <span style="font-size:12px; color:#888;">Xem danh sách order bên dưới</span>
+                            <span style="color:#ff6b6b; font-weight:600; display:block; margin-bottom:10px;">⬤ Đang phục vụ</span>
+                            <!-- Tìm orderId tương ứng từ map -->
+                            <a th:if="${activeOrderByTable != null and activeOrderByTable[table.id] != null}"
+                               th:href="@{'/staff/orders/' + ${activeOrderByTable[table.id]}}"
+                               class="btn btn-primary" style="width:100%; padding:8px; display:inline-block;">
+                                Xem Order →
+                            </a>
+                            <span th:unless="${activeOrderByTable != null and activeOrderByTable[table.id] != null}"
+                                  style="font-size:12px; color:#888;">Đang xử lý...</span>
                         </div>
-                        
+
+                        <!-- RESERVED: Thông báo đã đặt trước -->
                         <div th:if="${table.status.name() == 'RESERVED'}">
-                            <span style="color:#fcc419; font-weight:600; display:block; margin-bottom:10px;">Khách đã đặt</span>
+                            <span style="color:#fcc419; font-weight:600; display:block; margin-bottom:10px;">⬤ Đã đặt trước</span>
+                            <!-- Cho phép mở bàn khi khách đến -->
+                            <form th:action="@{/staff/orders/create}" method="post">
+                                <input type="hidden" name="tableId" th:value="${table.id}" />
+                                <button type="submit" class="btn btn-secondary"
+                                        style="width:100%; padding:8px;"
+                                        onclick="return confirm('Mở bàn cho khách đến?')">Khách Đến</button>
+                            </form>
+                        </div>
+
+                        <!-- MAINTENANCE -->
+                        <div th:if="${table.status.name() == 'MAINTENANCE'}">
+                            <span style="color:#adb5bd; font-weight:600;">⬤ Bảo trì</span>
                         </div>
                     </div>
                 </div>
@@ -88,6 +118,7 @@
                         <tr>
                             <th>Mã Order</th>
                             <th>Bàn</th>
+                            <th>Nhân viên</th>
                             <th>Trạng thái</th>
                             <th>Tổng tiền</th>
                             <th>Giờ vào</th>
@@ -95,18 +126,26 @@
                         </tr>
                     </thead>
                     <tbody>
-                        <tr th:each="order : ${orders}" th:if="${order.status.name() == 'PENDING' or order.status.name() == 'SERVING'}">
+                        <tr th:each="order : ${orders}"
+                            th:if="${order.status.name() == 'PENDING' or order.status.name() == 'SERVING'}">
                             <td th:text="'#' + ${order.id}">#1</td>
                             <td th:text="${order.table.tableName}">Bàn 01</td>
-                            <td th:text="${order.status}">PENDING</td>
-                            <td th:text="${#numbers.formatDecimal(order.totalAmount, 0, 'COMMA', 0, 'POINT')} + ' VNĐ'" style="font-weight:600; color:#cba876;">0 VNĐ</td>
-                            <td th:text="${#temporals.format(order.createdAt, 'HH:mm dd/MM/yyyy')}">10:00</td>
+                            <td th:text="${order.user != null ? order.user.fullName : '-'}">Nhân viên</td>
                             <td>
-                                <a th:href="@{'/staff/orders/' + ${order.id}}" class="btn btn-primary" style="padding: 6px 12px; font-size: 13px;">Chi tiết / Gọi món</a>
+                                <span class="status-badge" th:classappend="'status-' + ${order.status.name()}"
+                                      th:text="${order.status}">PENDING</span>
+                            </td>
+                            <td th:text="${#numbers.formatDecimal(order.totalAmount, 0, 'COMMA', 0, 'POINT')} + ' VNĐ'"
+                                style="font-weight:600; color:#cba876;">0 VNĐ</td>
+                            <td th:text="${#temporals.format(order.createdAt, 'HH:mm dd/MM')}">10:00</td>
+                            <td>
+                                <a th:href="@{'/staff/orders/' + ${order.id}}"
+                                   class="btn btn-primary"
+                                   style="padding: 6px 12px; font-size: 13px;">Chi tiết / Gọi món</a>
                             </td>
                         </tr>
                         <tr th:if="${#lists.isEmpty(orders)}">
-                            <td colspan="6" style="text-align:center;">Chưa có order nào đang hoạt động.</td>
+                            <td colspan="7" style="text-align:center;">Chưa có order nào đang hoạt động.</td>
                         </tr>
                     </tbody>
                 </table>

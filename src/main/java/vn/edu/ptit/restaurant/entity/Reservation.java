@@ -29,6 +29,9 @@ public class Reservation {
     @Column(name = "reservation_time", nullable = false)
     private LocalDateTime reservationTime;
 
+    @Column(name = "expiry_datetime")
+    private LocalDateTime expiryDatetime;
+
     @Column(name = "number_of_guests", nullable = false)
     private Integer numberOfGuests;
 
@@ -43,8 +46,9 @@ public class Reservation {
     @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt;
 
-    @Version
-    private Long version;
+    @Column(nullable = false)
+    @Builder.Default
+    private Boolean deleted = false;
 
     @PrePersist
     protected void onCreate() {

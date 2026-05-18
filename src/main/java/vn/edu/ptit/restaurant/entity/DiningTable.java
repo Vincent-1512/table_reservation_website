@@ -4,6 +4,8 @@ import jakarta.persistence.*;
 import lombok.*;
 import vn.edu.ptit.restaurant.entity.enums.TableStatus;
 
+import java.time.LocalDateTime;
+
 @Entity
 @Table(name = "tables")
 @Data
@@ -31,6 +33,16 @@ public class DiningTable {
     @Builder.Default
     private TableStatus status = TableStatus.AVAILABLE;
 
-    @Version
-    private Long version;
+    @Column(name = "updated_at")
+    private LocalDateTime updatedAt;
+
+    @PrePersist
+    protected void onCreate() {
+        updatedAt = LocalDateTime.now();
+    }
+
+    @PreUpdate
+    protected void onUpdate() {
+        updatedAt = LocalDateTime.now();
+    }
 }

@@ -12,4 +12,8 @@ public interface ReservationService {
     List<Reservation> findByStatus(ReservationStatus status);
     List<Reservation> findAll();
     void cancelReservation(Long reservationId, Long userId);
+    // Admin actions
+    void confirmReservation(Long reservationId);
+    void adminCancelReservation(Long reservationId);
+    void completeReservation(Long reservationId);
 }

@@ -12,21 +12,67 @@
         }
         .left-col { flex: 2; }
         .right-col { flex: 1; }
+        .payment-method-group {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            margin: 15px 0;
+        }
+        .payment-method-group label {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px 14px;
+            border: 1px solid #eee;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .payment-method-group label:hover {
+            border-color: #cba876;
+            background: #faf6ef;
+        }
+        .payment-method-group input[type="radio"]:checked + span {
+            color: #cba876;
+            font-weight: 600;
+        }
+        .payment-done {
+            background: #e8f5e9;
+            border-radius: 12px;
+            padding: 20px;
+            text-align: center;
+            margin-top: 15px;
+        }
+        .payment-done .badge {
+            display: inline-block;
+            background: #51cf66;
+            color: white;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 13px;
+            font-weight: 600;
+        }
     </style>
 </head>
 <body>
     <div class="admin-layout">
         <div class="sidebar">
             <h2>Lumina Staff</h2>
-            <a th:href="@{/staff/orders}" class="active">Sơ đồ Bàn & Phục vụ</a>
+            <a th:href="@{/staff/orders}" class="active">Sơ đồ Bàn &amp; Phục vụ</a>
             <a href="/">Về Trang chủ</a>
         </div>
 
         <div class="main-content">
+            <!-- Flash messages -->
+            <div style="background:#d1fae5; border:1px solid #a7f3d0; border-radius:8px; padding:12px 16px; margin-bottom:20px; font-weight:500; color:#065f46;"
+                 th:if="${success}" th:text="${success}"></div>
+            <div style="background:#fee2e2; border:1px solid #fca5a5; border-radius:8px; padding:12px 16px; margin-bottom:20px; font-weight:500; color:#991b1b;"
+                 th:if="${error}" th:text="${error}"></div>
+
             <div class="split-layout">
                 <!-- Cột trái: Form gọi món & Danh sách món đã gọi -->
                 <div class="left-col">
-                    <div class="card">
+                    <div class="card" th:if="${order.status.name() != 'COMPLETED' and order.status.name() != 'CANCELLED'}">
                         <div class="card-header">
                             <h3>Gọi món thêm</h3>
                         </div>
@@ -64,7 +110,7 @@
                                     <th>Đơn giá</th>
                                     <th>Thành tiền</th>
                                     <th>Ghi chú</th>
-                                    <th>Hủy</th>
+                                    <th th:if="${order.status.name() != 'COMPLETED' and order.status.name() != 'CANCELLED'}">Hủy</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -74,7 +120,7 @@
                                     <td th:text="${#numbers.formatDecimal(item.priceAtTime, 0, 'COMMA', 0, 'POINT')}">50,000</td>
                                     <td th:text="${#numbers.formatDecimal(item.priceAtTime * item.quantity, 0, 'COMMA', 0, 'POINT')}">100,000</td>
                                     <td th:text="${item.note}"></td>
-                                    <td>
+                                    <td th:if="${order.status.name() != 'COMPLETED' and order.status.name() != 'CANCELLED'}">
                                         <a th:href="@{'/staff/orders/' + ${order.id} + '/delete-item/' + ${item.id}}" 
                                            class="btn btn-danger" style="padding:4px 8px; font-size:12px;"
                                            onclick="return confirm('Hủy món này?');">Xóa</a>
@@ -98,6 +144,7 @@
                             <div><strong>Bàn:</strong> <span th:text="${order.table.tableName}">Bàn 01</span></div>
                             <div><strong>Nhân viên:</strong> <span th:text="${order.user.fullName}">Nguyễn Văn A</span></div>
                             <div><strong>Giờ vào:</strong> <span th:text="${#temporals.format(order.createdAt, 'HH:mm dd/MM/yyyy')}">10:00</span></div>
+                            <div><strong>Trạng thái:</strong> <span th:text="${order.status}">PENDING</span></div>
                             <hr style="margin:15px 0; border-top:1px dashed #ccc;">
                             <div style="font-size:24px; color:#cba876; text-align:center;">
                                 <strong>Tổng cộng:</strong><br>
@@ -105,10 +152,62 @@
                             </div>
                         </div>
 
-                        <form th:action="@{'/staff/orders/' + ${order.id} + '/checkout'}" method="post">
-                            <button type="submit" class="btn btn-primary" style="width:100%; font-size:18px; padding:15px;"
-                                    onclick="return confirm('Xác nhận thanh toán và đóng bàn?');">Thanh Toán & Đóng Bàn</button>
-                        </form>
+                        <!-- Nút chuyển PENDING → SERVING -->
+                        <div th:if="${order.status.name() == 'PENDING'}" style="margin-bottom:12px;">
+                            <form th:action="@{'/staff/orders/' + ${order.id} + '/update-status'}" method="post">
+                                <input type="hidden" name="status" value="SERVING" />
+                                <button type="submit" class="btn btn-secondary"
+                                        style="width:100%; padding:10px; font-size:15px;">
+                                    🍽 Bắt đầu Phục vụ
+                                </button>
+                            </form>
+                        </div>
+
+                        <!-- Nếu chưa thanh toán → hiện form checkout -->
+                        <div th:if="${payment == null and order.status.name() != 'COMPLETED' and order.status.name() != 'CANCELLED'}">
+                            <form th:action="@{'/staff/orders/' + ${order.id} + '/checkout'}" method="post">
+                                <div style="margin-bottom:15px;">
+                                    <label style="font-weight:600; margin-bottom:8px; display:block;">Phương thức thanh toán:</label>
+                                    <div class="payment-method-group">
+                                        <label>
+                                            <input type="radio" name="paymentMethod" value="CASH" checked>
+                                            <span>💵 Tiền mặt</span>
+                                        </label>
+                                        <label>
+                                            <input type="radio" name="paymentMethod" value="CARD">
+                                            <span>💳 Thẻ</span>
+                                        </label>
+                                        <label>
+                                            <input type="radio" name="paymentMethod" value="E_WALLET">
+                                            <span>📱 Ví điện tử</span>
+                                        </label>
+                                        <label>
+                                            <input type="radio" name="paymentMethod" value="BANK_TRANSFER">
+                                            <span>🏦 Chuyển khoản</span>
+                                        </label>
+                                    </div>
+                                </div>
+                                <button type="submit" class="btn btn-primary" style="width:100%; font-size:18px; padding:15px;"
+                                        onclick="return confirm('Xác nhận thanh toán và đóng bàn?');">Thanh Toán &amp; Đóng Bàn</button>
+                            </form>
+                        </div>
+
+                        <!-- Nếu đã thanh toán → hiện thông tin payment -->
+                        <div th:if="${payment != null}" class="payment-done">
+                            <span class="badge">✓ ĐÃ THANH TOÁN</span>
+                            <div style="margin-top:12px; font-size:14px; line-height:2;">
+                                <div><strong>Phương thức:</strong> 
+                                    <span th:switch="${payment.method.name()}">
+                                        <span th:case="'CASH'">💵 Tiền mặt</span>
+                                        <span th:case="'CARD'">💳 Thẻ</span>
+                                        <span th:case="'E_WALLET'">📱 Ví điện tử</span>
+                                        <span th:case="'BANK_TRANSFER'">🏦 Chuyển khoản</span>
+                                    </span>
+                                </div>
+                                <div><strong>Số tiền:</strong> <span th:text="${#numbers.formatDecimal(payment.amount, 0, 'COMMA', 0, 'POINT')} + ' VNĐ'">0 VNĐ</span></div>
+                                <div><strong>Thời gian:</strong> <span th:text="${#temporals.format(payment.createdAt, 'HH:mm dd/MM/yyyy')}">10:00</span></div>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>

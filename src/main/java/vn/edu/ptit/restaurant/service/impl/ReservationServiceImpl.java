@@ -114,4 +114,38 @@ public class ReservationServiceImpl implements ReservationService {
         
         reservationRepository.save(res);
     }
+
+    @Override
+    @Transactional
+    public void confirmReservation(Long reservationId) {
+        Reservation res = reservationRepository.findById(reservationId)
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy đặt bàn"));
+        if (res.getStatus() != ReservationStatus.PENDING) {
+            throw new RuntimeException("Chỉ có thể xác nhận đặt bàn ở trạng thái PENDING");
+        }
+        res.setStatus(ReservationStatus.CONFIRMED);
+        reservationRepository.save(res);
+    }
+
+    @Override
+    @Transactional
+    public void adminCancelReservation(Long reservationId) {
+        Reservation res = reservationRepository.findById(reservationId)
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy đặt bàn"));
+        res.setStatus(ReservationStatus.CANCELLED);
+        // Trả bàn về AVAILABLE
+        DiningTable table = res.getTable();
+        table.setStatus(TableStatus.AVAILABLE);
+        diningTableRepository.save(table);
+        reservationRepository.save(res);
+    }
+
+    @Override
+    @Transactional
+    public void completeReservation(Long reservationId) {
+        Reservation res = reservationRepository.findById(reservationId)
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy đặt bàn"));
+        res.setStatus(ReservationStatus.COMPLETED);
+        reservationRepository.save(res);
+    }
 }
