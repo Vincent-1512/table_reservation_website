@@ -21,7 +21,7 @@ public class AdminUserController {
 
     @GetMapping
     public String index(@RequestParam(defaultValue = "0") int page,
-                        @RequestParam(defaultValue = "10") int size,
+                        @RequestParam(defaultValue = "2") int size,
                         @RequestParam(required = false) Role role,
                         @RequestParam(required = false) String keyword,
                         Model model) {

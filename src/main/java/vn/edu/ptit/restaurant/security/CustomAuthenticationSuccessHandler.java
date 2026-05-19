@@ -28,7 +28,7 @@ public class CustomAuthenticationSuccessHandler implements AuthenticationSuccess
         }
 
         if (isAdmin) {
-            response.sendRedirect("/admin/menu");
+            response.sendRedirect("admin/reports");
         } else if (isStaff) {
             response.sendRedirect("/staff/orders");
         } else {

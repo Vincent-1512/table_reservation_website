@@ -21,14 +21,24 @@
 <div class="admin-layout">
     <div class="sidebar">
         <h2>Lumina Admin</h2>
+        <a th:href="@{/admin/reports}">Dashboard</a>
         <a th:href="@{/admin/menu}">Quản lý Thực đơn</a>
         <a th:href="@{/admin/tables}">Quản lý Bàn/Khu vực</a>
-        <a th:href="@{/admin/reservations}" class="active">Quản lý Đặt bàn</a>
+        <a th:href="@{/admin/reservations}" class="active">Lịch sử Đặt bàn</a>
         <a th:href="@{/admin/users}">Quản lý Người dùng</a>
         <a th:href="@{/admin/orders}">Lịch sử Hóa đơn</a>
         <a th:href="@{/admin/payments}">Quản lý Thanh toán</a>
-        <a th:href="@{/admin/reports}">Thống kê &amp; Báo cáo</a>
-        <a href="/" style="margin-top: 50px;">Về Trang chủ</a>
+        <form th:action="@{/logout}" method="post" style="margin:0;">
+            <button type="submit" style="background:none; border:none; color:#a0a0a0;; cursor:pointer; font-family:inherit; font-weight:500;
+                        display: block;
+                        color: #a0a0a0;
+                        text-decoration: none;
+                        padding: 12px 15px;
+                        margin-bottom: 10px;
+                        border-radius: 8px;
+                        transition: 0.3s;
+                        font-size: 16px;">Đăng xuất</button>
+        </form>
     </div>
 
     <div class="main-content">
