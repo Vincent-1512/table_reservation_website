@@ -9,6 +9,7 @@ TRUNCATE TABLE menu_items;
 TRUNCATE TABLE categories;
 TRUNCATE TABLE `tables`;
 TRUNCATE TABLE areas;
+TRUNCATE TABLE users;
 
 SET FOREIGN_KEY_CHECKS = 1;
 
@@ -62,3 +63,9 @@ INSERT INTO menu_items (name, description, price, is_available, category_id, cre
 ('Chè ba màu', 'Chè ba màu truyền thống với đậu, thạch và nước cốt dừa', 35000, 1, 5, NOW(), NOW()),
 ('Kem dừa', 'Kem dừa tươi phủ cùi dừa nạo', 45000, 1, 5, NOW(), NOW()),
 ('Bánh tiramisu', 'Bánh tiramisu Ý với cà phê espresso', 75000, 1, 5, NOW(), NOW());
+
+-- Thêm Users (password: 123456)
+INSERT INTO users (username, password_hash, full_name, phone, email, role, created_at, updated_at, deleted) VALUES
+('admin', '$2a$10$0w7tJykpZacr5NEbM.wvIeHTKViJ7ojyaB5iOEKKx/oFzkV40koMm', 'Quản trị viên', '0987654321', 'admin@restaurant.com', 'ADMIN', NOW(), NOW(), 0),
+('staff', '$2a$10$0w7tJykpZacr5NEbM.wvIeHTKViJ7ojyaB5iOEKKx/oFzkV40koMm', 'Nhân viên 1', '0123456789', 'staff@restaurant.com', 'STAFF', NOW(), NOW(), 0),
+('customer', '$2a$10$0w7tJykpZacr5NEbM.wvIeHTKViJ7ojyaB5iOEKKx/oFzkV40koMm', 'Khách hàng 1', '0333333333', 'customer@restaurant.com', 'CUSTOMER', NOW(), NOW(), 0);
