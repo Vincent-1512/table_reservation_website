@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Quản lý Đặt bàn - Lumina Staff</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" th:href="@{/css/admin.css}">
+    <style>
+        .status-PENDING   { background: #fff3cd; color: #856404; }
+        .status-CONFIRMED { background: #d1e7dd; color: #0a3622; }
+        .status-CANCELLED { background: #f8d7da; color: #842029; }
+        .status-COMPLETED { background: #e2e3e5; color: #41464b; }
+        .action-btns { display: flex; gap: 6px; flex-wrap: wrap; }
+        .action-btns form { margin: 0; }
+        .action-btns .btn { padding: 5px 10px; font-size: 12px; }
+    </style>
+</head>
+<body>
+    <div class="admin-layout">
+        <div th:replace="~{fragments/staff-layout :: sidebar('reservations')}"></div>
+
+        <div class="main-content">
+            <div th:replace="~{fragments/staff-layout :: alerts}"></div>
+
+            <div class="card">
+                <div class="card-header">
+                    <h3>📅 Quản lý Đặt bàn</h3>
+                </div>
+
+                <!-- Filter -->
+                <form th:action="@{/staff/reservations}" method="get" class="filter-bar">
+                    <div class="form-group">
+                        <label>Lọc theo trạng thái</label>
+                        <select name="status" class="form-control">
+                            <option value="">-- Tất cả --</option>
+                            <option th:each="s : ${statuses}" th:value="${s}" th:text="${s}"
+                                    th:selected="${selectedStatus != null and selectedStatus.name() == s.name()}">STATUS</option>
+                        </select>
+                    </div>
+                    <button type="submit" class="btn btn-primary" style="height:40px;">Lọc</button>
+                    <a th:href="@{/staff/reservations}" class="btn btn-secondary" style="height:40px; line-height:20px;">Xóa lọc</a>
+                </form>
+
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Mã</th>
+                            <th>Khách hàng</th>
+                            <th>Bàn</th>
+                            <th>Thời gian đặt</th>
+                            <th>Số khách</th>
+                            <th>Ghi chú</th>
+                            <th>Trạng thái</th>
+                            <th>Hành động</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr th:each="res : ${reservations}">
+                            <td th:text="'#' + ${res.id}">#1</td>
+                            <td th:text="${res.user.fullName}">Nguyễn Văn A</td>
+                            <td th:text="${res.table.tableName}">Bàn 01</td>
+                            <td th:text="${#temporals.format(res.reservationTime, 'HH:mm dd/MM/yyyy')}">10:00 01/01/2024</td>
+                            <td th:text="${res.numberOfGuests}">4</td>
+                            <td th:text="${res.note != null ? res.note : '-'}" style="max-width:150px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">-</td>
+                            <td>
+                                <span class="status-badge" th:classappend="'status-' + ${res.status.name()}">
+                                    <span th:switch="${res.status.name()}">
+                                        <span th:case="'PENDING'">Chờ xác nhận</span>
+                                        <span th:case="'CONFIRMED'">Đã xác nhận</span>
+                                        <span th:case="'CANCELLED'">Đã hủy</span>
+                                        <span th:case="'COMPLETED'">Hoàn thành</span>
+                                    </span>
+                                </span>
+                            </td>
+                            <td>
+                                <div class="action-btns">
+                                    <!-- PENDING: Confirm + Cancel -->
+                                    <div th:if="${res.status.name() == 'PENDING'}">
+                                        <form th:action="@{'/staff/reservations/' + ${res.id} + '/confirm'}" method="post" style="display:inline;">
+                                            <button type="submit" class="btn btn-success">✓ Xác nhận</button>
+                                        </form>
+                                        <form th:action="@{'/staff/reservations/' + ${res.id} + '/cancel'}" method="post" style="display:inline;">
+                                            <button type="submit" class="btn btn-danger" onclick="return confirm('Bạn có chắc muốn hủy đặt bàn này?');">✗ Hủy</button>
+                                        </form>
+                                    </div>
+                                    <!-- CONFIRMED: Check-in + Cancel -->
+                                    <div th:if="${res.status.name() == 'CONFIRMED'}">
+                                        <form th:action="@{'/staff/reservations/' + ${res.id} + '/checkin'}" method="post" style="display:inline;">
+                                            <button type="submit" class="btn btn-primary">📋 Check-in</button>
+                                        </form>
+                                        <form th:action="@{'/staff/reservations/' + ${res.id} + '/cancel'}" method="post" style="display:inline;">
+                                            <button type="submit" class="btn btn-danger" onclick="return confirm('Bạn có chắc muốn hủy đặt bàn này?');">✗ Hủy</button>
+                                        </form>
+                                    </div>
+                                    <!-- CANCELLED / COMPLETED: No action -->
+                                    <span th:if="${res.status.name() == 'CANCELLED' or res.status.name() == 'COMPLETED'}" style="color:#999; font-size:13px;">—</span>
+                                </div>
+                            </td>
+                        </tr>
+                        <tr th:if="${#lists.isEmpty(reservations)}">
+                            <td colspan="8" style="text-align:center; color:#999; padding:30px;">Không có đặt bàn nào.</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

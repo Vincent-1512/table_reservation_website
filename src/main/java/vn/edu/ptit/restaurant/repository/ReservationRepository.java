@@ -5,6 +5,7 @@ import org.springframework.stereotype.Repository;
 import vn.edu.ptit.restaurant.entity.Reservation;
 import vn.edu.ptit.restaurant.entity.enums.ReservationStatus;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Repository
@@ -12,4 +13,6 @@ public interface ReservationRepository extends JpaRepository<Reservation, Long> 
     List<Reservation> findByUserIdOrderByReservationTimeDesc(Long userId);
     List<Reservation> findByStatus(ReservationStatus status);
     List<Reservation> findByStatusOrderByReservationTimeAsc(ReservationStatus status);
+    List<Reservation> findAllByOrderByReservationTimeDesc();
+    List<Reservation> findByReservationTimeBetweenAndStatusIn(LocalDateTime start, LocalDateTime end, List<ReservationStatus> statuses);
 }

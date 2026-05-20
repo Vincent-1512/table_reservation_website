@@ -12,6 +12,7 @@ import vn.edu.ptit.restaurant.repository.PaymentRepository;
 import vn.edu.ptit.restaurant.service.PaymentService;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
@@ -67,5 +68,19 @@ public class PaymentServiceImpl implements PaymentService {
                 .orElseThrow(() -> new RuntimeException("Payment not found"));
         payment.setStatus(status);
         paymentRepository.save(payment);
+    }
+
+    @Override
+    public List<Payment> findCompletedPayments() {
+        return paymentRepository.findByStatusOrderByCreatedAtDesc(PaymentStatus.PAID);
+    }
+
+    @Override
+    public List<Payment> findCompletedPaymentsByDateRange(LocalDate start, LocalDate end) {
+        return paymentRepository.findByStatusAndCreatedAtBetweenOrderByCreatedAtDesc(
+                PaymentStatus.PAID,
+                start.atStartOfDay(),
+                end.atTime(23, 59, 59)
+        );
     }
 }

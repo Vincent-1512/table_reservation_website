@@ -14,6 +14,7 @@ import vn.edu.ptit.restaurant.service.ReservationService;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
@@ -160,5 +161,60 @@ public class ReservationServiceImpl implements ReservationService {
                 .orElseThrow(() -> new RuntimeException("Không tìm thấy đặt bàn"));
         res.setStatus(ReservationStatus.COMPLETED);
         reservationRepository.save(res);
+    }
+
+    @Override
+    public List<Reservation> findAllSorted() {
+        return reservationRepository.findAllByOrderByReservationTimeDesc();
+    }
+
+    @Override
+    public Optional<Reservation> findById(Long id) {
+        return reservationRepository.findById(id);
+    }
+
+    @Override
+    public List<Reservation> findUpcoming(int limit) {
+        LocalDateTime now = LocalDateTime.now();
+        LocalDateTime endOfDay = now.toLocalDate().atTime(23, 59, 59);
+        List<ReservationStatus> activeStatuses = List.of(ReservationStatus.PENDING, ReservationStatus.CONFIRMED);
+        List<Reservation> upcoming = reservationRepository.findByReservationTimeBetweenAndStatusIn(now, endOfDay, activeStatuses);
+        return upcoming.stream().limit(limit).toList();
+    }
+
+    @Override
+    @Transactional
+    public void checkinReservation(Long reservationId, String staffUsername) {
+        Reservation res = reservationRepository.findById(reservationId)
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy đặt bàn"));
+
+        if (res.getStatus() != ReservationStatus.CONFIRMED && res.getStatus() != ReservationStatus.PENDING) {
+            throw new RuntimeException("Chỉ có thể check-in đặt bàn ở trạng thái PENDING hoặc CONFIRMED");
+        }
+
+        // Mark reservation as completed
+        res.setStatus(ReservationStatus.COMPLETED);
+        reservationRepository.save(res);
+
+        // Set table to OCCUPIED
+        DiningTable table = res.getTable();
+        table.setStatus(TableStatus.OCCUPIED);
+        diningTableRepository.save(table);
+
+        // Check if there's already an order for this reservation (pre-ordered food)
+        Optional<Order> existingOrder = orderRepository.findByReservationId(reservationId);
+        if (existingOrder.isEmpty()) {
+            // Create new order
+            User staff = userRepository.findByUsername(staffUsername)
+                    .orElseThrow(() -> new RuntimeException("Không tìm thấy nhân viên"));
+            Order order = Order.builder()
+                    .table(table)
+                    .user(staff)
+                    .reservation(res)
+                    .totalAmount(java.math.BigDecimal.ZERO)
+                    .status(OrderStatus.PENDING)
+                    .build();
+            orderRepository.save(order);
+        }
     }
 }

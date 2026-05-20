@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Lịch sử Hóa đơn - Lumina Staff</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" th:href="@{/css/admin.css}">
+    <style>
+        .revenue-banner {
+            background: linear-gradient(135deg, #51cf66, #40c057);
+            color: white;
+            padding: 20px 25px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        .revenue-banner h4 { margin: 0; font-size: 14px; opacity: 0.9; }
+        .revenue-banner p { margin: 5px 0 0 0; font-size: 28px; font-weight: 700; }
+        .revenue-banner .count { font-size: 14px; opacity: 0.8; }
+        .payment-method-icon {
+            font-size: 16px;
+        }
+    </style>
+</head>
+<body>
+    <div class="admin-layout">
+        <div th:replace="~{fragments/staff-layout :: sidebar('invoices')}"></div>
+
+        <div class="main-content">
+            <div th:replace="~{fragments/staff-layout :: alerts}"></div>
+
+            <div class="card">
+                <div class="card-header">
+                    <h3>🧾 Lịch sử Hóa đơn</h3>
+                </div>
+
+                <!-- Filter by Date -->
+                <form th:action="@{/staff/invoices}" method="get" class="filter-bar">
+                    <div class="form-group">
+                        <label>Từ ngày</label>
+                        <input type="date" name="startDate" class="form-control" th:value="${startDate}">
+                    </div>
+                    <div class="form-group">
+                        <label>Đến ngày</label>
+                        <input type="date" name="endDate" class="form-control" th:value="${endDate}">
+                    </div>
+                    <button type="submit" class="btn btn-primary" style="height:40px;">Lọc</button>
+                    <a th:href="@{/staff/invoices}" class="btn btn-secondary" style="height:40px; line-height:20px;">Xóa lọc</a>
+                </form>
+
+                <!-- Revenue Summary -->
+                <div class="revenue-banner">
+                    <div>
+                        <h4>Tổng doanh thu</h4>
+                        <p th:text="${#numbers.formatDecimal(totalRevenue, 0, 'COMMA', 0, 'POINT')} + ' ₫'">0 ₫</p>
+                    </div>
+                    <div class="count" th:text="'Tổng ' + ${#lists.size(payments)} + ' hóa đơn'">Tổng 0 hóa đơn</div>
+                </div>
+
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Mã HĐ</th>
+                            <th>Mã Order</th>
+                            <th>Bàn</th>
+                            <th>Nhân viên</th>
+                            <th>Phương thức TT</th>
+                            <th>Số tiền</th>
+                            <th>Thời gian</th>
+                            <th>Chi tiết</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr th:each="payment : ${payments}">
+                            <td th:text="'#' + ${payment.id}">#1</td>
+                            <td th:text="'#' + ${payment.order.id}">#1</td>
+                            <td th:text="${payment.order.table.tableName}">Bàn 01</td>
+                            <td th:text="${payment.order.user != null ? payment.order.user.fullName : '-'}">Nhân viên</td>
+                            <td>
+                                <span th:switch="${payment.method.name()}">
+                                    <span th:case="'CASH'" class="payment-method-icon">💵 Tiền mặt</span>
+                                    <span th:case="'CARD'" class="payment-method-icon">💳 Thẻ</span>
+                                    <span th:case="'E_WALLET'" class="payment-method-icon">📱 Ví điện tử</span>
+                                    <span th:case="'BANK_TRANSFER'" class="payment-method-icon">🏦 Chuyển khoản</span>
+                                </span>
+                            </td>
+                            <td th:text="${#numbers.formatDecimal(payment.amount, 0, 'COMMA', 0, 'POINT')} + ' ₫'"
+                                style="font-weight:600; color:#51cf66;">0 ₫</td>
+                            <td th:text="${#temporals.format(payment.createdAt, 'HH:mm dd/MM/yyyy')}">10:00 01/01</td>
+                            <td>
+                                <a th:href="@{'/staff/invoices/' + ${payment.id}}"
+                                   class="btn btn-primary" style="padding: 4px 10px; font-size: 12px;">Xem</a>
+                            </td>
+                        </tr>
+                        <tr th:if="${#lists.isEmpty(payments)}">
+                            <td colspan="8" style="text-align:center; color:#999; padding:30px;">Chưa có hóa đơn nào.</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

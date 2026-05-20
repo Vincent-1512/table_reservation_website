@@ -31,12 +31,12 @@ public class StaffOrderController {
     public String index(Model model) {
         List<Order> allOrders = orderService.findAll();
 
-        // Tạo map: tableId -> orderId cho các bàn đang OCCUPIED (order PENDING hoặc SERVING)
-        Map<Long, Long> activeOrderByTable = new HashMap<>();
+        // Tạo map: tableId -> order cho các bàn đang OCCUPIED (order PENDING hoặc SERVING)
+        Map<Long, Order> activeOrderByTable = new HashMap<>();
         for (Order order : allOrders) {
             if (order.getStatus() == OrderStatus.PENDING || order.getStatus() == OrderStatus.SERVING) {
                 if (order.getTable() != null) {
-                    activeOrderByTable.put(order.getTable().getId(), order.getId());
+                    activeOrderByTable.put(order.getTable().getId(), order);
                 }
             }
         }
@@ -110,17 +110,40 @@ public class StaffOrderController {
         return "redirect:/staff/orders/" + id;
     }
 
-    // Thanh toán hóa đơn (Checkout) — tạo payment trước, rồi complete order
-    @PostMapping("/{id}/checkout")
-    public String checkoutOrder(@PathVariable Long id,
-                                @RequestParam PaymentMethod paymentMethod,
-                                RedirectAttributes redirectAttrs) {
+    // Thanh toán hóa đơn (chỉ ghi nhận thanh toán)
+    @PostMapping("/{id}/pay")
+    public String payOrder(@PathVariable Long id,
+                           @RequestParam PaymentMethod paymentMethod,
+                           RedirectAttributes redirectAttrs) {
         try {
-            // Tạo payment record trước
             paymentService.createPayment(id, paymentMethod);
-            // Sau đó đóng bàn (set COMPLETED + free table)
+            redirectAttrs.addFlashAttribute("success", "Thanh toán thành công!");
+        } catch (Exception e) {
+            redirectAttrs.addFlashAttribute("error", "Lỗi: " + e.getMessage());
+        }
+        return "redirect:/staff/orders/" + id;
+    }
+
+    // Đóng bàn (giải phóng bàn)
+    @PostMapping("/{id}/close-table")
+    public String closeTable(@PathVariable Long id,
+                             RedirectAttributes redirectAttrs) {
+        try {
             orderService.checkout(id);
-            redirectAttrs.addFlashAttribute("success", "Thanh toán thành công! Bàn đã được giải phóng.");
+            redirectAttrs.addFlashAttribute("success", "Đã đóng bàn và giải phóng bàn thành công.");
+        } catch (Exception e) {
+            redirectAttrs.addFlashAttribute("error", "Lỗi: " + e.getMessage());
+            return "redirect:/staff/orders/" + id;
+        }
+        return "redirect:/staff/orders";
+    }
+
+    // Hủy bàn (Hủy order nếu khách chưa gọi món hoặc muốn hủy)
+    @PostMapping("/{id}/cancel")
+    public String cancelOrder(@PathVariable Long id, RedirectAttributes redirectAttrs) {
+        try {
+            orderService.cancelOrder(id);
+            redirectAttrs.addFlashAttribute("success", "Đã hủy bàn thành công.");
         } catch (Exception e) {
             redirectAttrs.addFlashAttribute("error", "Lỗi: " + e.getMessage());
             return "redirect:/staff/orders/" + id;

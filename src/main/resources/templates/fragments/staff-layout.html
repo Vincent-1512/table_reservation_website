@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+
+<!-- Staff Sidebar Fragment -->
+<div th:fragment="sidebar(activeMenu)" class="sidebar">
+    <h2>Lumina Staff</h2>
+    <a th:href="@{/staff/dashboard}" th:classappend="${activeMenu == 'dashboard'} ? 'active' : ''">
+        📊 Dashboard Ca làm
+    </a>
+    <a th:href="@{/staff/reservations}" th:classappend="${activeMenu == 'reservations'} ? 'active' : ''">
+        📅 Quản lý Đặt bàn
+    </a>
+    <a th:href="@{/staff/tables}" th:classappend="${activeMenu == 'tables'} ? 'active' : ''">
+        🪑 Sơ đồ / Trạng thái Bàn
+    </a>
+    <a th:href="@{/staff/orders}" th:classappend="${activeMenu == 'orders'} ? 'active' : ''">
+        🍽️ Quản lý Đơn hàng
+    </a>
+    <a th:href="@{/staff/invoices}" th:classappend="${activeMenu == 'invoices'} ? 'active' : ''">
+        🧾 Lịch sử Hóa đơn
+    </a>
+    <a th:href="@{/staff/profile}" th:classappend="${activeMenu == 'profile'} ? 'active' : ''">
+        👤 Thông tin Cá nhân
+    </a>
+    <form th:action="@{/logout}" method="post" style="margin-top: 20px;">
+        <button type="submit" class="btn" style="background:none; border:none; color:#a0a0a0; cursor:pointer; font-family:inherit;
+                    display: block; text-decoration: none; padding: 12px 15px; border-radius: 8px;
+                    transition: 0.3s; font-size: 16px; text-align: left; width: 100%;">
+            🚪 Đăng xuất
+        </button>
+    </form>
+</div>
+
+<!-- Flash Messages Fragment -->
+<div th:fragment="alerts">
+    <div class="alert alert-success" th:if="${success}" th:text="${success}"></div>
+    <div class="alert alert-error" th:if="${error}" th:text="${error}"></div>
+    <div class="alert alert-warning" th:if="${warning}" th:text="${warning}"></div>
+</div>
+
+</html>

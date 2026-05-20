@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Thông tin Cá nhân - Lumina Staff</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" th:href="@{/css/admin.css}">
+    <style>
+        .profile-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 25px;
+        }
+        @media (max-width: 900px) { .profile-grid { grid-template-columns: 1fr; } }
+        .profile-avatar {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #cba876, #a88755);
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 32px;
+            font-weight: 700;
+            margin-bottom: 15px;
+        }
+        .profile-header {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            margin-bottom: 25px;
+            padding-bottom: 20px;
+            border-bottom: 1px solid #eee;
+        }
+        .profile-header .info h3 { margin: 0 0 5px 0; }
+        .profile-header .info p { margin: 0; color: #666; font-size: 14px; }
+        .role-badge {
+            display: inline-block;
+            padding: 3px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+            background: #e3f2fd;
+            color: #1565c0;
+        }
+    </style>
+</head>
+<body>
+    <div class="admin-layout">
+        <div th:replace="~{fragments/staff-layout :: sidebar('profile')}"></div>
+
+        <div class="main-content">
+            <div th:replace="~{fragments/staff-layout :: alerts}"></div>
+
+            <!-- Profile Header -->
+            <div class="card">
+                <div class="profile-header">
+                    <div class="profile-avatar" th:text="${user.fullName != null ? user.fullName.substring(0,1).toUpperCase() : '?'}">H</div>
+                    <div class="info">
+                        <h3 th:text="${user.fullName}">Nguyễn Văn A</h3>
+                        <p th:text="'@' + ${user.username}">@staff</p>
+                        <span class="role-badge" th:text="${user.role}">STAFF</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="profile-grid">
+                <!-- Cập nhật thông tin -->
+                <div class="card">
+                    <div class="card-header">
+                        <h3>📝 Thông tin Cá nhân</h3>
+                    </div>
+                    <form th:action="@{/staff/profile/update}" method="post">
+                        <div class="form-group">
+                            <label>Tên đăng nhập</label>
+                            <input type="text" class="form-control" th:value="${user.username}" disabled
+                                   style="background: #f8f9fa; cursor: not-allowed;">
+                        </div>
+                        <div class="form-group">
+                            <label>Họ và tên <span style="color:red;">*</span></label>
+                            <input type="text" name="fullName" class="form-control" th:value="${user.fullName}" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Số điện thoại</label>
+                            <input type="text" name="phone" class="form-control" th:value="${user.phone}" placeholder="0901234567">
+                        </div>
+                        <div class="form-group">
+                            <label>Email</label>
+                            <input type="email" name="email" class="form-control" th:value="${user.email}" placeholder="email@example.com">
+                        </div>
+                        <button type="submit" class="btn btn-primary" style="width:100%; padding:12px; font-size:15px;">💾 Lưu thay đổi</button>
+                    </form>
+                </div>
+
+                <!-- Đổi mật khẩu -->
+                <div class="card">
+                    <div class="card-header">
+                        <h3>🔒 Đổi mật khẩu</h3>
+                    </div>
+                    <form th:action="@{/staff/profile/change-password}" method="post">
+                        <div class="form-group">
+                            <label>Mật khẩu hiện tại <span style="color:red;">*</span></label>
+                            <input type="password" name="oldPassword" class="form-control" required placeholder="Nhập mật khẩu hiện tại">
+                        </div>
+                        <div class="form-group">
+                            <label>Mật khẩu mới <span style="color:red;">*</span></label>
+                            <input type="password" name="newPassword" class="form-control" required minlength="6" placeholder="Ít nhất 6 ký tự">
+                        </div>
+                        <div class="form-group">
+                            <label>Xác nhận mật khẩu mới <span style="color:red;">*</span></label>
+                            <input type="password" name="confirmPassword" class="form-control" required minlength="6" placeholder="Nhập lại mật khẩu mới">
+                        </div>
+                        <button type="submit" class="btn btn-warning" style="width:100%; padding:12px; font-size:15px;">🔑 Đổi mật khẩu</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

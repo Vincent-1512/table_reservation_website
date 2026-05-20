@@ -28,5 +28,6 @@ public interface OrderService {
 
     Page<Order> findByStatusPaginated(OrderStatus status, int page, int size);
     void updateOrderStatus(Long orderId, OrderStatus newStatus);
+    void cancelOrder(Long orderId);
     void checkout(Long orderId);
 }

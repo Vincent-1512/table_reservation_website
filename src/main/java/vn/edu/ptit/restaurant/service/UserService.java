@@ -18,4 +18,6 @@ public interface UserService {
     void deleteById(Long id);
     List<User> search(String keyword);
     Page<User> findPaginated(int page, int size);
+    void updateProfile(String username, String fullName, String phone, String email);
+    void changePassword(String username, String oldPassword, String newPassword);
 }

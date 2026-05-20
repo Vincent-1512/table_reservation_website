@@ -56,25 +56,22 @@
 </head>
 <body>
     <div class="admin-layout">
-        <div class="sidebar">
-            <h2>Lumina Staff</h2>
-            <a th:href="@{/staff/orders}" class="active">Sơ đồ Bàn &amp; Phục vụ</a>
-            <a href="/">Về Trang chủ</a>
-        </div>
+        <div th:replace="~{fragments/staff-layout :: sidebar('orders')}"></div>
 
         <div class="main-content">
+            <div style="margin-bottom: 20px;">
+                <a href="javascript:history.back()" class="btn btn-secondary" style="padding: 8px 18px;">← Quay lại</a>
+            </div>
+
             <!-- Flash messages -->
-            <div style="background:#d1fae5; border:1px solid #a7f3d0; border-radius:8px; padding:12px 16px; margin-bottom:20px; font-weight:500; color:#065f46;"
-                 th:if="${success}" th:text="${success}"></div>
-            <div style="background:#fee2e2; border:1px solid #fca5a5; border-radius:8px; padding:12px 16px; margin-bottom:20px; font-weight:500; color:#991b1b;"
-                 th:if="${error}" th:text="${error}"></div>
+            <div th:replace="~{fragments/staff-layout :: alerts}"></div>
 
             <div class="split-layout">
                 <!-- Cột trái: Form gọi món & Danh sách món đã gọi -->
                 <div class="left-col">
                     <div class="card" th:if="${order.status.name() != 'COMPLETED' and order.status.name() != 'CANCELLED'}">
                         <div class="card-header">
-                            <h3>Gọi món thêm</h3>
+                            <h3>🍜 Gọi món thêm</h3>
                         </div>
                         <form th:action="@{'/staff/orders/' + ${order.id} + '/add-item'}" method="post" style="display:flex; gap:15px; align-items:flex-end;">
                             <div class="form-group" style="flex:2; margin:0;">
@@ -100,7 +97,7 @@
 
                     <div class="card">
                         <div class="card-header">
-                            <h3>Danh sách món ăn đã gọi</h3>
+                            <h3>📋 Danh sách món ăn đã gọi</h3>
                         </div>
                         <table class="table">
                             <thead>
@@ -138,7 +135,7 @@
                 <div class="right-col">
                     <div class="card">
                         <div class="card-header">
-                            <h3>Thông tin Hóa Đơn</h3>
+                            <h3>💳 Thông tin Hóa Đơn</h3>
                         </div>
                         <div style="font-size:16px; margin-bottom:20px; line-height:2;">
                             <div><strong>Bàn:</strong> <span th:text="${order.table.tableName}">Bàn 01</span></div>
@@ -148,24 +145,32 @@
                             <hr style="margin:15px 0; border-top:1px dashed #ccc;">
                             <div style="font-size:24px; color:#cba876; text-align:center;">
                                 <strong>Tổng cộng:</strong><br>
-                                <span th:text="${#numbers.formatDecimal(order.totalAmount, 0, 'COMMA', 0, 'POINT')} + ' VNĐ'">0 VNĐ</span>
+                                <span th:text="${#numbers.formatDecimal(order.totalAmount, 0, 'COMMA', 0, 'POINT')} + ' ₫'">0 ₫</span>
                             </div>
                         </div>
 
-                        <!-- Nút chuyển PENDING → SERVING -->
-                        <div th:if="${order.status.name() == 'PENDING'}" style="margin-bottom:12px;">
-                            <form th:action="@{'/staff/orders/' + ${order.id} + '/update-status'}" method="post">
+                        <!-- Nút chuyển PENDING → SERVING và Hủy Bàn -->
+                        <div th:if="${order.status.name() == 'PENDING'}" style="margin-bottom:12px; display: flex; gap: 10px;">
+                            <form th:action="@{'/staff/orders/' + ${order.id} + '/update-status'}" method="post" style="flex: 1;">
                                 <input type="hidden" name="status" value="SERVING" />
                                 <button type="submit" class="btn btn-secondary"
                                         style="width:100%; padding:10px; font-size:15px;">
                                     🍽 Bắt đầu Phục vụ
                                 </button>
                             </form>
+                            
+                            <form th:action="@{'/staff/orders/' + ${order.id} + '/cancel'}" method="post" style="flex: 1;">
+                                <button type="submit" class="btn btn-danger"
+                                        style="width:100%; padding:10px; font-size:15px;"
+                                        onclick="return confirm('Bạn có chắc muốn hủy bàn này? Trạng thái bàn sẽ chuyển về Trống.');">
+                                    ❌ Hủy Bàn
+                                </button>
+                            </form>
                         </div>
 
-                        <!-- Nếu chưa thanh toán → hiện form checkout -->
+                        <!-- Nếu chưa thanh toán → hiện form thanh toán -->
                         <div th:if="${payment == null and order.status.name() != 'COMPLETED' and order.status.name() != 'CANCELLED'}">
-                            <form th:action="@{'/staff/orders/' + ${order.id} + '/checkout'}" method="post">
+                            <form th:action="@{'/staff/orders/' + ${order.id} + '/pay'}" method="post">
                                 <div style="margin-bottom:15px;">
                                     <label style="font-weight:600; margin-bottom:8px; display:block;">Phương thức thanh toán:</label>
                                     <div class="payment-method-group">
@@ -188,25 +193,34 @@
                                     </div>
                                 </div>
                                 <button type="submit" class="btn btn-primary" style="width:100%; font-size:18px; padding:15px;"
-                                        onclick="return confirm('Xác nhận thanh toán và đóng bàn?');">Thanh Toán &amp; Đóng Bàn</button>
+                                        onclick="return confirm('Xác nhận thanh toán cho hóa đơn này?');">Thanh Toán</button>
                             </form>
                         </div>
 
-                        <!-- Nếu đã thanh toán → hiện thông tin payment -->
-                        <div th:if="${payment != null}" class="payment-done">
-                            <span class="badge">✓ ĐÃ THANH TOÁN</span>
-                            <div style="margin-top:12px; font-size:14px; line-height:2;">
-                                <div><strong>Phương thức:</strong> 
-                                    <span th:switch="${payment.method.name()}">
-                                        <span th:case="'CASH'">💵 Tiền mặt</span>
-                                        <span th:case="'CARD'">💳 Thẻ</span>
-                                        <span th:case="'E_WALLET'">📱 Ví điện tử</span>
-                                        <span th:case="'BANK_TRANSFER'">🏦 Chuyển khoản</span>
-                                    </span>
+                        <!-- Nếu đã thanh toán → hiện thông tin payment và Nút Đóng Bàn -->
+                        <div th:if="${payment != null}">
+                            <div class="payment-done" style="margin-bottom:15px;">
+                                <span class="badge">✓ ĐÃ THANH TOÁN</span>
+                                <div style="margin-top:12px; font-size:14px; line-height:2;">
+                                    <div><strong>Phương thức:</strong> 
+                                        <span th:switch="${payment.method.name()}">
+                                            <span th:case="'CASH'">💵 Tiền mặt</span>
+                                            <span th:case="'CARD'">💳 Thẻ</span>
+                                            <span th:case="'E_WALLET'">📱 Ví điện tử</span>
+                                            <span th:case="'BANK_TRANSFER'">🏦 Chuyển khoản</span>
+                                        </span>
+                                    </div>
+                                    <div><strong>Số tiền:</strong> <span th:text="${#numbers.formatDecimal(payment.amount, 0, 'COMMA', 0, 'POINT')} + ' ₫'">0 ₫</span></div>
+                                    <div><strong>Thời gian:</strong> <span th:text="${#temporals.format(payment.createdAt, 'HH:mm dd/MM/yyyy')}">10:00</span></div>
                                 </div>
-                                <div><strong>Số tiền:</strong> <span th:text="${#numbers.formatDecimal(payment.amount, 0, 'COMMA', 0, 'POINT')} + ' VNĐ'">0 VNĐ</span></div>
-                                <div><strong>Thời gian:</strong> <span th:text="${#temporals.format(payment.createdAt, 'HH:mm dd/MM/yyyy')}">10:00</span></div>
                             </div>
+                            
+                            <!-- Nút Đóng Bàn nếu order chưa COMPLETED -->
+                            <form th:if="${order.status.name() != 'COMPLETED' and order.status.name() != 'CANCELLED'}"
+                                  th:action="@{'/staff/orders/' + ${order.id} + '/close-table'}" method="post">
+                                <button type="submit" class="btn btn-warning" style="width:100%; font-size:18px; padding:15px;"
+                                        onclick="return confirm('Bạn có chắc muốn đóng bàn và giải phóng chỗ không?');">Đóng Bàn</button>
+                            </form>
                         </div>
                     </div>
                 </div>

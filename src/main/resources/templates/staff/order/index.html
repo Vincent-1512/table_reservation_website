@@ -19,18 +19,19 @@
             text-align: center;
             box-shadow: 0 4px 10px rgba(0,0,0,0.05);
             border-top: 5px solid #ccc;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        .table-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 20px rgba(0,0,0,0.1);
         }
         .table-card h4 { margin: 0 0 8px 0; font-size: 18px; }
         .table-card p { margin: 0 0 12px 0; color: #666; font-size: 13px; }
         .status-AVAILABLE  { border-top-color: #51cf66; }
         .status-OCCUPIED   { border-top-color: #ff6b6b; }
+        .status-PENDING    { border-top-color: #fcc419; }
         .status-RESERVED   { border-top-color: #fcc419; }
         .status-MAINTENANCE{ border-top-color: #adb5bd; }
-        .alert {
-            padding: 12px 16px; border-radius: 8px; margin-bottom: 20px; font-weight: 500;
-        }
-        .alert-success { background: #d1fae5; color: #065f46; border: 1px solid #a7f3d0; }
-        .alert-error   { background: #fee2e2; color: #991b1b; border: 1px solid #fca5a5; }
         .status-badge { padding: 3px 10px; border-radius: 20px; font-size: 12px; font-weight: 600; }
         .status-PENDING  { background: #fff3cd; color: #856404; }
         .status-SERVING  { background: #d1e7dd; color: #0a3622; }
@@ -40,22 +41,17 @@
 <body>
     <div class="admin-layout">
         <!-- Sidebar -->
-        <div class="sidebar">
-            <h2>Lumina Staff</h2>
-            <a th:href="@{/staff/orders}" class="active">Sơ đồ Bàn &amp; Phục vụ</a>
-            <a href="/">Về Trang chủ</a>
-        </div>
+        <div th:replace="~{fragments/staff-layout :: sidebar('orders')}"></div>
 
         <!-- Main Content -->
         <div class="main-content">
 
             <!-- Flash messages -->
-            <div class="alert alert-success" th:if="${success}" th:text="${success}"></div>
-            <div class="alert alert-error"   th:if="${error}"   th:text="${error}"></div>
+            <div th:replace="~{fragments/staff-layout :: alerts}"></div>
 
             <div class="card">
                 <div class="card-header">
-                    <h3>Sơ đồ Bàn ăn</h3>
+                    <h3>🪑 Sơ đồ Bàn ăn</h3>
                 </div>
 
                 <div class="table-grid">
@@ -80,7 +76,7 @@
                             <span style="color:#ff6b6b; font-weight:600; display:block; margin-bottom:10px;">⬤ Đang phục vụ</span>
                             <!-- Tìm orderId tương ứng từ map -->
                             <a th:if="${activeOrderByTable != null and activeOrderByTable[table.id] != null}"
-                               th:href="@{'/staff/orders/' + ${activeOrderByTable[table.id]}}"
+                               th:href="@{'/staff/orders/' + ${activeOrderByTable[table.id].id}}"
                                class="btn btn-primary" style="width:100%; padding:8px; display:inline-block;">
                                 Xem Order →
                             </a>
@@ -111,7 +107,7 @@
             <!-- Danh sách Order hiện tại -->
             <div class="card">
                 <div class="card-header">
-                    <h3>Danh sách Hóa đơn Đang phục vụ</h3>
+                    <h3>🍽️ Danh sách Hóa đơn Đang phục vụ</h3>
                 </div>
                 <table class="table">
                     <thead>
@@ -135,8 +131,8 @@
                                 <span class="status-badge" th:classappend="'status-' + ${order.status.name()}"
                                       th:text="${order.status}">PENDING</span>
                             </td>
-                            <td th:text="${#numbers.formatDecimal(order.totalAmount, 0, 'COMMA', 0, 'POINT')} + ' VNĐ'"
-                                style="font-weight:600; color:#cba876;">0 VNĐ</td>
+                            <td th:text="${#numbers.formatDecimal(order.totalAmount, 0, 'COMMA', 0, 'POINT')} + ' ₫'"
+                                style="font-weight:600; color:#cba876;">0 ₫</td>
                             <td th:text="${#temporals.format(order.createdAt, 'HH:mm dd/MM')}">10:00</td>
                             <td>
                                 <a th:href="@{'/staff/orders/' + ${order.id}}"

@@ -96,4 +96,27 @@ public class UserServiceImpl implements UserService {
 
         return userRepository.findAll(pageable);
     }
+
+    @Override
+    @org.springframework.transaction.annotation.Transactional
+    public void updateProfile(String username, String fullName, String phone, String email) {
+        User user = userRepository.findByUsername(username)
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy người dùng"));
+        user.setFullName(fullName);
+        user.setPhone(phone);
+        user.setEmail(email);
+        userRepository.save(user);
+    }
+
+    @Override
+    @org.springframework.transaction.annotation.Transactional
+    public void changePassword(String username, String oldPassword, String newPassword) {
+        User user = userRepository.findByUsername(username)
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy người dùng"));
+        if (!passwordEncoder.matches(oldPassword, user.getPassword())) {
+            throw new RuntimeException("Mật khẩu cũ không đúng!");
+        }
+        user.setPassword(passwordEncoder.encode(newPassword));
+        userRepository.save(user);
+    }
 }

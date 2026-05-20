@@ -88,6 +88,31 @@ public class OrderServiceImpl implements OrderService {
 
     @Override
     @Transactional
+    public void cancelOrder(Long orderId) {
+        Order order = orderRepository.findById(orderId)
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy hóa đơn"));
+        
+        order.setStatus(OrderStatus.CANCELLED);
+        
+        // Giải phóng bàn
+        DiningTable table = order.getTable();
+        if (table != null) {
+            table.setStatus(TableStatus.AVAILABLE);
+            diningTableRepository.save(table);
+        }
+        
+        // Hoàn thành Đặt bàn nếu có (nếu muốn, hoặc để nguyên tùy logic, ở đây hủy luôn reservation nếu có)
+        if (order.getReservation() != null) {
+            vn.edu.ptit.restaurant.entity.Reservation res = order.getReservation();
+            res.setStatus(vn.edu.ptit.restaurant.entity.enums.ReservationStatus.CANCELLED);
+            reservationRepository.save(res);
+        }
+        
+        orderRepository.save(order);
+    }
+
+    @Override
+    @Transactional
     public void checkout(Long orderId) {
         Order order = orderRepository.findById(orderId)
                 .orElseThrow(() -> new RuntimeException("Không tìm thấy hóa đơn"));
