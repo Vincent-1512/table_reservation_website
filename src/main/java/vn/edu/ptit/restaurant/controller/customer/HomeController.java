@@ -1,4 +1,4 @@
-package vn.edu.ptit.restaurant.controller;
+package vn.edu.ptit.restaurant.controller.customer;
 
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;

@@ -1,32 +1,33 @@
-package vn.edu.ptit.restaurant.controller;
+package vn.edu.ptit.restaurant.controller.admin;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
-import vn.edu.ptit.restaurant.entity.enums.ReservationStatus;
 import vn.edu.ptit.restaurant.service.ReservationService;
-
-import java.security.Principal;
+import vn.edu.ptit.restaurant.entity.enums.ReservationStatus;
 
 @Controller
-@RequestMapping("/staff/reservations")
 @RequiredArgsConstructor
-public class StaffReservationController {
+@RequestMapping("/admin/reservations")
+public class AdminReservationController {
 
     private final ReservationService reservationService;
 
     @GetMapping
-    public String index(@RequestParam(required = false) ReservationStatus status, Model model) {
+    public String index(@RequestParam(required = false) ReservationStatus status,
+                        Model model) {
         if (status != null) {
             model.addAttribute("reservations", reservationService.findByStatus(status));
         } else {
-            model.addAttribute("reservations", reservationService.findAllSorted());
+            model.addAttribute("reservations", reservationService.findAll());
         }
+
         model.addAttribute("statuses", ReservationStatus.values());
         model.addAttribute("selectedStatus", status);
-        return "staff/reservation/index";
+
+        return "admin/reservation/index";
     }
 
     @PostMapping("/{id}/confirm")
@@ -37,7 +38,7 @@ public class StaffReservationController {
         } catch (Exception e) {
             redirectAttrs.addFlashAttribute("error", "Lỗi: " + e.getMessage());
         }
-        return "redirect:/staff/reservations";
+        return "redirect:/admin/reservations";
     }
 
     @PostMapping("/{id}/cancel")
@@ -48,18 +49,17 @@ public class StaffReservationController {
         } catch (Exception e) {
             redirectAttrs.addFlashAttribute("error", "Lỗi: " + e.getMessage());
         }
-        return "redirect:/staff/reservations";
+        return "redirect:/admin/reservations";
     }
 
-    @PostMapping("/{id}/checkin")
-    public String checkinReservation(@PathVariable Long id, Principal principal, RedirectAttributes redirectAttrs) {
+    @PostMapping("/{id}/complete")
+    public String completeReservation(@PathVariable Long id, RedirectAttributes redirectAttrs) {
         try {
-            String username = principal != null ? principal.getName() : "admin";
-            reservationService.checkinReservation(id, username);
-            redirectAttrs.addFlashAttribute("success", "Check-in thành công! Bàn đã được mở phục vụ.");
+            reservationService.completeReservation(id);
+            redirectAttrs.addFlashAttribute("success", "Đã đánh dấu hoàn thành đặt bàn.");
         } catch (Exception e) {
             redirectAttrs.addFlashAttribute("error", "Lỗi: " + e.getMessage());
         }
-        return "redirect:/staff/reservations";
+        return "redirect:/admin/reservations";
     }
 }

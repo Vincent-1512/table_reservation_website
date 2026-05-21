@@ -1,4 +1,4 @@
-package vn.edu.ptit.restaurant.controller;
+package vn.edu.ptit.restaurant.controller.admin;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.core.io.InputStreamResource;

@@ -1,4 +1,4 @@
-package vn.edu.ptit.restaurant.controller;
+package vn.edu.ptit.restaurant.controller.customer;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.orm.ObjectOptimisticLockingFailureException;
