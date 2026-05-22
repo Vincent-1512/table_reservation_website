@@ -22,9 +22,57 @@
         <div class="nav-links">
             <a href="/">Trang chủ</a>
             <a href="/menu">Thực đơn</a>
-            <a href="/reservation">Đặt bàn</a>
+            <a href="/my-reservations">Thông tin đặt bàn</a>
+            <a href="/reservation" class="btn-nav-highlight">Đặt bàn ngay</a>
+            
+            <!-- Hiển thị khi chưa đăng nhập -->
+            <div sec:authorize="!isAuthenticated()">
+                <a th:href="@{/login}" class="btn-nav-login">Đăng nhập</a>
+            </div>
+
+            <!-- Hiển thị khi đã đăng nhập -->
+            <div sec:authorize="isAuthenticated()" class="nav-user-dropdown">
+                <button class="nav-avatar-btn" onclick="toggleNavDropdown(event)">
+                    <div class="nav-avatar-circle" th:text="${#strings.substring(#authentication.name, 0, 1).toUpperCase()}">U</div>
+                    <span class="d-none d-md-inline nav-username" th:text="${#authentication.name}">Username</span>
+                    <i class="bi bi-chevron-down nav-chevron"></i>
+                </button>
+                <div class="nav-dropdown-menu" id="navDropdownMenu">
+                    <a href="/my-reservations?tab=profile">
+                        <i class="bi bi-person-circle"></i> Thông tin cá nhân
+                    </a>
+                    <a sec:authorize="hasAnyAuthority('ROLE_ADMIN', 'ROLE_STAFF')" href="/staff/orders">
+                        <i class="bi bi-person-badge"></i> Phục vụ (Staff)
+                    </a>
+                    <a sec:authorize="hasAuthority('ROLE_ADMIN')" href="/admin/menu">
+                        <i class="bi bi-shield-lock"></i> Quản trị (Admin)
+                    </a>
+                    <form th:action="@{/logout}" method="post" id="navLogoutForm" style="margin: 0;">
+                        <button type="submit" class="nav-logout-btn" onclick="return confirm('Quý khách có chắc chắn muốn đăng xuất?')">
+                            <i class="bi bi-box-arrow-right"></i> Đăng xuất
+                        </button>
+                    </form>
+                </div>
+            </div>
         </div>
     </nav>
+    <script>
+        function toggleNavDropdown(event) {
+            event.stopPropagation();
+            const dropdown = document.querySelector('.nav-user-dropdown');
+            const menu = document.getElementById('navDropdownMenu');
+            dropdown.classList.toggle('active');
+            menu.classList.toggle('show');
+        }
+        document.addEventListener('click', function(event) {
+            const dropdown = document.querySelector('.nav-user-dropdown');
+            const menu = document.getElementById('navDropdownMenu');
+            if (dropdown && menu && !dropdown.contains(event.target)) {
+                dropdown.classList.remove('active');
+                menu.classList.remove('show');
+            }
+        });
+    </script>
 
     <div class="cart-container">
         <h2 style="margin-bottom: 30px; text-align:center;">Giỏ Món Tạm Tính</h2>

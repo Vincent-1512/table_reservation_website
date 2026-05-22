@@ -27,17 +27,17 @@ INSERT INTO areas (id, name, description, created_at, updated_at) VALUES
 (3, 'Sân thượng', 'Khu vực ngoài trời, lãng mạn', NOW(), NOW());
 
 -- Thêm Tables
-INSERT INTO tables (id, table_name, capacity, status, area_id, version, updated_at) VALUES
-(1, 'Bàn 01', 2, 'AVAILABLE', 1, 0, NOW()),
-(2, 'Bàn 02', 4, 'AVAILABLE', 1, 0, NOW()),
-(3, 'Bàn 03', 4, 'AVAILABLE', 1, 0, NOW()),
-(4, 'Bàn 04', 6, 'AVAILABLE', 1, 0, NOW()),
-(5, 'Bàn 05', 2, 'AVAILABLE', 2, 0, NOW()),
-(6, 'Bàn 06', 4, 'AVAILABLE', 2, 0, NOW()),
-(7, 'Bàn 07', 6, 'AVAILABLE', 2, 0, NOW()),
-(8, 'Bàn 08', 8, 'AVAILABLE', 2, 0, NOW()),
-(9, 'Bàn 09', 4, 'AVAILABLE', 3, 0, NOW()),
-(10, 'Bàn 10', 6, 'AVAILABLE', 3, 0, NOW());
+INSERT INTO tables (id, table_name, capacity, status, area_id, updated_at) VALUES
+(1, 'Bàn 01', 2, 'AVAILABLE', 1, NOW()),
+(2, 'Bàn 02', 4, 'AVAILABLE', 1, NOW()),
+(3, 'Bàn 03', 4, 'AVAILABLE', 1, NOW()),
+(4, 'Bàn 04', 6, 'AVAILABLE', 1, NOW()),
+(5, 'Bàn 05', 2, 'AVAILABLE', 2, NOW()),
+(6, 'Bàn 06', 4, 'AVAILABLE', 2, NOW()),
+(7, 'Bàn 07', 6, 'AVAILABLE', 2, NOW()),
+(8, 'Bàn 08', 8, 'AVAILABLE', 2, NOW()),
+(9, 'Bàn 09', 4, 'AVAILABLE', 3, NOW()),
+(10, 'Bàn 10', 6, 'AVAILABLE', 3, NOW());
 
 -- Thêm Menu Items
 INSERT INTO menu_items (name, description, price, is_available, category_id, created_at, updated_at) VALUES

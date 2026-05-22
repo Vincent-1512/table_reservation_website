@@ -1,0 +1,1190 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Thanh Toán Món Ăn - Lumina</title>
+    <meta name="_csrf" th:content="${_csrf.token}"/>
+    <meta name="_csrf_header" th:content="${_csrf.headerName}"/>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+    <!-- Bootstrap Icons -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+    
+    <style>
+        :root {
+            --primary: #cba876;
+            --primary-dark: #b18e5b;
+            --bg-dark: #121212;
+            --text-light: #ffffff;
+            --text-muted: #a0a0a0;
+            --glass-bg: rgba(18, 18, 18, 0.75);
+            --glass-border: rgba(255, 255, 255, 0.08);
+            --success-color: #51cf66;
+        }
+
+        /* 2-Column Checkout Layout */
+        .checkout-grid {
+            display: grid;
+            grid-template-columns: 1.2fr 1fr;
+            gap: 30px;
+            margin-top: 30px;
+        }
+
+        @media (max-width: 992px) {
+            .checkout-grid {
+                grid-template-columns: 1fr;
+                gap: 20px;
+            }
+        }
+
+        /* Card panels */
+        .checkout-card {
+            background: var(--glass-bg);
+            backdrop-filter: blur(15px);
+            -webkit-backdrop-filter: blur(15px);
+            border: 1px solid var(--glass-border);
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 15px 35px rgba(0,0,0,0.5);
+            animation: fadeIn 0.6s ease-out;
+        }
+
+        /* Typography & sections */
+        .section-title {
+            color: var(--primary);
+            font-size: 20px;
+            font-weight: 600;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+            padding-bottom: 10px;
+        }
+
+        /* Info items */
+        .info-list {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-bottom: 25px;
+        }
+
+        @media (max-width: 576px) {
+            .info-list {
+                grid-template-columns: 1fr;
+                gap: 10px;
+            }
+        }
+
+        .info-item {
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid rgba(255, 255, 255, 0.04);
+            border-radius: 12px;
+            padding: 12px 15px;
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .info-label {
+            font-size: 11px;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .info-value {
+            font-size: 15px;
+            color: #fff;
+            font-weight: 500;
+        }
+
+        /* Food Items list in invoice */
+        .food-items-container {
+            max-height: 250px;
+            overflow-y: auto;
+            margin-bottom: 20px;
+            padding-right: 5px;
+        }
+
+        /* Custom Scrollbar for food list */
+        .food-items-container::-webkit-scrollbar {
+            width: 6px;
+        }
+        .food-items-container::-webkit-scrollbar-track {
+            background: rgba(255, 255, 255, 0.02);
+            border-radius: 3px;
+        }
+        .food-items-container::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 3px;
+        }
+        .food-items-container::-webkit-scrollbar-thumb:hover {
+            background: var(--primary);
+        }
+
+        .food-item-row {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            padding: 12px 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .food-item-row:last-child {
+            border-bottom: none;
+        }
+
+        .food-item-img {
+            width: 50px;
+            height: 50px;
+            border-radius: 10px;
+            object-fit: cover;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .food-item-details {
+            flex: 1;
+        }
+
+        .food-item-name {
+            font-size: 14px;
+            color: #fff;
+            font-weight: 500;
+            margin-bottom: 2px;
+        }
+
+        .food-item-meta {
+            font-size: 12px;
+            color: var(--text-muted);
+        }
+
+        .food-item-price {
+            font-size: 14px;
+            color: var(--primary);
+            font-weight: 600;
+            text-align: right;
+        }
+
+        /* Payment methods selector */
+        .payment-methods {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            margin-bottom: 25px;
+        }
+
+        .payment-method-card {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 12px;
+            padding: 15px;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .payment-method-card:hover {
+            background: rgba(255, 255, 255, 0.06);
+            border-color: rgba(203, 168, 118, 0.5);
+            transform: translateY(-2px);
+        }
+
+        .payment-method-card.active {
+            background: rgba(203, 168, 118, 0.08);
+            border-color: var(--primary);
+            box-shadow: 0 4px 15px rgba(203, 168, 118, 0.15);
+        }
+
+        .payment-method-icon {
+            font-size: 24px;
+            color: var(--primary);
+            width: 40px;
+            height: 40px;
+            background: rgba(203, 168, 118, 0.1);
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .payment-method-info {
+            flex: 1;
+        }
+
+        .payment-method-title {
+            font-size: 14px;
+            color: #fff;
+            font-weight: 500;
+            margin-bottom: 2px;
+        }
+
+        .payment-method-desc {
+            font-size: 12px;
+            color: var(--text-muted);
+        }
+
+        .payment-method-radio {
+            width: 18px;
+            height: 18px;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s;
+        }
+
+        .payment-method-card.active .payment-method-radio {
+            border-color: var(--primary);
+        }
+
+        .payment-method-card.active .payment-method-radio::after {
+            content: '';
+            width: 10px;
+            height: 10px;
+            background: var(--primary);
+            border-radius: 50%;
+            display: block;
+        }
+
+        /* Sub-sections of Payment Card */
+        .payment-sub-section {
+            background: rgba(255, 255, 255, 0.01);
+            border: 1px dashed rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            padding: 15px;
+            margin-bottom: 20px;
+            display: none;
+            animation: fadeIn 0.3s ease;
+        }
+
+        .payment-sub-section.active {
+            display: block;
+        }
+
+        /* Order Bill Summary */
+        .bill-summary {
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            border-radius: 12px;
+            padding: 15px 20px;
+            margin-bottom: 25px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .bill-row {
+            display: flex;
+            justify-content: space-between;
+            font-size: 14px;
+            color: var(--text-muted);
+        }
+
+        .bill-row.highlight {
+            color: #fff;
+            font-weight: 500;
+        }
+
+        .bill-row.total {
+            border-top: 1px solid rgba(255, 255, 255, 0.08);
+            padding-top: 12px;
+            font-size: 18px;
+            color: #fff;
+            font-weight: 700;
+        }
+
+        .bill-row.total .total-price {
+            color: var(--primary);
+        }
+
+        /* Interactive Bank Transfer QR simulation */
+        .qr-container {
+            text-align: center;
+            padding: 10px 0;
+        }
+
+        .qr-code-wrapper {
+            background: white;
+            padding: 12px;
+            border-radius: 16px;
+            display: inline-block;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+            margin-bottom: 15px;
+            position: relative;
+        }
+
+        .qr-code-img {
+            width: 160px;
+            height: 160px;
+            display: block;
+        }
+
+        .qr-instruction {
+            font-size: 13px;
+            color: var(--text-muted);
+            line-height: 1.5;
+        }
+
+        .qr-instruction span {
+            color: var(--primary);
+            font-weight: 600;
+        }
+
+        /* Loading / Processing screen */
+        .processing-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.9);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            display: none;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 10000;
+            opacity: 0;
+            transition: opacity 0.4s ease;
+        }
+
+        .processing-overlay.show {
+            display: flex;
+            opacity: 1;
+        }
+
+        .spinner-large {
+            border: 4px solid rgba(255, 255, 255, 0.05);
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            border-left-color: var(--primary);
+            animation: spin 1.2s cubic-bezier(0.5, 0, 0.5, 1) infinite;
+            margin-bottom: 30px;
+            box-shadow: 0 0 30px rgba(203, 168, 118, 0.2);
+        }
+
+        .processing-status {
+            color: #fff;
+            font-size: 20px;
+            font-weight: 600;
+            margin-bottom: 10px;
+            letter-spacing: 0.5px;
+        }
+
+        .processing-subtext {
+            color: var(--text-muted);
+            font-size: 14px;
+        }
+
+        /* Success screen */
+        .success-animation-container {
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+            max-width: 500px;
+            padding: 30px;
+            animation: scaleIn 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+
+        @keyframes scaleIn {
+            0% { transform: scale(0.8); opacity: 0; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+
+        /* Elegant SVG Checkmark */
+        .checkmark-svg {
+            width: 100px;
+            height: 100px;
+            border-radius: 50%;
+            display: block;
+            stroke-width: 2.5;
+            stroke: var(--success-color);
+            stroke-miterlimit: 10;
+            box-shadow: inset 0px 0px 0px var(--success-color);
+            animation: fillCircle .4s ease-in-out .4s forwards, scaleUp .3s ease-in-out .9s both;
+            margin: 0 auto 30px auto;
+        }
+
+        .checkmark-circle {
+            stroke-dasharray: 166;
+            stroke-dashoffset: 166;
+            stroke-width: 2.5;
+            stroke-miterlimit: 10;
+            stroke: var(--success-color);
+            fill: none;
+            animation: strokeCircle .6s cubic-bezier(0.65, 0, 0.45, 1) forwards;
+        }
+
+        .checkmark-check {
+            transform-origin: 50% 50%;
+            stroke-dasharray: 48;
+            stroke-dashoffset: 48;
+            stroke: var(--success-color);
+            fill: none;
+            animation: strokeCheck .3s cubic-bezier(0.65, 0, 0.45, 1) .8s forwards;
+        }
+
+        @keyframes strokeCircle {
+            100% { stroke-dashoffset: 0; }
+        }
+
+        @keyframes strokeCheck {
+            100% { stroke-dashoffset: 0; }
+        }
+
+        @keyframes fillCircle {
+            100% { box-shadow: inset 0px 0px 0px 50px rgba(81, 207, 102, 0.1); }
+        }
+
+        @keyframes scaleUp {
+            0%, 100% { transform: none; }
+            50% { transform: scale3d(1.1, 1.1, 1); }
+        }
+
+        /* Success texts */
+        .success-title {
+            color: #fff;
+            font-size: 26px;
+            font-weight: 700;
+            margin-bottom: 12px;
+        }
+
+        .success-desc {
+            color: var(--text-muted);
+            font-size: 15px;
+            line-height: 1.6;
+            margin-bottom: 30px;
+        }
+
+        /* Elegant Countdown card */
+        .countdown-card {
+            background: rgba(81, 207, 102, 0.06);
+            border: 1px solid rgba(81, 207, 102, 0.2);
+            border-radius: 12px;
+            padding: 12px 24px;
+            font-size: 14px;
+            color: var(--success-color);
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .countdown-num {
+            font-weight: 700;
+            font-size: 16px;
+        }
+
+        /* Background overlay decoration */
+        .bg-decor {
+            position: fixed;
+            width: 400px;
+            height: 400px;
+            background: radial-gradient(circle, rgba(203, 168, 118, 0.08) 0%, rgba(0,0,0,0) 70%);
+            z-index: -1;
+            pointer-events: none;
+        }
+        .decor-top-right {
+            top: -100px;
+            right: -100px;
+        }
+        .decor-bottom-left {
+            bottom: -150px;
+            left: -150px;
+        }
+        
+        /* Dynamic Payment Option Cards */
+        .pay-option-card {
+            flex: 1;
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 16px;
+            padding: 18px 15px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 5px;
+        }
+        .pay-option-card:hover {
+            background: rgba(255, 255, 255, 0.05);
+            border-color: rgba(203, 168, 118, 0.5);
+            transform: translateY(-2px);
+        }
+        .pay-option-card.active {
+            background: rgba(203, 168, 118, 0.08) !important;
+            border-color: var(--primary) !important;
+            box-shadow: 0 8px 20px rgba(203, 168, 118, 0.15);
+        }
+        .pay-option-card-icon {
+            font-size: 24px;
+            color: var(--primary);
+            margin-bottom: 5px;
+        }
+        .pay-option-card-title {
+            font-size: 14px;
+            font-weight: 600;
+            color: #fff;
+        }
+        .pay-option-card-price {
+            font-size: 13px;
+            color: var(--text-muted);
+            font-weight: 500;
+        }
+    </style>
+</head>
+
+<body class="auth-body">
+    <!-- Background lights -->
+    <div class="bg-decor decor-top-right"></div>
+    <div class="bg-decor decor-bottom-left"></div>
+
+    <!-- Header Navbar -->
+    <nav class="navbar">
+        <a href="/" class="logo">Lumina</a>
+        <div class="nav-links">
+            <a href="/">Trang chủ</a>
+            <a href="/menu">Thực đơn</a>
+            <a href="/my-reservations">Thông tin đặt bàn</a>
+            <a href="/reservation" class="btn-nav-highlight">Đặt bàn ngay</a>
+            
+            <!-- Hiển thị khi chưa đăng nhập -->
+            <div sec:authorize="!isAuthenticated()">
+                <a th:href="@{/login}" class="btn-nav-login">Đăng nhập</a>
+            </div>
+
+            <!-- Hiển thị khi đã đăng nhập -->
+            <div sec:authorize="isAuthenticated()" class="nav-user-dropdown">
+                <button class="nav-avatar-btn" onclick="toggleNavDropdown(event)">
+                    <div class="nav-avatar-circle" th:text="${#strings.substring(#authentication.name, 0, 1).toUpperCase()}">U</div>
+                    <span class="d-none d-md-inline nav-username" th:text="${#authentication.name}">Username</span>
+                    <i class="bi bi-chevron-down nav-chevron"></i>
+                </button>
+                <div class="nav-dropdown-menu" id="navDropdownMenu">
+                    <a href="/my-reservations?tab=profile">
+                        <i class="bi bi-person-circle"></i> Thông tin cá nhân
+                    </a>
+                    <a sec:authorize="hasAnyAuthority('ROLE_ADMIN', 'ROLE_STAFF')" href="/staff/orders">
+                        <i class="bi bi-person-badge"></i> Phục vụ (Staff)
+                    </a>
+                    <a sec:authorize="hasAuthority('ROLE_ADMIN')" href="/admin/menu">
+                        <i class="bi bi-shield-lock"></i> Quản trị (Admin)
+                    </a>
+                    <form th:action="@{/logout}" method="post" id="navLogoutForm" style="margin: 0;">
+                        <button type="submit" class="nav-logout-btn" onclick="return confirm('Quý khách có chắc chắn muốn đăng xuất?')">
+                            <i class="bi bi-box-arrow-right"></i> Đăng xuất
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </nav>
+    <script>
+        function toggleNavDropdown(event) {
+            event.stopPropagation();
+            const dropdown = document.querySelector('.nav-user-dropdown');
+            const menu = document.getElementById('navDropdownMenu');
+            dropdown.classList.toggle('active');
+            menu.classList.toggle('show');
+        }
+        document.addEventListener('click', function(event) {
+            const dropdown = document.querySelector('.nav-user-dropdown');
+            const menu = document.getElementById('navDropdownMenu');
+            if (dropdown && menu && !dropdown.contains(event.target)) {
+                dropdown.classList.remove('active');
+                menu.classList.remove('show');
+            }
+        });
+    </script>
+
+    <!-- Main Content Container -->
+    <div class="container" style="max-width: 1000px; margin: 120px auto 50px auto; padding: 0 20px;">
+        
+        <!-- Header Page Title -->
+        <div style="text-align: center; margin-bottom: 35px;">
+            <span style="color: var(--primary); text-transform: uppercase; font-size: 13px; letter-spacing: 2px; font-weight: 600;">Cổng thanh toán điện tử</span>
+            <h2 style="font-size: 36px; font-weight: 700; color: #fff; margin-top: 5px;">Thanh Toán Món Ăn</h2>
+            <p style="color: var(--text-muted); font-size: 15px; margin-top: 8px; max-width: 600px; margin-left: auto; margin-right: auto;">
+                Quý khách vui lòng hoàn tất thanh toán cho các món ăn đã chọn trong giỏ hàng để nhà hàng chuẩn bị chu đáo nhất.
+            </p>
+        </div>
+
+        <div class="checkout-grid">
+            <!-- COLUMN 1: INVOICE DETAILS (LEFT) -->
+            <div class="checkout-card">
+                <div class="section-title">
+                    <i class="bi bi-file-earmark-text"></i> Chi Tiết Phiếu Đặt Chỗ
+                </div>
+
+                <!-- Reservation Information Grid -->
+                <div class="info-list">
+                    <div class="info-item">
+                        <span class="info-label">Mã đặt bàn</span>
+                        <span class="info-value" style="color: var(--primary); font-weight: bold;" th:text="'#RES-' + ${reservation.id}">#RES-123</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">Tên khách hàng</span>
+                        <span class="info-value" th:text="${reservation.user.fullName}">Nguyễn Văn A</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">Số điện thoại</span>
+                        <span class="info-value" th:text="${reservation.user.phone}">0912345678</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">Bàn đã chọn</span>
+                        <span class="info-value" th:text="${reservation.table.tableName} + ' - ' + ${reservation.table.area.name}">Bàn 01 - Tầng 1</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">Thời gian tiệc</span>
+                        <span class="info-value" th:text="${#temporals.format(reservation.reservationTime, 'HH:mm - dd/MM/yyyy')}">19:00 - 25/05/2026</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">Số lượng khách</span>
+                        <span class="info-value" th:text="${reservation.numberOfGuests} + ' người'">4 người</span>
+                    </div>
+                </div>
+
+                <!-- Food pre-order display -->
+                <div>
+                    <div class="section-title" style="margin-top: 15px;">
+                        <i class="bi bi-egg-fried"></i> Thực Đơn Đặt Trước
+                    </div>
+                    
+                    <div class="food-items-container">
+                        <div class="food-item-row" th:each="item : ${orderItems}">
+                            <img class="food-item-img" th:src="${item.menuItem.imageUrl != null ? item.menuItem.imageUrl : '/images/menu-placeholder.jpg'}" alt="Món ăn">
+                            <div class="food-item-details">
+                                <div class="food-item-name" th:text="${item.menuItem.name}">Món ăn ngon</div>
+                                <div class="food-item-meta" th:text="${item.quantity} + ' x ' + ${#numbers.formatDecimal(item.priceAtTime, 0, 'COMMA', 0, 'POINT')} + ' đ'">1 x 150.000 đ</div>
+                            </div>
+                            <div class="food-item-price" th:text="${#numbers.formatDecimal(item.priceAtTime * item.quantity, 0, 'COMMA', 0, 'POINT')} + ' đ'">150.000 đ</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Fine print notes -->
+                <div style="background: rgba(255, 255, 255, 0.02); border-radius: 12px; padding: 15px; border-left: 3px solid var(--primary); margin-top: 20px;">
+                    <h4 style="font-size: 13px; color: #fff; margin-bottom: 4px; font-weight: 600;"><i class="bi bi-shield-check" style="margin-right: 5px;"></i> Chính sách chuẩn bị món ăn</h4>
+                    <p style="font-size: 12px; color: var(--text-muted); line-height: 1.5; margin: 0;">
+                        Các món ăn đã chọn sẽ được chuẩn bị và phục vụ nóng hổi ngay khi quý khách đến nhà hàng. Mọi thay đổi về thực đơn vui lòng liên hệ hotline trước 2 giờ.
+                    </p>
+                </div>
+            </div>
+
+            <!-- COLUMN 2: PAYMENT INTERACTION (RIGHT) -->
+            <div class="checkout-card" style="display: flex; flex-direction: column; justify-content: space-between;">
+                <div>
+                    <div class="section-title">
+                        <i class="bi bi-check-circle-fill"></i> Lựa Chọn Thanh Toán
+                    </div>
+
+                    <!-- Payment Mode Selector Cards -->
+                    <div style="display: flex; gap: 15px; margin-bottom: 25px;">
+                        <div class="pay-option-card" data-mode="deposit">
+                            <i class="bi bi-shield-check pay-option-card-icon"></i>
+                            <span class="pay-option-card-title">Chỉ Đặt Cọc</span>
+                            <span class="pay-option-card-price">100.000 đ</span>
+                        </div>
+                        <div class="pay-option-card active" data-mode="full">
+                            <i class="bi bi-cart-check-fill pay-option-card-icon"></i>
+                            <span class="pay-option-card-title">Thanh Toán Hết</span>
+                            <span class="pay-option-card-price" th:text="${#numbers.formatDecimal(totalFoodAmount, 0, 'COMMA', 0, 'POINT')} + ' đ'">150.000 đ</span>
+                        </div>
+                    </div>
+
+                    <div class="section-title">
+                        <i class="bi bi-wallet2"></i> Chọn Phương Thức Thanh Toán
+                    </div>
+
+                    <!-- Payment methods selector -->
+                    <div class="payment-methods">
+                        <!-- Method 1: Lumina Pay -->
+                        <div class="payment-method-card active" data-method="lumina">
+                            <div class="payment-method-icon">
+                                <i class="bi bi-phone-vibrate"></i>
+                            </div>
+                            <div class="payment-method-info">
+                                <div class="payment-method-title">Ví Điện Tử Lumina Pay</div>
+                                <div class="payment-method-desc">Thanh toán nhanh chóng, an toàn tuyệt đối</div>
+                            </div>
+                            <div class="payment-method-radio"></div>
+                        </div>
+
+                        <!-- Method 2: Credit card -->
+                        <div class="payment-method-card" data-method="card">
+                            <div class="payment-method-icon">
+                                <i class="bi bi-credit-card"></i>
+                            </div>
+                            <div class="payment-method-info">
+                                <div class="payment-method-title">Thẻ Quốc Tế Visa / Master</div>
+                                <div class="payment-method-desc">Hỗ trợ các loại thẻ Visa, Mastercard, JCB</div>
+                            </div>
+                            <div class="payment-method-radio"></div>
+                        </div>
+
+                        <!-- Method 3: Bank Transfer -->
+                        <div class="payment-method-card" data-method="transfer">
+                            <div class="payment-method-icon">
+                                <i class="bi bi-qr-code"></i>
+                            </div>
+                            <div class="payment-method-info">
+                                <div class="payment-method-title">Chuyển Khoản Ngân Hàng QR</div>
+                                <div class="payment-method-desc">Tạo mã QR thanh toán nhanh qua ứng dụng ngân hàng</div>
+                            </div>
+                            <div class="payment-method-radio"></div>
+                        </div>
+                    </div>
+
+                    <!-- Sub fields of payment method: VISA CARD -->
+                    <div id="section-card" class="payment-sub-section">
+                        <div class="form-group" style="margin-bottom: 15px;">
+                            <label style="font-size: 12px; color: var(--text-muted);">Số thẻ tín dụng</label>
+                            <input type="text" class="form-control" placeholder="0000 0000 0000 0000" style="padding: 10px 12px; font-size: 14px;">
+                        </div>
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                            <div class="form-group" style="margin-bottom: 0;">
+                                <label style="font-size: 12px; color: var(--text-muted);">Hạn sử dụng</label>
+                                <input type="text" class="form-control" placeholder="MM/YY" style="padding: 10px 12px; font-size: 14px;">
+                            </div>
+                            <div class="form-group" style="margin-bottom: 0;">
+                                <label style="font-size: 12px; color: var(--text-muted);">Mã bảo mật CVV</label>
+                                <input type="text" class="form-control" placeholder="123" style="padding: 10px 12px; font-size: 14px;">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Sub fields of payment method: BANK TRANSFER -->
+                    <div id="section-transfer" class="payment-sub-section">
+                        <div class="qr-container">
+                            <div class="qr-code-wrapper">
+                                <img class="qr-code-img" th:src="'https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=LuminaPay_ResId_' + ${reservation.id} + '_Amount_' + ${totalFoodAmount}" alt="VietQR VietinBank">
+                            </div>
+                            <div class="qr-instruction" style="text-align: left; margin-top: 15px; padding: 15px; background: rgba(255, 255, 255, 0.02); border: 1px solid rgba(255, 255, 255, 0.05); border-radius: 12px; font-size: 13px; color: var(--text-muted); line-height: 1.6;">
+                                <div style="margin-bottom: 8px; border-bottom: 1px dashed rgba(255, 255, 255, 0.1); padding-bottom: 8px; color: #fff; font-weight: 600; display: flex; align-items: center; gap: 8px;">
+                                    <i class="bi bi-bank" style="color: var(--primary);"></i> Thông Tin Tài Khoản Ngân Hàng
+                                </div>
+                                <div style="display: grid; grid-template-columns: 100px 1fr; gap: 5px;">
+                                    <span>Ngân hàng:</span>
+                                    <strong style="color: #fff;">VietinBank</strong>
+                                    <span>Chủ tài khoản:</span>
+                                    <strong style="color: #fff;">NHÀ HÀNG LUMINA</strong>
+                                    <span>Số tài khoản:</span>
+                                    <strong style="color: var(--primary);">102888888888</strong>
+                                    <span>Số tiền:</span>
+                                    <strong id="transfer-amount-value" style="color: #fff;" th:text="${#numbers.formatDecimal(totalFoodAmount, 0, 'COMMA', 0, 'POINT')} + ' đ'">150.000 đ</strong>
+                                    <span>Nội dung CK:</span>
+                                    <strong style="color: var(--primary); font-size: 14px;" th:text="'RES' + ${reservation.id}">RES123</strong>
+                                </div>
+                                <div style="margin-top: 12px; color: var(--text-muted); font-size: 11px; font-style: italic; border-top: 1px dashed rgba(255, 255, 255, 0.1); padding-top: 8px; text-align: center;">
+                                    (Vui lòng nhập chính xác Nội dung chuyển khoản là mã đặt bàn để hệ thống tự động xác nhận thanh toán)
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Bill Breakdowns -->
+                    <div class="bill-summary" style="background: rgba(255, 255, 255, 0.02); border: 1px solid rgba(255, 255, 255, 0.05); border-radius: 12px; padding: 20px; margin-bottom: 25px; display: flex; flex-direction: column; gap: 12px;">
+                        
+                        <div style="font-size: 14px; font-weight: 600; color: #fff; margin-bottom: 5px; display: flex; align-items: center; gap: 8px; border-bottom: 1px solid rgba(255, 255, 255, 0.08); padding-bottom: 8px;">
+                            <i class="bi bi-receipt" style="color: var(--primary);"></i> Chi Tiết Hóa Đơn Thanh Toán
+                        </div>
+
+                        <!-- Chi tiết danh sách món ăn, số lượng, đơn giá, thành tiền -->
+                        <div class="bill-food-list" style="max-height: 150px; overflow-y: auto; margin-bottom: 8px; padding-right: 5px;">
+                            <div th:each="item : ${orderItems}" style="display: flex; justify-content: space-between; align-items: center; font-size: 13px; margin-bottom: 8px; border-bottom: 1px dashed rgba(255, 255, 255, 0.03); padding-bottom: 6px;">
+                                <div style="display: flex; flex-direction: column;">
+                                    <span style="color: #fff; font-weight: 500;" th:text="${item.menuItem.name}">Tên món ăn</span>
+                                    <span style="color: var(--text-muted); font-size: 11px;">
+                                        Số lượng: <strong style="color: #fff;" th:text="${item.quantity}">1</strong> | Đơn giá: <strong style="color: #fff;" th:text="${#numbers.formatDecimal(item.priceAtTime, 0, 'COMMA', 0, 'POINT')} + ' đ'">150.000 đ</strong>
+                                    </span>
+                                </div>
+                                <div style="text-align: right;">
+                                    <span style="font-size: 11px; color: var(--text-muted); display: block;">Thành tiền</span>
+                                    <span style="color: var(--primary); font-weight: 600;" th:text="${#numbers.formatDecimal(item.priceAtTime * item.quantity, 0, 'COMMA', 0, 'POINT')} + ' đ'">150.000 đ</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Tổng cộng các món ăn -->
+                        <div class="bill-row highlight" id="row-food-amount" style="display: flex; justify-content: space-between; font-size: 14px; color: #fff; font-weight: 500; border-top: 1px dashed rgba(255, 255, 255, 0.08); padding-top: 10px;">
+                            <span id="label-food-amount">Tổng cộng món ăn (giỏ hàng)</span>
+                            <span id="val-food-amount" style="color: var(--primary); font-weight: 600;" th:text="${#numbers.formatDecimal(totalFoodAmount, 0, 'COMMA', 0, 'POINT')} + ' đ'">150.000 đ</span>
+                        </div>
+
+                        <!-- Đặt cọc (nếu chọn) -->
+                        <div class="bill-row" id="row-deposit-amount" style="display: none; justify-content: space-between; font-size: 14px; color: var(--text-muted);">
+                            <span id="label-deposit-amount">Khoản đặt cọc trừ trước</span>
+                            <span id="val-deposit-amount" th:text="${#numbers.formatDecimal(depositAmount, 0, 'COMMA', 0, 'POINT')} + ' đ'">100.000 đ</span>
+                        </div>
+
+                        <!-- Tổng thanh toán thực tế -->
+                        <div class="bill-row total" style="display: flex; justify-content: space-between; font-size: 18px; color: #fff; font-weight: 700; border-top: 1px solid rgba(255, 255, 255, 0.08); padding-top: 12px;">
+                            <span>Tổng thanh toán thực tế:</span>
+                            <span class="total-price" id="val-total-bill" th:text="${#numbers.formatDecimal(totalFoodAmount, 0, 'COMMA', 0, 'POINT')} + ' đ'">150.000 đ</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Submit Button -->
+                <button id="btn-pay-now" class="btn-primary" style="margin-top: 15px; padding: 14px; font-size: 17px; display: flex; align-items: center; justify-content: center; gap: 10px;">
+                    <i class="bi bi-shield-lock-fill"></i> Xác Nhận Thanh Toán Toàn Bộ <span th:text="${#numbers.formatDecimal(totalFoodAmount, 0, 'COMMA', 0, 'POINT')} + ' đ'">150.000 đ</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- FULLSCREEN PROCESSING / LOADING & SUCCESS SCREEN OVERLAY -->
+    <div id="processing-overlay" class="processing-overlay">
+        <!-- Spinner Screen -->
+        <div id="spinner-screen" style="text-align: center; display: flex; flex-direction: column; align-items: center;">
+            <div class="spinner-large"></div>
+            <div class="processing-status" id="status-title">Đang xác thực thông tin...</div>
+            <div class="processing-subtext" id="status-subtext">Kết nối an toàn tới cổng thanh toán trực tuyến Lumina.</div>
+        </div>
+
+        <!-- Success Animation Screen -->
+        <div id="success-screen" class="success-animation-container">
+            <!-- Animated SVG Checkmark -->
+            <svg class="checkmark-svg" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 52 52">
+                <circle class="checkmark-circle" cx="26" cy="26" r="25" fill="none"/>
+                <path class="checkmark-check" fill="none" d="M14.1 27.2l7.1 7.2 16.7-16.8"/>
+            </svg>
+            
+            <h3 class="success-title">Thanh Toán Món Ăn Thành Công!</h3>
+            <p class="success-desc" style="margin-bottom: 20px;">
+                Cảm ơn bạn đã lựa chọn nhà hàng Lumina. Lumina đã xác nhận thanh toán thực đơn món ăn của bạn. Các món ăn sẽ được chuẩn bị và phục vụ chu đáo nhất ngay khi bạn ghé nhà hàng.
+            </p>
+
+            <!-- Success Booking Summary -->
+            <div style="background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 16px; padding: 15px 25px; margin-bottom: 25px; width: 100%; text-align: left; display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+                <div style="display: flex; flex-direction: column; gap: 2px;">
+                    <span style="font-size: 11px; color: var(--text-muted); text-transform: uppercase;">Mã đặt bàn</span>
+                    <span style="font-size: 14px; color: #fff; font-weight: 600;" th:text="'#RES-' + ${reservation.id}">#RES-123</span>
+                </div>
+                <div style="display: flex; flex-direction: column; gap: 2px;">
+                    <span style="font-size: 11px; color: var(--text-muted); text-transform: uppercase;">Bàn đã chọn</span>
+                    <span style="font-size: 14px; color: var(--primary); font-weight: 600;" th:text="${reservation.table != null ? reservation.table.tableName : 'N/A'} + ${reservation.table != null && reservation.table.area != null ? ' - ' + reservation.table.area.name : ''}">Bàn 01 - Tầng 1</span>
+                </div>
+                <div style="display: flex; flex-direction: column; gap: 2px;">
+                    <span style="font-size: 11px; color: var(--text-muted); text-transform: uppercase;">Thời gian tiệc</span>
+                    <span style="font-size: 14px; color: #fff; font-weight: 600;" th:text="${#temporals.format(reservation.reservationTime, 'HH:mm - dd/MM/yyyy')}">19:00 - 25/05/2026</span>
+                </div>
+                <div style="display: flex; flex-direction: column; gap: 2px;">
+                    <span style="font-size: 11px; color: var(--text-muted); text-transform: uppercase;">Số khách</span>
+                    <span style="font-size: 14px; color: #fff; font-weight: 600;" th:text="${reservation.numberOfGuests} + ' người'">4 người</span>
+                </div>
+            </div>
+            
+            <div class="countdown-card">
+                <i class="bi bi-arrow-right-circle-fill"></i>
+                <span>Tự động chuyển hướng sau <span id="countdown" class="countdown-num">5</span> giây...</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Canvas Confetti Library from CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+
+    <script th:inline="javascript">
+        /*<![CDATA[*/
+        const reservationId = /*[[${reservation.id}]]*/ 0;
+        const totalFoodAmount = /*[[${totalFoodAmount}]]*/ 0;
+        const depositAmount = /*[[${depositAmount}]]*/ 100000;
+        /*]]>*/
+
+        document.addEventListener('DOMContentLoaded', function () {
+            
+            // Payment Option Selector (Deposit vs Full)
+            const optionCards = document.querySelectorAll('.pay-option-card');
+            let selectedPaymentMode = 'full'; // default
+
+            const labelFoodAmount = document.getElementById('label-food-amount');
+            const rowDepositAmount = document.getElementById('row-deposit-amount');
+            const valTotalBill = document.getElementById('val-total-bill');
+            const btnPayNow = document.getElementById('btn-pay-now');
+            
+            // Format number to VND function
+            function formatVND(amount) {
+                return new Intl.NumberFormat('vi-VN').format(amount) + ' đ';
+            }
+
+            function updatePaymentUI() {
+                const qrImg = document.querySelector('.qr-code-img');
+                const transferAmountVal = document.getElementById('transfer-amount-value');
+                const successDesc = document.querySelector('.success-desc');
+                
+                if (selectedPaymentMode === 'deposit') {
+                    // Update bill breakdown
+                    if (labelFoodAmount) labelFoodAmount.textContent = "Tiền món ăn (trả sau tại nhà hàng)";
+                    if (rowDepositAmount) rowDepositAmount.style.display = "flex";
+                    if (valTotalBill) valTotalBill.textContent = formatVND(depositAmount);
+                    
+                    // Update submit button
+                    if (btnPayNow) {
+                        btnPayNow.innerHTML = `<i class="bi bi-shield-lock-fill"></i> Xác Nhận Thanh Toán Đặt Cọc <span>${formatVND(depositAmount)}</span>`;
+                    }
+                    
+                    // Update transfer QR details
+                    if (qrImg) {
+                        qrImg.src = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=LuminaPay_ResId_${reservationId}_Amount_${depositAmount}`;
+                    }
+                    if (transferAmountVal) {
+                        transferAmountVal.textContent = formatVND(depositAmount);
+                    }
+                    if (successDesc) {
+                        successDesc.innerHTML = 'Cảm ơn bạn đã lựa chọn nhà hàng Lumina. Chúng tôi đã xác nhận khoản <strong>đặt cọc bàn 100.000 đ</strong> của bạn. Thực đơn các món ăn đã được lưu trữ và quý khách sẽ thanh toán tiền ăn tại nhà hàng khi dùng bữa.';
+                    }
+                } else {
+                    // Update bill breakdown
+                    if (labelFoodAmount) labelFoodAmount.textContent = "Tiền món ăn thanh toán ngay";
+                    if (rowDepositAmount) rowDepositAmount.style.display = "none";
+                    if (valTotalBill) valTotalBill.textContent = formatVND(totalFoodAmount);
+                    
+                    // Update submit button
+                    if (btnPayNow) {
+                        btnPayNow.innerHTML = `<i class="bi bi-shield-lock-fill"></i> Xác Nhận Thanh Toán Toàn Bộ <span>${formatVND(totalFoodAmount)}</span>`;
+                    }
+                    
+                    // Update transfer QR details
+                    if (qrImg) {
+                        qrImg.src = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=LuminaPay_ResId_${reservationId}_Amount_${totalFoodAmount}`;
+                    }
+                    if (transferAmountVal) {
+                        transferAmountVal.textContent = formatVND(totalFoodAmount);
+                    }
+                    if (successDesc) {
+                        successDesc.innerHTML = 'Cảm ơn bạn đã lựa chọn nhà hàng Lumina. Chúng tôi đã xác nhận thanh toán <strong>toàn bộ tiền món ăn</strong> của bạn. Các món ăn sẽ được phục vụ chu đáo nhất ngay khi bạn ghé nhà hàng.';
+                    }
+                }
+            }
+
+            optionCards.forEach(card => {
+                card.addEventListener('click', function () {
+                    optionCards.forEach(c => c.classList.remove('active'));
+                    this.classList.add('active');
+                    selectedPaymentMode = this.getAttribute('data-mode');
+                    updatePaymentUI();
+                });
+            });
+
+            // Run initial update to align elements on load
+            updatePaymentUI();
+
+            // Payment method tabs switcher
+            const cards = document.querySelectorAll('.payment-method-card');
+            const cardSection = document.getElementById('section-card');
+            const transferSection = document.getElementById('section-transfer');
+
+            cards.forEach(card => {
+                card.addEventListener('click', function () {
+                    cards.forEach(c => c.classList.remove('active'));
+                    this.classList.add('active');
+
+                    const method = this.getAttribute('data-method');
+                    
+                    // Show corresponding sections
+                    if (method === 'card') {
+                        cardSection.classList.add('active');
+                        transferSection.classList.remove('active');
+                    } else if (method === 'transfer') {
+                        transferSection.classList.add('active');
+                        cardSection.classList.remove('active');
+                    } else {
+                        cardSection.classList.remove('active');
+                        transferSection.classList.remove('active');
+                    }
+                });
+            });
+
+            // Action: Click pay button
+            const payBtn = document.getElementById('btn-pay-now');
+            const overlay = document.getElementById('processing-overlay');
+            const spinnerScreen = document.getElementById('spinner-screen');
+            const successScreen = document.getElementById('success-screen');
+            const statusTitle = document.getElementById('status-title');
+            const statusSubtext = document.getElementById('status-subtext');
+
+            payBtn.addEventListener('click', function () {
+                // Step 1: Open overlay and show verifying status
+                overlay.style.display = 'flex';
+                setTimeout(() => {
+                    overlay.classList.add('show');
+                }, 50);
+
+                // Step 2: Simulate banking processing delay
+                setTimeout(() => {
+                    statusTitle.textContent = "Đang xử lý giao dịch...";
+                    statusSubtext.textContent = "Vui lòng không tắt trình duyệt hoặc tải lại trang.";
+
+                    setTimeout(() => {
+                        statusTitle.textContent = "Hoàn tất xác nhận ngân hàng...";
+                        statusSubtext.textContent = "Đang đồng bộ hóa hóa đơn hệ thống.";
+                        
+                        // Send actual confirm request to server
+                        const csrfToken = document.querySelector('meta[name="_csrf"]').getAttribute('content');
+                        const csrfHeader = document.querySelector('meta[name="_csrf_header"]').getAttribute('content');
+
+                        fetch(`/reservation/payment/food?id=${reservationId}&paymentMode=${selectedPaymentMode}`, {
+                            method: 'POST',
+                            headers: {
+                                [csrfHeader]: csrfToken
+                            }
+                        })
+                        .then(res => res.json())
+                        .then(data => {
+                            if (data.success) {
+                                // Clear booking flow session flags if any
+                                sessionStorage.removeItem('bookingFlowActive');
+                                sessionStorage.removeItem('reservationId');
+                                
+                                // Transition to success animation screen
+                                spinnerScreen.style.display = 'none';
+                                successScreen.style.display = 'flex';
+
+                                // Trigger Premium Confetti
+                                triggerConfetti();
+
+                                // Launch automatic countdown redirect
+                                startCountdown();
+                            } else {
+                                // Display payment fail toast/popup and close overlay
+                                overlay.classList.remove('show');
+                                setTimeout(() => {
+                                    overlay.style.display = 'none';
+                                    alert("Thanh toán thất bại: " + (data.error || "Giao dịch bị từ chối bởi ngân hàng."));
+                                }, 400);
+                            }
+                        })
+                        .catch(err => {
+                            overlay.classList.remove('show');
+                            setTimeout(() => {
+                                overlay.style.display = 'none';
+                                alert("Đã xảy ra lỗi kết nối với máy chủ. Vui lòng thanh toán lại.");
+                            }, 400);
+                        });
+
+                    }, 1200);
+
+                }, 1200);
+            });
+
+            // Premium Confetti function using canvas-confetti library with fallback
+            function triggerConfetti() {
+                try {
+                    if (typeof confetti === 'function') {
+                        var duration = 4 * 1000;
+                        var end = Date.now() + duration;
+
+                        (function frame() {
+                            confetti({
+                                particleCount: 4,
+                                angle: 60,
+                                spread: 55,
+                                origin: { x: 0, y: 0.8 },
+                                colors: ['#cba876', '#ffffff', '#b18e5b', '#e2cbb2']
+                            });
+                            confetti({
+                                particleCount: 4,
+                                angle: 120,
+                                spread: 55,
+                                origin: { x: 1, y: 0.8 },
+                                colors: ['#cba876', '#ffffff', '#b18e5b', '#e2cbb2']
+                            });
+
+                            if (Date.now() < end) {
+                                requestAnimationFrame(frame);
+                            }
+                        }());
+                    } else {
+                        createJSConfettiFallback();
+                    }
+                } catch (e) {
+                    console.error("Confetti error:", e);
+                }
+            }
+
+            // Fallback pure JS confetti creator
+            function createJSConfettiFallback() {
+                const canvas = document.createElement('canvas');
+                canvas.style.position = 'fixed';
+                canvas.style.top = '0';
+                canvas.style.left = '0';
+                canvas.style.width = '100vw';
+                canvas.style.height = '100vh';
+                canvas.style.pointerEvents = 'none';
+                canvas.style.zIndex = '99999';
+                document.body.appendChild(canvas);
+                const ctx = canvas.getContext('2d');
+                canvas.width = window.innerWidth;
+                canvas.height = window.innerHeight;
+
+                const colors = ['#cba876', '#ffffff', '#b18e5b', '#e2cbb2'];
+                const particles = [];
+
+                for (let i = 0; i < 150; i++) {
+                    particles.push({
+                        x: Math.random() * canvas.width,
+                        y: Math.random() * canvas.height - canvas.height,
+                        r: Math.random() * 4 + 2,
+                        d: Math.random() * canvas.height,
+                        color: colors[Math.floor(Math.random() * colors.length)],
+                        tilt: Math.random() * 10 - 5,
+                        tiltAngleIncremental: Math.random() * 0.07 + 0.02,
+                        tiltAngle: 0
+                    });
+                }
+
+                function draw() {
+                    ctx.clearRect(0, 0, canvas.width, canvas.height);
+                    particles.forEach((p, idx) => {
+                        p.tiltAngle += p.tiltAngleIncremental;
+                        p.y += (Math.cos(p.d) + 3 + p.r / 2) / 2;
+                        p.x += Math.sin(p.tiltAngle);
+                        p.tilt = Math.sin(p.tiltAngle - idx / 3) * 15;
+
+                        ctx.beginPath();
+                        ctx.lineWidth = p.r;
+                        ctx.strokeStyle = p.color;
+                        ctx.moveTo(p.x + p.tilt + p.r / 2, p.y);
+                        ctx.lineTo(p.x + p.tilt, p.y + p.tilt + p.r / 2);
+                        ctx.stroke();
+                    });
+
+                    let active = particles.some(p => p.y < canvas.height);
+                    if (active) {
+                        requestAnimationFrame(draw);
+                    } else {
+                        document.body.removeChild(canvas);
+                    }
+                }
+                draw();
+            }
+
+            // Redirect countdown sequence
+            function startCountdown() {
+                const countDisplay = document.getElementById('countdown');
+                let count = 5;
+                const timer = setInterval(() => {
+                    count--;
+                    countDisplay.textContent = count;
+                    if (count <= 0) {
+                        clearInterval(timer);
+                        window.location.href = "/my-reservations";
+                    }
+                }, 1000);
+            }
+        });
+    </script>
+</body>
+
+</html>

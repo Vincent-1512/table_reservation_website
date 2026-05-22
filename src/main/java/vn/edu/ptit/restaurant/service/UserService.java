@@ -18,4 +18,5 @@ public interface UserService {
     void deleteById(Long id);
     List<User> search(String keyword);
     Page<User> findPaginated(int page, int size);
+    User save(User user);
 }
