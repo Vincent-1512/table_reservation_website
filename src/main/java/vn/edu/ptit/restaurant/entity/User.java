@@ -33,6 +33,9 @@ public class User {
     @Column(length = 100)
     private String email;
 
+    @Column(name = "avatar_url", length = 255)
+    private String avatarUrl;
+
     @Column(name = "date_of_birth")
     private LocalDateTime dateOfBirth;
 

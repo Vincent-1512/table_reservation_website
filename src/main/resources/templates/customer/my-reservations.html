@@ -856,12 +856,13 @@
             <!-- Hiển thị khi đã đăng nhập -->
             <div sec:authorize="isAuthenticated()" class="nav-user-dropdown">
                 <button class="nav-avatar-btn" onclick="toggleNavDropdown(event)">
-                    <div class="nav-avatar-circle" th:text="${#strings.substring(#authentication.name, 0, 1).toUpperCase()}">U</div>
-                    <span class="d-none d-md-inline nav-username" th:text="${#authentication.name}">Username</span>
+                    <img th:if="${currentUser != null and currentUser.avatarUrl != null}" th:src="${currentUser.avatarUrl}" class="nav-avatar-img" alt="Avatar">
+                    <div th:unless="${currentUser != null and currentUser.avatarUrl != null}" class="nav-avatar-circle" th:text="${#strings.substring(#authentication.name, 0, 1).toUpperCase()}">U</div>
+                    <span class="d-none d-md-inline nav-username" th:text="${currentUser != null and currentUser.fullName != null and !currentUser.fullName.isEmpty() ? currentUser.fullName : #authentication.name}">Username</span>
                     <i class="bi bi-chevron-down nav-chevron"></i>
                 </button>
                 <div class="nav-dropdown-menu" id="navDropdownMenu">
-                    <a href="/my-reservations?tab=profile">
+                    <a href="/profile">
                         <i class="bi bi-person-circle"></i> Thông tin cá nhân
                     </a>
                     <a sec:authorize="hasAnyAuthority('ROLE_ADMIN', 'ROLE_STAFF')" href="/staff/orders">
@@ -923,9 +924,6 @@
                 </button>
                 <button class="tab-btn" id="tab-orders-btn" onclick="switchTab('orders')">
                     <i class="bi bi-receipt"></i> Đơn món ăn
-                </button>
-                <button class="tab-btn" id="tab-profile-btn" onclick="switchTab('profile')">
-                    <i class="bi bi-person-bounding-box"></i> Thông tin cá nhân
                 </button>
             </div>
 
@@ -1076,116 +1074,6 @@
                     <p>Quý khách chưa có đơn đặt món ăn nào.</p>
                 </div>
             </div>
-
-            <!-- TAB 3: PERSONAL PROFILE PANEL -->
-            <div class="tab-panel" id="panel-profile">
-                <div class="profile-wrapper" th:if="${user != null}">
-                    <!-- Cột trái: Sidebar thông tin tài khoản -->
-                    <div class="profile-sidebar">
-                        <div class="profile-avatar-container">
-                            <div class="profile-avatar-circle" th:text="${user.fullName != null and !user.fullName.isEmpty() ? #strings.substring(user.fullName, 0, 1) : #strings.substring(user.username, 0, 1)}">
-                                U
-                            </div>
-                            <div class="profile-avatar-glow"></div>
-                        </div>
-                        <h3 class="profile-name" th:text="${user.fullName != null and !user.fullName.isEmpty() ? user.fullName : user.username}">Họ và Tên</h3>
-                        <span class="profile-role-badge">Khách hàng</span>
-                        
-                        <div class="profile-meta-list">
-                            <div class="profile-meta-item">
-                                <i class="bi bi-clock-history"></i>
-                                <span>Thành viên từ: <span class="profile-meta-value" th:text="${user.createdAt != null ? #temporals.format(user.createdAt, 'dd/MM/yyyy') : 'Chưa rõ'}">24/12/2026</span></span>
-                            </div>
-                            <div class="profile-meta-item">
-                                <i class="bi bi-person-fill-lock"></i>
-                                <span>Tài khoản: <span class="profile-meta-value" th:text="${user.username}">username</span></span>
-                            </div>
-                        </div>
-
-                        <!-- Đăng xuất -->
-                        <form th:action="@{/logout}" method="post" id="logoutForm" style="display: none;"></form>
-                        <button class="profile-logout-btn" onclick="confirmLogout()">
-                            <i class="bi bi-box-arrow-right"></i> Đăng xuất
-                        </button>
-                    </div>
-
-                    <!-- Cột phải: Form cập nhật & đổi mật khẩu -->
-                    <div class="profile-content">
-                        <!-- Form 1: Cập nhật thông tin cá nhân -->
-                        <div class="profile-card">
-                            <h3 class="profile-card-title">
-                                <i class="bi bi-person-lines-fill"></i> Thông Tin Cá Nhân
-                            </h3>
-                            <form th:action="@{/profile/update}" method="post" class="form-grid">
-                                <div class="profile-form-group">
-                                    <label for="fullName">Họ và tên</label>
-                                    <div class="profile-input-wrapper">
-                                        <input type="text" id="fullName" name="fullName" class="profile-input" th:value="${user.fullName}" required>
-                                        <i class="bi bi-person-fill"></i>
-                                    </div>
-                                </div>
-                                <div class="profile-form-group">
-                                    <label for="phone">Số điện thoại</label>
-                                    <div class="profile-input-wrapper">
-                                        <input type="tel" id="phone" name="phone" class="profile-input" th:value="${user.phone}" pattern="[0-9]{9,11}" placeholder="0987654321" required>
-                                        <i class="bi bi-telephone-fill"></i>
-                                    </div>
-                                </div>
-                                <div class="profile-form-group form-group-full">
-                                    <label for="email">Địa chỉ Email</label>
-                                    <div class="profile-input-wrapper">
-                                        <input type="email" id="email" name="email" class="profile-input" th:value="${user.email}" placeholder="yourname@gmail.com" required>
-                                        <i class="bi bi-envelope-fill"></i>
-                                    </div>
-                                </div>
-                                <div class="form-group-full">
-                                    <button type="submit" class="btn-profile-save">
-                                        <i class="bi bi-check2-circle"></i> Lưu thay đổi
-                                    </button>
-                                </div>
-                            </form>
-                        </div>
-
-                        <!-- Form 2: Đổi mật khẩu -->
-                        <div class="profile-card">
-                            <h3 class="profile-card-title">
-                                <i class="bi bi-shield-lock-fill"></i> Đổi Mật Khẩu
-                            </h3>
-                            <form th:action="@{/profile/change-password}" method="post" id="changePasswordForm" class="form-grid" onsubmit="return validatePasswordForm(event)">
-                                <div class="profile-form-group form-group-full">
-                                    <label for="currentPassword">Mật khẩu hiện tại</label>
-                                    <div class="profile-input-wrapper">
-                                        <input type="password" id="currentPassword" name="currentPassword" class="profile-input" required>
-                                        <i class="bi bi-key-fill"></i>
-                                    </div>
-                                </div>
-                                <div class="profile-form-group">
-                                    <label for="newPassword">Mật khẩu mới</label>
-                                    <div class="profile-input-wrapper">
-                                        <input type="password" id="newPassword" name="newPassword" class="profile-input" placeholder="Tối thiểu 6 ký tự" required>
-                                        <i class="bi bi-lock-fill"></i>
-                                    </div>
-                                </div>
-                                <div class="profile-form-group">
-                                    <label for="confirmPassword">Xác nhận mật khẩu mới</label>
-                                    <div class="profile-input-wrapper">
-                                        <input type="password" id="confirmPassword" name="confirmPassword" class="profile-input" placeholder="Nhập lại mật khẩu mới" required>
-                                        <i class="bi bi-lock-fill"></i>
-                                    </div>
-                                    <div id="pw-match-error" style="color: #ff6b6b; font-size: 12px; margin-top: 5px; display: none;">
-                                        <i class="bi bi-exclamation-circle"></i> Mật khẩu xác nhận không khớp!
-                                    </div>
-                                </div>
-                                <div class="form-group-full">
-                                    <button type="submit" class="btn-profile-save">
-                                        <i class="bi bi-shield-check"></i> Cập nhật mật khẩu
-                                    </button>
-                                </div>
-                            </form>
-                        </div>
-                    </div>
-                </div>
-            </div>
         </div>
     </div>
 
@@ -1309,9 +1197,6 @@
             } else if (tabName === 'orders') {
                 document.getElementById('tab-orders-btn').classList.add('active');
                 document.getElementById('panel-orders').classList.add('active');
-            } else if (tabName === 'profile') {
-                document.getElementById('tab-profile-btn').classList.add('active');
-                document.getElementById('panel-profile').classList.add('active');
             }
             
             // Save current tab in localStorage
@@ -1322,61 +1207,17 @@
         window.addEventListener('DOMContentLoaded', () => {
             const urlParams = new URLSearchParams(window.location.search);
             const urlTab = urlParams.get('tab');
-            if (urlTab && (urlTab === 'reservations' || urlTab === 'orders' || urlTab === 'profile')) {
+            if (urlTab && (urlTab === 'reservations' || urlTab === 'orders')) {
                 switchTab(urlTab);
             } else {
                 const savedTab = localStorage.getItem('activeReservationsTab');
-                if (savedTab && (savedTab === 'reservations' || savedTab === 'orders' || savedTab === 'profile')) {
+                if (savedTab && (savedTab === 'reservations' || savedTab === 'orders')) {
                     switchTab(savedTab);
+                } else {
+                    switchTab('reservations'); // default fallback
                 }
             }
-
-            // Interactive password match checking while typing
-            const newPasswordInput = document.getElementById('newPassword');
-            const confirmPasswordInput = document.getElementById('confirmPassword');
-            const matchErrorDiv = document.getElementById('pw-match-error');
-
-            if (newPasswordInput && confirmPasswordInput) {
-                const checkMatch = () => {
-                    if (confirmPasswordInput.value && newPasswordInput.value !== confirmPasswordInput.value) {
-                        matchErrorDiv.style.display = 'block';
-                    } else {
-                        matchErrorDiv.style.display = 'none';
-                    }
-                };
-                newPasswordInput.addEventListener('input', checkMatch);
-                confirmPasswordInput.addEventListener('input', checkMatch);
-            }
         });
-
-        // Confirm before logging out
-        function confirmLogout() {
-            if (confirm("Quý khách có chắc chắn muốn đăng xuất khỏi tài khoản Lumina của mình?")) {
-                document.getElementById('logoutForm').submit();
-            }
-        }
-
-        // Client-side password validation
-        function validatePasswordForm(e) {
-            const newPassword = document.getElementById('newPassword').value;
-            const confirmPassword = document.getElementById('confirmPassword').value;
-            const matchError = document.getElementById('pw-match-error');
-
-            if (newPassword.length < 6) {
-                alert("Mật khẩu mới phải có tối thiểu 6 ký tự!");
-                e.preventDefault();
-                return false;
-            }
-
-            if (newPassword !== confirmPassword) {
-                matchError.style.display = 'block';
-                e.preventDefault();
-                return false;
-            } else {
-                matchError.style.display = 'none';
-            }
-            return true;
-        }
 
         // Open Reservation detail Modal
         function openReservationModal(btn) {

@@ -12,9 +12,9 @@
 --------------------------------------------------------------*/
 /* Fonts */
 :root {
-  --default-font: "Roboto",  system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", "Liberation Sans", sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
-  --heading-font: "Playfair Display",  sans-serif;
-  --nav-font: "Poppins",  sans-serif;
+  --default-font: "Outfit", "Inter", system-ui, -apple-system, sans-serif;
+  --heading-font: "Outfit", "Inter", sans-serif;
+  --nav-font: "Outfit", "Inter", sans-serif;
 }
 
 /* Global Colors - The following color variables are used throughout the website. Updating them here will change the color scheme of the entire website */
@@ -1759,4 +1759,14 @@ section,
   display: flex;
   align-items: center;
   gap: 8px;
+}
+
+.nav-avatar-img {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 1px solid var(--accent-color);
+  box-shadow: 0 2px 8px rgba(205, 164, 94, 0.3);
+  display: inline-block;
 }

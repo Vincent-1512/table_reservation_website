@@ -4,26 +4,13 @@
 <head>
     <meta charset="UTF-8">
     <title>Đặt Bàn - Lumina</title>
-    <meta name="_csrf" th:content="${_csrf.token}"/>
-    <meta name="_csrf_header" th:content="${_csrf.headerName}"/>
+    <meta name="_csrf" th:content="${_csrf.token}" />
+    <meta name="_csrf_header" th:content="${_csrf.headerName}" />
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" th:href="@{/css/style.css}">
     <!-- Bootstrap Icons (for beautiful icons) -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
-    <style>
-        .form-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 20px;
-        }
-
-        @media (max-width: 768px) {
-            .form-grid {
-                grid-template-columns: 1fr;
-                gap: 10px;
-            }
-        }
-    </style>
+    <link rel="stylesheet" th:href="@{/css/customer/booking.css}">
 </head>
 
 <body class="auth-body">
@@ -34,7 +21,7 @@
             <a href="/menu">Thực đơn</a>
             <a href="/my-reservations">Thông tin đặt bàn</a>
             <a href="/reservation" class="btn-nav-highlight">Đặt bàn ngay</a>
-            
+
             <!-- Hiển thị khi chưa đăng nhập -->
             <div sec:authorize="!isAuthenticated()">
                 <a th:href="@{/login}" class="btn-nav-login">Đăng nhập</a>
@@ -43,12 +30,16 @@
             <!-- Hiển thị khi đã đăng nhập -->
             <div sec:authorize="isAuthenticated()" class="nav-user-dropdown">
                 <button class="nav-avatar-btn" onclick="toggleNavDropdown(event)">
-                    <div class="nav-avatar-circle" th:text="${#strings.substring(#authentication.name, 0, 1).toUpperCase()}">U</div>
-                    <span class="d-none d-md-inline nav-username" th:text="${#authentication.name}">Username</span>
+                    <img th:if="${currentUser != null and currentUser.avatarUrl != null}"
+                        th:src="${currentUser.avatarUrl}" class="nav-avatar-img" alt="Avatar">
+                    <div th:unless="${currentUser != null and currentUser.avatarUrl != null}" class="nav-avatar-circle"
+                        th:text="${#strings.substring(#authentication.name, 0, 1).toUpperCase()}">U</div>
+                    <span class="d-none d-md-inline nav-username"
+                        th:text="${currentUser != null and currentUser.fullName != null and !currentUser.fullName.isEmpty() ? currentUser.fullName : #authentication.name}">Username</span>
                     <i class="bi bi-chevron-down nav-chevron"></i>
                 </button>
                 <div class="nav-dropdown-menu" id="navDropdownMenu">
-                    <a href="/my-reservations?tab=profile">
+                    <a href="/profile">
                         <i class="bi bi-person-circle"></i> Thông tin cá nhân
                     </a>
                     <a sec:authorize="hasAnyAuthority('ROLE_ADMIN', 'ROLE_STAFF')" href="/staff/orders">
@@ -58,7 +49,8 @@
                         <i class="bi bi-shield-lock"></i> Quản trị (Admin)
                     </a>
                     <form th:action="@{/logout}" method="post" id="navLogoutForm" style="margin: 0;">
-                        <button type="submit" class="nav-logout-btn" onclick="return confirm('Quý khách có chắc chắn muốn đăng xuất?')">
+                        <button type="submit" class="nav-logout-btn"
+                            onclick="return confirm('Quý khách có chắc chắn muốn đăng xuất?')">
                             <i class="bi bi-box-arrow-right"></i> Đăng xuất
                         </button>
                     </form>
@@ -74,7 +66,7 @@
             dropdown.classList.toggle('active');
             menu.classList.toggle('show');
         }
-        document.addEventListener('click', function(event) {
+        document.addEventListener('click', function (event) {
             const dropdown = document.querySelector('.nav-user-dropdown');
             const menu = document.getElementById('navDropdownMenu');
             if (dropdown && menu && !dropdown.contains(event.target)) {
@@ -97,28 +89,33 @@
 
         <form id="reservation-form" th:action="@{/reservation}" method="post">
             <!-- PHÂN KHU 1: THÔNG TIN KHÁCH HÀNG -->
-            <h3 style="color: var(--primary); font-size: 18px; margin-bottom: 15px; border-bottom: 1px solid rgba(255,255,255,0.08); padding-bottom: 8px;">
+            <h3
+                style="color: var(--primary); font-size: 18px; margin-bottom: 15px; border-bottom: 1px solid rgba(255,255,255,0.08); padding-bottom: 8px;">
                 <i class="bi bi-person-badge" style="margin-right: 8px;"></i>Thông Tin Liên Hệ
             </h3>
-            
+
             <div class="form-group">
                 <label>Họ và tên quý khách</label>
-                <input type="text" name="fullName" class="form-control" th:value="${user.fullName}" placeholder="Nhập đầy đủ họ tên..." required>
+                <input type="text" name="fullName" class="form-control" th:value="${user.fullName}"
+                    placeholder="Nhập đầy đủ họ tên..." required>
             </div>
 
             <div class="form-grid">
                 <div class="form-group">
                     <label>Số điện thoại di động</label>
-                    <input type="tel" name="phone" class="form-control" th:value="${user.phone}" placeholder="Nhập số điện thoại để liên lạc..." required>
+                    <input type="tel" name="phone" class="form-control" th:value="${user.phone}"
+                        placeholder="Nhập số điện thoại để liên lạc..." required>
                 </div>
                 <div class="form-group">
                     <label>Địa chỉ Email</label>
-                    <input type="email" name="email" class="form-control" th:value="${user.email}" placeholder="Nhập email nhận xác nhận..." required>
+                    <input type="email" name="email" class="form-control" th:value="${user.email}"
+                        placeholder="Nhập email nhận xác nhận..." required>
                 </div>
             </div>
 
             <!-- PHÂN KHU 2: CHI TIẾT BÀN TIỆC -->
-            <h3 style="color: var(--primary); font-size: 18px; margin-top: 30px; margin-bottom: 15px; border-bottom: 1px solid rgba(255,255,255,0.08); padding-bottom: 8px;">
+            <h3
+                style="color: var(--primary); font-size: 18px; margin-top: 30px; margin-bottom: 15px; border-bottom: 1px solid rgba(255,255,255,0.08); padding-bottom: 8px;">
                 <i class="bi bi-calendar-event" style="margin-right: 8px;"></i>Thông Tin Đặt Bàn
             </h3>
 
@@ -149,11 +146,12 @@
                     </select>
                 </div>
             </div>
-            
+
             <div class="form-group" style="grid-column: span 2;">
                 <small style="color:#aaa; display:block; margin-bottom: 15px; line-height: 1.4;">
                     <i class="bi bi-shield-check" style="color:var(--primary); margin-right:5px;"></i>
-                    Hệ thống tự động chống trùng lịch đặt bàn. Trong trường hợp bàn bạn chọn vừa có khách khác giữ chỗ trước vài giây, hệ thống sẽ tự động nhắc nhở bạn đổi bàn.
+                    Hệ thống tự động chống trùng lịch đặt bàn. Trong trường hợp bàn bạn chọn vừa có khách khác giữ chỗ
+                    trước vài giây, hệ thống sẽ tự động nhắc nhở bạn đổi bàn.
                 </small>
             </div>
 
@@ -167,7 +165,8 @@
                 <i class="bi bi-check2-circle" style="margin-right: 8px;"></i>Xác Nhận Giữ Chỗ
             </button>
             <p style="text-align:center; color:#aaa; font-size:13px; margin-top:15px;">
-                <i class="bi bi-info-circle" style="margin-right: 5px;"></i>Các món ăn trong Giỏ hàng sẽ được tự động tích hợp làm món ăn đặt trước!
+                <i class="bi bi-info-circle" style="margin-right: 5px;"></i>Các món ăn trong Giỏ hàng sẽ được tự động
+                tích hợp làm món ăn đặt trước!
             </p>
         </form>
     </div>

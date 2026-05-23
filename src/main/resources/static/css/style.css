@@ -319,6 +319,15 @@ body {
     box-shadow: 0 2px 8px rgba(203, 168, 118, 0.3);
 }
 
+.nav-avatar-img {
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 1px solid var(--primary);
+    box-shadow: 0 2px 8px rgba(203, 168, 118, 0.3);
+}
+
 .nav-username {
     font-weight: 600;
     font-size: 14px;

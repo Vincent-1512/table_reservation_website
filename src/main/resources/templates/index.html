@@ -24,12 +24,13 @@
             <!-- Hiển thị khi đã đăng nhập -->
             <div sec:authorize="isAuthenticated()" class="nav-user-dropdown">
                 <button class="nav-avatar-btn" onclick="toggleNavDropdown(event)">
-                    <div class="nav-avatar-circle" th:text="${#strings.substring(#authentication.name, 0, 1).toUpperCase()}">U</div>
-                    <span class="d-none d-md-inline nav-username" th:text="${#authentication.name}">Username</span>
+                    <img th:if="${currentUser != null and currentUser.avatarUrl != null}" th:src="${currentUser.avatarUrl}" class="nav-avatar-img" alt="Avatar">
+                    <div th:unless="${currentUser != null and currentUser.avatarUrl != null}" class="nav-avatar-circle" th:text="${#strings.substring(#authentication.name, 0, 1).toUpperCase()}">U</div>
+                    <span class="d-none d-md-inline nav-username" th:text="${currentUser != null and currentUser.fullName != null and !currentUser.fullName.isEmpty() ? currentUser.fullName : #authentication.name}">Username</span>
                     <i class="bi bi-chevron-down nav-chevron"></i>
                 </button>
                 <div class="nav-dropdown-menu" id="navDropdownMenu">
-                    <a href="/my-reservations?tab=profile">
+                    <a href="/profile">
                         <i class="bi bi-person-circle"></i> Thông tin cá nhân
                     </a>
                     <a sec:authorize="hasAnyAuthority('ROLE_ADMIN', 'ROLE_STAFF')" href="/staff/orders">

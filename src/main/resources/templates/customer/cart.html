@@ -5,16 +5,7 @@
     <title>Giỏ hàng - Lumina</title>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" th:href="@{/css/style.css}">
-    <style>
-        .cart-container { max-width: 900px; margin: 120px auto 50px auto; padding: 40px; background: var(--glass-bg); border-radius: 15px; border: 1px solid var(--glass-border); }
-        .cart-item { display: flex; align-items: center; padding: 20px 0; border-bottom: 1px solid rgba(255,255,255,0.1); }
-        .cart-item img { width: 80px; height: 80px; border-radius: 8px; object-fit: cover; margin-right: 20px; }
-        .item-info { flex: 1; }
-        .item-name { font-size: 18px; font-weight: 600; color: #fff; }
-        .item-price { color: var(--primary); }
-        .qty-input { width: 60px; padding: 8px; border-radius: 5px; border: 1px solid rgba(255,255,255,0.2); background: transparent; color: #fff; text-align: center; }
-        .total-box { margin-top: 30px; text-align: right; font-size: 24px; font-weight: 600; }
-    </style>
+    <link rel="stylesheet" th:href="@{/css/customer/cart.css}">
 </head>
 <body>
     <nav class="navbar">
@@ -33,12 +24,13 @@
             <!-- Hiển thị khi đã đăng nhập -->
             <div sec:authorize="isAuthenticated()" class="nav-user-dropdown">
                 <button class="nav-avatar-btn" onclick="toggleNavDropdown(event)">
-                    <div class="nav-avatar-circle" th:text="${#strings.substring(#authentication.name, 0, 1).toUpperCase()}">U</div>
-                    <span class="d-none d-md-inline nav-username" th:text="${#authentication.name}">Username</span>
+                    <img th:if="${currentUser != null and currentUser.avatarUrl != null}" th:src="${currentUser.avatarUrl}" class="nav-avatar-img" alt="Avatar">
+                    <div th:unless="${currentUser != null and currentUser.avatarUrl != null}" class="nav-avatar-circle" th:text="${#strings.substring(#authentication.name, 0, 1).toUpperCase()}">U</div>
+                    <span class="d-none d-md-inline nav-username" th:text="${currentUser != null and currentUser.fullName != null and !currentUser.fullName.isEmpty() ? currentUser.fullName : #authentication.name}">Username</span>
                     <i class="bi bi-chevron-down nav-chevron"></i>
                 </button>
                 <div class="nav-dropdown-menu" id="navDropdownMenu">
-                    <a href="/my-reservations?tab=profile">
+                    <a href="/profile">
                         <i class="bi bi-person-circle"></i> Thông tin cá nhân
                     </a>
                     <a sec:authorize="hasAnyAuthority('ROLE_ADMIN', 'ROLE_STAFF')" href="/staff/orders">

@@ -26,7 +26,12 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import vn.edu.ptit.restaurant.entity.OrderItem;
-
+import org.springframework.web.multipart.MultipartFile;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
+import java.util.UUID;
 @Controller
 @RequiredArgsConstructor
 public class CustomerController {
@@ -57,64 +62,6 @@ public class CustomerController {
         model.addAttribute("tables", diningTableService.findAll());
         
         return "customer/menu";
-    }
-
-    @GetMapping("/api/cart")
-    @ResponseBody
-    public ResponseEntity<?> getCartApi() {
-        Map<String, Object> response = new HashMap<>();
-        response.put("items", cartService.getItems());
-        response.put("totalAmount", cartService.getAmount());
-        response.put("count", cartService.getCount());
-        return ResponseEntity.ok(response);
-    }
-
-    @PostMapping("/api/cart/add")
-    @ResponseBody
-    public ResponseEntity<?> addToCartApi(@RequestParam Long menuItemId, @RequestParam(defaultValue = "1") Integer quantity) {
-        MenuItem item = menuItemService.findById(menuItemId).orElseThrow();
-        CartItem cartItem = CartItem.builder()
-                .menuItemId(item.getId())
-                .name(item.getName())
-                .price(item.getPrice())
-                .imageUrl(item.getImageUrl())
-                .quantity(quantity)
-                .build();
-        cartService.add(cartItem);
-        
-        Map<String, Object> response = new HashMap<>();
-        response.put("success", true);
-        response.put("message", "Đã thêm " + item.getName() + " vào giỏ hàng");
-        response.put("items", cartService.getItems());
-        response.put("totalAmount", cartService.getAmount());
-        response.put("count", cartService.getCount());
-        return ResponseEntity.ok(response);
-    }
-
-    @PostMapping("/api/cart/update")
-    @ResponseBody
-    public ResponseEntity<?> updateCartApi(@RequestParam Long menuItemId, @RequestParam Integer quantity) {
-        cartService.update(menuItemId, quantity);
-        
-        Map<String, Object> response = new HashMap<>();
-        response.put("success", true);
-        response.put("items", cartService.getItems());
-        response.put("totalAmount", cartService.getAmount());
-        response.put("count", cartService.getCount());
-        return ResponseEntity.ok(response);
-    }
-
-    @PostMapping("/api/cart/remove")
-    @ResponseBody
-    public ResponseEntity<?> removeFromCartApi(@RequestParam Long menuItemId) {
-        cartService.remove(menuItemId);
-        
-        Map<String, Object> response = new HashMap<>();
-        response.put("success", true);
-        response.put("items", cartService.getItems());
-        response.put("totalAmount", cartService.getAmount());
-        response.put("count", cartService.getCount());
-        return ResponseEntity.ok(response);
     }
 
     @PostMapping("/cart/add")
@@ -259,23 +206,24 @@ public class CustomerController {
     }
 
     @PostMapping("/reservation/payment")
-    @ResponseBody
-    public ResponseEntity<?> processPayment(@RequestParam Long id, Principal principal) {
+    public String processPayment(@RequestParam Long id, Principal principal, RedirectAttributes redirectAttrs) {
         if (principal == null) {
-            return ResponseEntity.status(401).body(Map.of("success", false, "error", "Vui lòng đăng nhập"));
+            return "redirect:/login";
         }
         try {
             Reservation reservation = reservationService.findById(id);
             if (!reservation.getUser().getUsername().equals(principal.getName())) {
-                return ResponseEntity.status(403).body(Map.of("success", false, "error", "Không có quyền thanh toán"));
+                redirectAttrs.addFlashAttribute("error", "Không có quyền thanh toán.");
+                return "redirect:/my-reservations";
             }
 
             // Thanh toán thành công -> chuyển sang CONFIRMED
             reservationService.confirmReservation(id);
-
-            return ResponseEntity.ok(Map.of("success", true, "message", "Thanh toán đặt cọc thành công!"));
+            redirectAttrs.addFlashAttribute("success", "Thanh toán đặt cọc thành công!");
+            return "redirect:/reservation/success?id=" + id;
         } catch (Exception e) {
-            return ResponseEntity.ok(Map.of("success", false, "error", e.getMessage()));
+            redirectAttrs.addFlashAttribute("error", "Thanh toán thất bại: " + e.getMessage());
+            return "redirect:/reservation/payment?id=" + id;
         }
     }
 
@@ -325,15 +273,15 @@ public class CustomerController {
     }
 
     @PostMapping("/reservation/payment/food")
-    @ResponseBody
-    public ResponseEntity<?> processFoodPayment(@RequestParam Long id, @RequestParam(defaultValue = "full") String paymentMode, Principal principal) {
+    public String processFoodPayment(@RequestParam Long id, @RequestParam(defaultValue = "full") String paymentMode, Principal principal, RedirectAttributes redirectAttrs) {
         if (principal == null) {
-            return ResponseEntity.status(401).body(Map.of("success", false, "error", "Vui lòng đăng nhập"));
+            return "redirect:/login";
         }
         try {
             Reservation reservation = reservationService.findById(id);
             if (!reservation.getUser().getUsername().equals(principal.getName())) {
-                return ResponseEntity.status(403).body(Map.of("success", false, "error", "Không có quyền thanh toán"));
+                redirectAttrs.addFlashAttribute("error", "Không có quyền thanh toán.");
+                return "redirect:/my-reservations";
             }
 
             // Thanh toán thành công -> chuyển sang CONFIRMED
@@ -351,9 +299,11 @@ public class CustomerController {
                 orderRepository.save(order);
             }
 
-            return ResponseEntity.ok(Map.of("success", true, "message", "Thanh toán thành công!"));
+            redirectAttrs.addFlashAttribute("success", "Thanh toán thành công đơn đặt món ăn!");
+            return "redirect:/my-reservations";
         } catch (Exception e) {
-            return ResponseEntity.ok(Map.of("success", false, "error", e.getMessage()));
+            redirectAttrs.addFlashAttribute("error", "Thanh toán thất bại: " + e.getMessage());
+            return "redirect:/reservation/payment/food?id=" + id;
         }
     }
 
@@ -464,6 +414,67 @@ public class CustomerController {
             userService.save(user);
 
             redirectAttrs.addFlashAttribute("success", "Đã thay đổi mật khẩu thành công.");
+        } catch (Exception e) {
+            redirectAttrs.addFlashAttribute("error", "Có lỗi xảy ra: " + e.getMessage());
+        }
+        return "redirect:/profile";
+    }
+
+    @PostMapping("/profile/avatar/upload")
+    public String uploadAvatar(@RequestParam("avatar") MultipartFile file, Principal principal, RedirectAttributes redirectAttrs) {
+        if (principal == null) return "redirect:/login";
+        if (file.isEmpty()) {
+            redirectAttrs.addFlashAttribute("error", "File tải lên không được để trống.");
+            return "redirect:/profile";
+        }
+        
+        try {
+            User user = userService.findByUsername(principal.getName()).orElseThrow();
+            
+            // Validate file type
+            String contentType = file.getContentType();
+            if (contentType == null || !contentType.startsWith("image/")) {
+                redirectAttrs.addFlashAttribute("error", "Chỉ cho phép tải lên các file định dạng hình ảnh.");
+                return "redirect:/profile";
+            }
+            
+            // Create target directory if it doesn't exist
+            String uploadDir = "src/main/resources/static/uploads/avatars/";
+            Path uploadPath = Paths.get(uploadDir);
+            if (!Files.exists(uploadPath)) {
+                Files.createDirectories(uploadPath);
+            }
+            
+            // Generate unique filename
+            String fileExtension = "";
+            String originalFilename = file.getOriginalFilename();
+            if (originalFilename != null && originalFilename.contains(".")) {
+                fileExtension = originalFilename.substring(originalFilename.lastIndexOf("."));
+            }
+            String filename = UUID.randomUUID().toString() + fileExtension;
+            
+            // Save file
+            Path filePath = uploadPath.resolve(filename);
+            Files.copy(file.getInputStream(), filePath, StandardCopyOption.REPLACE_EXISTING);
+            
+            // Also copy to target classes dir so it's served immediately without restart!
+            try {
+                String targetDir = "target/classes/static/uploads/avatars/";
+                Path targetPath = Paths.get(targetDir);
+                if (!Files.exists(targetPath)) {
+                    Files.createDirectories(targetPath);
+                }
+                Files.copy(filePath, targetPath.resolve(filename), StandardCopyOption.REPLACE_EXISTING);
+            } catch (Exception e) {
+                // Ignore copying to target if failed
+            }
+            
+            // Update user entity
+            String relativeUrl = "/uploads/avatars/" + filename;
+            user.setAvatarUrl(relativeUrl);
+            userService.save(user);
+            
+            redirectAttrs.addFlashAttribute("success", "Đã tải lên ảnh đại diện thành công!");
         } catch (Exception e) {
             redirectAttrs.addFlashAttribute("error", "Có lỗi xảy ra: " + e.getMessage());
         }
