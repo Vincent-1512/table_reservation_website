@@ -59,9 +59,7 @@ public class OrderServiceImpl implements OrderService {
         User staff = userRepository.findByUsername(username)
                 .orElseThrow(() -> new RuntimeException("Không tìm thấy nhân viên"));
 
-        // Chuyển trạng thái bàn
-        table.setStatus(TableStatus.OCCUPIED);
-        diningTableRepository.save(table);
+        // Không chuyển trạng thái bàn ở đây - chỉ chuyển khi nhấn "Bắt đầu Phục vụ"
 
         Order order = Order.builder()
                 .table(table)
@@ -84,6 +82,13 @@ public class OrderServiceImpl implements OrderService {
                 .orElseThrow(() -> new RuntimeException("Không tìm thấy hóa đơn"));
         order.setStatus(newStatus);
         orderRepository.save(order);
+
+        // Khi chuyển sang SERVING, đánh dấu bàn là OCCUPIED (đang phục vụ)
+        if (newStatus == OrderStatus.SERVING && order.getTable() != null) {
+            DiningTable table = order.getTable();
+            table.setStatus(TableStatus.OCCUPIED);
+            diningTableRepository.save(table);
+        }
     }
 
     @Override

@@ -61,13 +61,13 @@
                         <h4 th:text="${table.tableName}">Bàn 01</h4>
                         <p th:text="${table.area.name} + ' · ' + ${table.capacity} + ' người'">Tầng 1 · 4 người</p>
 
-                        <!-- AVAILABLE: Mở bàn mới -->
+                        <!-- AVAILABLE: Xem bàn -->
                         <div th:if="${table.status.name() == 'AVAILABLE'}">
                             <span style="color:#51cf66; font-weight:600; display:block; margin-bottom:10px;">⬤ Trống</span>
                             <form th:action="@{/staff/orders/create}" method="post">
                                 <input type="hidden" name="tableId" th:value="${table.id}" />
                                 <button type="submit" class="btn btn-primary"
-                                        style="width:100%; padding:8px;">Mở Bàn</button>
+                                        style="width:100%; padding:8px;">Xem Bàn</button>
                             </form>
                         </div>
 

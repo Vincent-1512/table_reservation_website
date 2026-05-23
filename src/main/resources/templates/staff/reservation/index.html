@@ -27,19 +27,6 @@
                     <h3>📅 Quản lý Đặt bàn</h3>
                 </div>
 
-                <!-- Filter -->
-                <form th:action="@{/staff/reservations}" method="get" class="filter-bar">
-                    <div class="form-group">
-                        <label>Lọc theo trạng thái</label>
-                        <select name="status" class="form-control">
-                            <option value="">-- Tất cả --</option>
-                            <option th:each="s : ${statuses}" th:value="${s}" th:text="${s}"
-                                    th:selected="${selectedStatus != null and selectedStatus.name() == s.name()}">STATUS</option>
-                        </select>
-                    </div>
-                    <button type="submit" class="btn btn-primary" style="height:40px;">Lọc</button>
-                    <a th:href="@{/staff/reservations}" class="btn btn-secondary" style="height:40px; line-height:20px;">Xóa lọc</a>
-                </form>
 
                 <table class="table">
                     <thead>
