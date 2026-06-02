@@ -86,7 +86,8 @@ public class ReservationServiceImpl implements ReservationService {
 
     @Override
     public List<Reservation> findByUserId(Long userId) {
-        return reservationRepository.findByUserIdOrderByReservationTimeDesc(userId);
+        java.time.LocalDateTime startOfToday = java.time.LocalDate.now().atStartOfDay();
+        return reservationRepository.findByUserIdAndReservationTimeGreaterThanEqualOrderByReservationTimeDesc(userId, startOfToday);
     }
 
     @Override
@@ -164,57 +165,50 @@ public class ReservationServiceImpl implements ReservationService {
     }
 
     @Override
-    public List<Reservation> findAllSorted() {
-        return reservationRepository.findAllByOrderByReservationTimeDesc();
-    }
-
-    @Override
-    public Optional<Reservation> findById(Long id) {
-        return reservationRepository.findById(id);
-    }
-
-    @Override
-    public List<Reservation> findUpcoming(int limit) {
-        LocalDateTime now = LocalDateTime.now();
-        LocalDateTime endOfDay = now.toLocalDate().atTime(23, 59, 59);
-        List<ReservationStatus> activeStatuses = List.of(ReservationStatus.PENDING, ReservationStatus.CONFIRMED);
-        List<Reservation> upcoming = reservationRepository.findByReservationTimeBetweenAndStatusIn(now, endOfDay, activeStatuses);
-        return upcoming.stream().limit(limit).toList();
+    public Reservation findById(Long id) {
+        return reservationRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy đặt bàn với ID: " + id));
     }
 
     @Override
     @Transactional
-    public void checkinReservation(Long reservationId, String staffUsername) {
-        Reservation res = reservationRepository.findById(reservationId)
-                .orElseThrow(() -> new RuntimeException("Không tìm thấy đặt bàn"));
+    public Order createOrderForReservation(Long reservationId, String username) {
+        Reservation reservation = reservationRepository.findById(reservationId)
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy đặt bàn với ID: " + reservationId));
+        User user = userRepository.findByUsername(username)
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy người dùng với username: " + username));
 
-        if (res.getStatus() != ReservationStatus.CONFIRMED && res.getStatus() != ReservationStatus.PENDING) {
-            throw new RuntimeException("Chỉ có thể check-in đặt bàn ở trạng thái PENDING hoặc CONFIRMED");
-        }
+        // Hủy/xóa Order cũ đã liên kết với reservation này nếu có
+        orderRepository.findByReservationId(reservationId).ifPresent(existingOrder -> {
+            List<OrderItem> items = orderItemRepository.findByOrderId(existingOrder.getId());
+            orderItemRepository.deleteAll(items);
+            orderRepository.delete(existingOrder);
+        });
 
-        // Mark reservation as completed
-        res.setStatus(ReservationStatus.COMPLETED);
-        reservationRepository.save(res);
+        // Tạo Order mới từ giỏ hàng hiện tại
+        Order order = Order.builder()
+                .table(reservation.getTable())
+                .user(user)
+                .reservation(reservation)
+                .totalAmount(cartService.getAmount())
+                .status(OrderStatus.PENDING)
+                .build();
+        Order savedOrder = orderRepository.save(order);
 
-        // Set table to OCCUPIED
-        DiningTable table = res.getTable();
-        table.setStatus(TableStatus.OCCUPIED);
-        diningTableRepository.save(table);
-
-        // Check if there's already an order for this reservation (pre-ordered food)
-        Optional<Order> existingOrder = orderRepository.findByReservationId(reservationId);
-        if (existingOrder.isEmpty()) {
-            // Create new order
-            User staff = userRepository.findByUsername(staffUsername)
-                    .orElseThrow(() -> new RuntimeException("Không tìm thấy nhân viên"));
-            Order order = Order.builder()
-                    .table(table)
-                    .user(staff)
-                    .reservation(res)
-                    .totalAmount(java.math.BigDecimal.ZERO)
-                    .status(OrderStatus.PENDING)
+        for (CartItem item : cartService.getItems()) {
+            MenuItem menuItem = menuItemRepository.findById(item.getMenuItemId()).orElseThrow();
+            OrderItem orderItem = OrderItem.builder()
+                    .order(savedOrder)
+                    .menuItem(menuItem)
+                    .quantity(item.getQuantity())
+                    .priceAtTime(item.getPrice())
                     .build();
-            orderRepository.save(order);
+            orderItemRepository.save(orderItem);
         }
+
+        // Xóa giỏ hàng sau khi đã lưu đơn đặt món
+        cartService.clear();
+
+        return savedOrder;
     }
 }

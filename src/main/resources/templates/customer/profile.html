@@ -1,0 +1,508 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Hồ Sơ Cá Nhân - Lumina</title>
+    <meta name="_csrf" th:content="${_csrf.token}" />
+    <meta name="_csrf_header" th:content="${_csrf.headerName}" />
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+    <!-- Bootstrap Icons -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+
+    <link rel="stylesheet" th:href="@{/css/customer/profile.css}">
+</head>
+
+<body>
+    <nav class="navbar">
+        <a href="/" class="logo">Lumina</a>
+        <div class="nav-links">
+            <a href="/">Trang chủ</a>
+            <a href="/menu">Thực đơn</a>
+            <a href="/my-reservations">Thông tin đặt bàn</a>
+            <a href="/reservation" class="btn-nav-highlight">Đặt bàn ngay</a>
+
+            <!-- Hiển thị khi chưa đăng nhập -->
+            <div sec:authorize="!isAuthenticated()">
+                <a th:href="@{/login}" class="btn-nav-login">Đăng nhập</a>
+            </div>
+
+            <!-- Hiển thị khi đã đăng nhập -->
+            <div sec:authorize="isAuthenticated()" class="nav-user-dropdown active-profile">
+                <button class="nav-avatar-btn" onclick="toggleNavDropdown(event)">
+                    <!-- Hiển thị Avatar tròn nếu có, ngược lại dùng chữ cái đầu -->
+                    <img id="nav-dropdown-avatar-img" th:if="${currentUser != null and currentUser.avatarUrl != null}"
+                        th:src="${currentUser.avatarUrl}" class="nav-avatar-img" alt="Avatar">
+                    <div id="nav-dropdown-avatar-circle"
+                        th:unless="${currentUser != null and currentUser.avatarUrl != null}" class="nav-avatar-circle"
+                        th:text="${#strings.substring(#authentication.name, 0, 1).toUpperCase()}">U</div>
+                    <span class="d-none d-md-inline nav-username"
+                        th:text="${currentUser != null and currentUser.fullName != null and !currentUser.fullName.isEmpty() ? currentUser.fullName : #authentication.name}">Username</span>
+                    <i class="bi bi-chevron-down nav-chevron"></i>
+                </button>
+                <div class="nav-dropdown-menu" id="navDropdownMenu">
+                    <a href="/profile" style="color: var(--primary); font-weight: bold;">
+                        <i class="bi bi-person-circle"></i> Thông tin cá nhân
+                    </a>
+                    <a sec:authorize="hasAnyAuthority('ROLE_ADMIN', 'ROLE_STAFF')" href="/staff/orders">
+                        <i class="bi bi-person-badge"></i> Phục vụ (Staff)
+                    </a>
+                    <a sec:authorize="hasAuthority('ROLE_ADMIN')" href="/admin/menu">
+                        <i class="bi bi-shield-lock"></i> Quản trị (Admin)
+                    </a>
+                    <form th:action="@{/logout}" method="post" id="navLogoutForm" style="margin: 0;">
+                        <button type="submit" class="nav-logout-btn"
+                            onclick="return confirm('Quý khách có chắc chắn muốn đăng xuất?')">
+                            <i class="bi bi-box-arrow-right"></i> Đăng xuất
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </nav>
+    <script>
+        function toggleNavDropdown(event) {
+            event.stopPropagation();
+            const dropdown = document.querySelector('.nav-user-dropdown');
+            const menu = document.getElementById('navDropdownMenu');
+            dropdown.classList.toggle('active');
+            menu.classList.toggle('show');
+        }
+        document.addEventListener('click', function (event) {
+            const dropdown = document.querySelector('.nav-user-dropdown');
+            const menu = document.getElementById('navDropdownMenu');
+            if (dropdown && menu && !dropdown.contains(event.target)) {
+                dropdown.classList.remove('active');
+                menu.classList.remove('show');
+            }
+        });
+    </script>
+
+    <!-- Form upload avatar chuẩn MVC -->
+    <form id="avatarForm" th:action="@{/profile/avatar/upload}" method="post" enctype="multipart/form-data"
+        style="display:none;">
+        <input type="file" id="avatarUploadInput" name="avatar" accept="image/*"
+            onchange="document.getElementById('avatarForm').submit();">
+    </form>
+
+    <div class="dashboard-container">
+        <!-- Profile Dashboard Grid -->
+        <div class="profile-dashboard" th:if="${user != null}">
+
+            <!-- SIDEBAR PROFILE CARD (LEFT) -->
+            <div class="premium-sidebar">
+                <!-- Avatar Container -->
+                <div class="premium-avatar-wrapper" onclick="triggerAvatarUpload()">
+                    <!-- Avatar Image (if uploaded) -->
+                    <img id="sidebar-avatar-img" th:if="${user.avatarUrl != null}" th:src="${user.avatarUrl}"
+                        class="large-avatar-image" alt="Avatar">
+
+                    <!-- Initials Fallback (if no avatar) -->
+                    <div id="sidebar-avatar-circle" th:unless="${user.avatarUrl != null}" class="large-avatar-fallback"
+                        th:text="${user.fullName != null and !user.fullName.isEmpty() ? #strings.substring(user.fullName, 0, 1).toUpperCase() : #strings.substring(user.username, 0, 1).toUpperCase()}">
+                        U
+                    </div>
+
+                    <!-- Hover overlay -->
+                    <div class="avatar-hover-overlay">
+                        <i class="bi bi-camera-fill"></i>
+                        <span>Tải ảnh mới</span>
+                    </div>
+
+                    <!-- Uploading Spinner -->
+                    <div id="avatarSpinner" class="avatar-spinner">
+                        <div class="spinner-border"></div>
+                    </div>
+                </div>
+
+                <h3 id="sidebar-fullname" class="profile-display-name"
+                    th:text="${user.fullName != null and !user.fullName.isEmpty() ? user.fullName : user.username}">Họ
+                    và Tên</h3>
+                <span class="profile-role-pill">Khách hàng</span>
+
+                <div class="premium-meta-box">
+                    <div class="premium-meta-item">
+                        <i class="bi bi-clock-history"></i>
+                        <span>Thành viên từ</span>
+                        <span class="premium-meta-val"
+                            th:text="${user.createdAt != null ? #temporals.format(user.createdAt, 'dd/MM/yyyy') : 'Chưa rõ'}">24/12/2026</span>
+                    </div>
+                    <div class="premium-meta-item">
+                        <i class="bi bi-person-fill-lock"></i>
+                        <span>Tài khoản</span>
+                        <span class="premium-meta-val" th:text="${user.username}">username</span>
+                    </div>
+                </div>
+
+                <!-- Action Buttons -->
+                <button class="sidebar-action-btn btn-avatar-edit" onclick="triggerAvatarUpload()">
+                    <i class="bi bi-image"></i> Đổi ảnh đại diện
+                </button>
+
+                <form th:action="@{/logout}" method="post" id="logoutForm" style="display: none;"></form>
+                <button class="sidebar-action-btn btn-logout-premium" onclick="confirmLogout()">
+                    <i class="bi bi-box-arrow-right"></i> Đăng xuất tài khoản
+                </button>
+            </div>
+
+            <!-- MAIN CONTENT AREA (RIGHT) -->
+            <div class="premium-content-area">
+
+                <!-- CARD 1: THÔNG TIN CÁ NHÂN -->
+                <div class="premium-card">
+                    <h3 class="premium-card-header">
+                        <i class="bi bi-person-lines-fill"></i> Thông Tin Cá Nhân
+                    </h3>
+
+                    <form th:action="@{/profile/update}" method="post" class="form-grid-premium" id="profileUpdateForm"
+                        onsubmit="return validateProfileForm(event)">
+                        <div class="premium-input-group">
+                            <label for="fullName">Họ và tên</label>
+                            <div class="premium-field-wrapper">
+                                <input type="text" id="fullName" name="fullName" class="input-field"
+                                    th:value="${user.fullName}" required placeholder="Nguyễn Văn A">
+                                <i class="bi bi-person-fill field-icon"></i>
+                            </div>
+                        </div>
+
+                        <div class="premium-input-group">
+                            <label for="phone">Số điện thoại Việt Nam</label>
+                            <div class="premium-field-wrapper">
+                                <input type="tel" id="phone" name="phone" class="input-field" th:value="${user.phone}"
+                                    pattern="[0-9]{9,11}" placeholder="0987654321" required>
+                                <i class="bi bi-telephone-fill field-icon"></i>
+                            </div>
+                        </div>
+
+                        <div class="premium-input-group form-full-row">
+                            <label for="email">Địa chỉ Email</label>
+                            <div class="premium-field-wrapper">
+                                <input type="email" id="email" name="email" class="input-field" th:value="${user.email}"
+                                    placeholder="yourname@gmail.com" required>
+                                <i class="bi bi-envelope-fill field-icon"></i>
+                            </div>
+                        </div>
+
+                        <div class="form-full-row" style="margin-top: 10px;">
+                            <button type="submit" class="btn-save-premium">
+                                <i class="bi bi-check2-circle"></i> Lưu thông tin hồ sơ
+                            </button>
+                        </div>
+                    </form>
+                </div>
+
+                <!-- CARD 2: BẢO MẬT TÀI KHOẢN (ĐỔI MẬT KHẨU) -->
+                <div class="premium-card">
+                    <h3 class="premium-card-header">
+                        <i class="bi bi-shield-lock-fill"></i> Bảo Mật Tài Khoản
+                    </h3>
+
+                    <form th:action="@{/profile/change-password}" method="post" id="changePasswordForm"
+                        class="form-grid-premium" onsubmit="return validatePasswordForm(event)">
+                        <!-- Mật khẩu cũ -->
+                        <div class="premium-input-group form-full-row">
+                            <label for="currentPassword">Mật khẩu hiện tại</label>
+                            <div class="premium-field-wrapper">
+                                <input type="password" id="currentPassword" name="currentPassword"
+                                    class="input-field password-input" required placeholder="••••••••">
+                                <i class="bi bi-key-fill field-icon"></i>
+                                <i class="bi bi-eye-slash-fill password-toggle-icon"
+                                    onclick="togglePasswordVisibility('currentPassword', this)"></i>
+                            </div>
+                        </div>
+
+                        <!-- Mật khẩu mới -->
+                        <div class="premium-input-group">
+                            <label for="newPassword">Mật khẩu mới</label>
+                            <div class="premium-field-wrapper">
+                                <input type="password" id="newPassword" name="newPassword"
+                                    class="input-field password-input" placeholder="Tối thiểu 6 ký tự" required
+                                    oninput="evaluatePasswordInput(this.value)">
+                                <i class="bi bi-lock-fill field-icon"></i>
+                                <i class="bi bi-eye-slash-fill password-toggle-icon"
+                                    onclick="togglePasswordVisibility('newPassword', this)"></i>
+                            </div>
+                            <!-- Password Strength Indicator -->
+                            <div class="pw-strength-container" id="strengthMeterContainer" style="display: none;">
+                                <div class="pw-strength-bar-bg">
+                                    <div id="strengthBar" class="pw-strength-bar-progress"></div>
+                                </div>
+                                <span id="strengthText" class="pw-strength-txt">Mật khẩu yếu</span>
+                            </div>
+                        </div>
+
+                        <!-- Xác nhận mật khẩu mới -->
+                        <div class="premium-input-group">
+                            <label for="confirmPassword">Xác nhận mật khẩu mới</label>
+                            <div class="premium-field-wrapper">
+                                <input type="password" id="confirmPassword" name="confirmPassword"
+                                    class="input-field password-input" placeholder="Nhập lại mật khẩu mới" required>
+                                <i class="bi bi-lock-fill field-icon"></i>
+                                <i class="bi bi-eye-slash-fill password-toggle-icon"
+                                    onclick="togglePasswordVisibility('confirmPassword', this)"></i>
+                            </div>
+                            <div id="pw-match-error"
+                                style="color: var(--error-color); font-size: 12px; margin-top: 5px; display: none;">
+                                <i class="bi bi-exclamation-circle"></i> Mật khẩu xác nhận không khớp!
+                            </div>
+                        </div>
+
+                        <div class="form-full-row" style="margin-top: 10px;">
+                            <button type="submit" class="btn-save-premium">
+                                <i class="bi bi-shield-check"></i> Cập nhật mật khẩu an toàn
+                            </button>
+                        </div>
+                    </form>
+                </div>
+
+                <!-- CARD 3: CÀI ĐẶT TÀI KHOẢN -->
+                <div class="premium-card">
+                    <h3 class="premium-card-header">
+                        <i class="bi bi-sliders"></i> Cài Đặt Tài Khoản
+                    </h3>
+
+                    <div class="settings-list">
+                        <!-- Setting 1: Email notifications -->
+                        <div class="settings-item">
+                            <div class="settings-info">
+                                <span class="settings-title">Nhận thông báo qua Email</span>
+                                <span class="settings-desc">Tự động nhận hóa đơn và thông tin đặt bàn thành công qua hòm
+                                    thư điện tử.</span>
+                            </div>
+                            <label class="premium-switch">
+                                <input type="checkbox" checked
+                                    onchange="showSuccessToast('Thông báo', 'Cập nhật cài đặt nhận email thành công!')">
+                                <span class="switch-slider"></span>
+                            </label>
+                        </div>
+
+                        <!-- Setting 2: Double Security -->
+                        <div class="settings-item">
+                            <div class="settings-info">
+                                <span class="settings-title">Xác thực 2 lớp (2FA)</span>
+                                <span class="settings-desc">Bảo vệ tài khoản tối ưu bằng mã xác minh gửi về số điện
+                                    thoại khi đăng nhập.</span>
+                            </div>
+                            <label class="premium-switch">
+                                <input type="checkbox" onchange="toggle2FASwitch(this)">
+                                <span class="switch-slider"></span>
+                            </label>
+                        </div>
+
+                        <!-- Setting 3: Dark Mode Preference -->
+                        <div class="settings-item">
+                            <div class="settings-info">
+                                <span class="settings-title">Giao diện tối (Lumina Gold Mode)</span>
+                                <span class="settings-desc">Chuyển đổi giao diện sang chế độ tối đặc trưng vàng kim ấm
+                                    áp.</span>
+                            </div>
+                            <label class="premium-switch">
+                                <input type="checkbox" checked disabled>
+                                <span class="switch-slider"></span>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+
+        </div>
+    </div>
+
+    <!-- TOAST CONTAINER -->
+    <div class="toast-container" id="toastContainer"></div>
+
+    <!-- THYMELEAF FLASH TOAST HANDLERS -->
+    <div th:if="${success}" style="display:none;" id="flashSuccess" th:text="${success}"></div>
+    <div th:if="${error}" style="display:none;" id="flashError" th:text="${error}"></div>
+
+    <!-- Script Controller -->
+    <script>
+        // Custom Toast Notification System
+        function showToast(title, msg, type = 'success') {
+            const container = document.getElementById('toastContainer');
+
+            const toast = document.createElement('div');
+            toast.className = `lumina-toast ${type === 'success' ? 'toast-success' : 'toast-danger'}`;
+
+            const iconClass = type === 'success' ? 'bi-check-circle-fill' : 'bi-exclamation-triangle-fill';
+
+            toast.innerHTML = `
+                <i class="bi ${iconClass} toast-icon"></i>
+                <div class="toast-content">
+                    <span class="toast-title">${title}</span>
+                    <span class="toast-msg">${msg}</span>
+                </div>
+                <button class="toast-close-btn" onclick="this.parentElement.remove()">&times;</button>
+            `;
+
+            container.appendChild(toast);
+
+            // Trigger animation reflow
+            toast.offsetHeight;
+            toast.classList.add('show');
+
+            // Auto remove toast after 4.5 seconds
+            setTimeout(() => {
+                toast.classList.remove('show');
+                setTimeout(() => {
+                    toast.remove();
+                }, 500);
+            }, 4500);
+        }
+
+        function showSuccessToast(title, msg) {
+            showToast(title, msg, 'success');
+        }
+
+        function showErrorToast(title, msg) {
+            showToast(title, msg, 'danger');
+        }
+
+        // On DOMContentLoaded check flash attributes to fire toasts!
+        window.addEventListener('DOMContentLoaded', () => {
+            const successEl = document.getElementById('flashSuccess');
+            const errorEl = document.getElementById('flashError');
+
+            if (successEl) {
+                showSuccessToast('Thành công', successEl.textContent);
+            }
+            if (errorEl) {
+                showErrorToast('Thất bại', errorEl.textContent);
+            }
+
+            // Real-time matching check for Confirm Password
+            const newPasswordInput = document.getElementById('newPassword');
+            const confirmPasswordInput = document.getElementById('confirmPassword');
+            const matchErrorDiv = document.getElementById('pw-match-error');
+
+            if (newPasswordInput && confirmPasswordInput) {
+                const checkMatch = () => {
+                    if (confirmPasswordInput.value && newPasswordInput.value !== confirmPasswordInput.value) {
+                        matchErrorDiv.style.display = 'block';
+                    } else {
+                        matchErrorDiv.style.display = 'none';
+                    }
+                };
+                newPasswordInput.addEventListener('input', checkMatch);
+                confirmPasswordInput.addEventListener('input', checkMatch);
+            }
+        });
+
+        // Trigger hidden file upload input
+        function triggerAvatarUpload() {
+            document.getElementById('avatarUploadInput').click();
+        }
+
+        // Toggle Password Show/Hide Visibility
+        function togglePasswordVisibility(fieldId, icon) {
+            const input = document.getElementById(fieldId);
+            if (input.type === 'password') {
+                input.type = 'text';
+                icon.classList.remove('bi-eye-slash-fill');
+                icon.classList.add('bi-eye-fill');
+            } else {
+                input.type = 'password';
+                icon.classList.remove('bi-eye-fill');
+                icon.classList.add('bi-eye-slash-fill');
+            }
+        }
+
+        // Real-time Password Strength Evaluator
+        function evaluatePasswordInput(password) {
+            const container = document.getElementById('strengthMeterContainer');
+            const bar = document.getElementById('strengthBar');
+            const text = document.getElementById('strengthText');
+
+            if (!password) {
+                container.style.display = 'none';
+                return;
+            }
+
+            container.style.display = 'block';
+
+            let score = 0;
+            if (password.length >= 6) score++;
+            if (password.length >= 10) score++;
+            if (/[A-Z]/.test(password)) score++;
+            if (/[0-9]/.test(password)) score++;
+            if (/[^A-Za-z0-9]/.test(password)) score++;
+
+            if (score <= 2) {
+                bar.style.width = '33%';
+                bar.style.backgroundColor = 'var(--error-color)';
+                text.textContent = 'Mật khẩu yếu ⚠️';
+                text.style.color = 'var(--error-color)';
+            } else if (score <= 4) {
+                bar.style.width = '66%';
+                bar.style.backgroundColor = 'var(--warning-color)';
+                text.textContent = 'Mật khẩu trung bình 👍';
+                text.style.color = 'var(--warning-color)';
+            } else {
+                bar.style.width = '100%';
+                bar.style.backgroundColor = 'var(--success-color)';
+                text.textContent = 'Mật khẩu mạnh mẽ! 🔥';
+                text.style.color = 'var(--success-color)';
+            }
+        }
+
+        // Toggle 2FA switch simulator
+        function toggle2FASwitch(checkbox) {
+            if (checkbox.checked) {
+                showSuccessToast('Bảo mật nâng cao', 'Đã kích hoạt xác thực hai yếu tố thành công!');
+            } else {
+                showToast('Bảo mật', 'Đã hủy kích hoạt xác thực hai yếu tố.', 'danger');
+            }
+        }
+
+        // Confirm logout
+        function confirmLogout() {
+            if (confirm("Quý khách có chắc chắn muốn đăng xuất khỏi tài khoản Lumina của mình?")) {
+                document.getElementById('logoutForm').submit();
+            }
+        }
+
+        // Profile Form Validation
+        function validateProfileForm(e) {
+            const fullName = document.getElementById('fullName').value.trim();
+            const phone = document.getElementById('phone').value.trim();
+            const email = document.getElementById('email').value.trim();
+
+            if (!fullName) {
+                showErrorToast('Lỗi nhập liệu', 'Họ tên không được để trống!');
+                e.preventDefault();
+                return false;
+            }
+
+            if (!/^[0-9]{9,11}$/.test(phone)) {
+                showErrorToast('Lỗi nhập liệu', 'Số điện thoại Việt Nam phải gồm 9-11 chữ số!');
+                e.preventDefault();
+                return false;
+            }
+
+            return true;
+        }
+
+        // Password Form validation
+        function validatePasswordForm(e) {
+            const newPassword = document.getElementById('newPassword').value;
+            const confirmPassword = document.getElementById('confirmPassword').value;
+
+            if (newPassword.length < 6) {
+                showErrorToast('Lỗi mật khẩu', 'Mật khẩu mới phải có tối thiểu 6 ký tự!');
+                e.preventDefault();
+                return false;
+            }
+
+            if (newPassword !== confirmPassword) {
+                showErrorToast('Lỗi mật khẩu', 'Mật khẩu xác nhận không trùng khớp!');
+                e.preventDefault();
+                return false;
+            }
+            return true;
+        }
+    </script>
+</body>
+
+</html>

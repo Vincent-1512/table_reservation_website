@@ -36,9 +36,9 @@ public class SecurityConfig {
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http
             .authorizeHttpRequests(authorize -> authorize
-                .requestMatchers("/", "/login", "/register", "/css/**", "/js/**", "/images/**").permitAll()
+                .requestMatchers("/", "/index1", "/login", "/register", "/css/**", "/js/**", "/images/**", "/img/**", "/vendor/**").permitAll()
                 // Public customer-facing routes - accessible without login
-                .requestMatchers("/menu", "/cart/**", "/reservation", "/my-reservations").authenticated()
+                .requestMatchers("/menu", "/cart/**", "/reservation", "/my-reservations", "/profile").authenticated()
                 .requestMatchers("/admin/**").hasRole("ADMIN")
                 .requestMatchers("/staff/**").hasAnyRole("ADMIN", "STAFF")
                 .anyRequest().authenticated()

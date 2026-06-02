@@ -14,6 +14,11 @@ public class HomeController {
         if (principal != null) {
             model.addAttribute("username", principal.getName());
         }
-        return "index";
+        return "home";
+    }
+
+    @GetMapping("/index1")
+    public String index1() {
+        return "index1";
     }
 }
