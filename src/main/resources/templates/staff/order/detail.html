@@ -107,7 +107,6 @@
                                     <th>Đơn giá</th>
                                     <th>Thành tiền</th>
                                     <th>Ghi chú</th>
-                                    <th th:if="${order.status.name() != 'COMPLETED' and order.status.name() != 'CANCELLED'}">Hủy</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -117,14 +116,9 @@
                                     <td th:text="${#numbers.formatDecimal(item.priceAtTime, 0, 'COMMA', 0, 'POINT')}">50,000</td>
                                     <td th:text="${#numbers.formatDecimal(item.priceAtTime * item.quantity, 0, 'COMMA', 0, 'POINT')}">100,000</td>
                                     <td th:text="${item.note}"></td>
-                                    <td th:if="${order.status.name() != 'COMPLETED' and order.status.name() != 'CANCELLED'}">
-                                        <a th:href="@{'/staff/orders/' + ${order.id} + '/delete-item/' + ${item.id}}" 
-                                           class="btn btn-danger" style="padding:4px 8px; font-size:12px;"
-                                           onclick="return confirm('Hủy món này?');">Xóa</a>
-                                    </td>
                                 </tr>
                                 <tr th:if="${#lists.isEmpty(orderItems)}">
-                                    <td colspan="6" style="text-align:center;">Chưa gọi món nào.</td>
+                                    <td colspan="5" style="text-align:center;">Chưa gọi món nào.</td>
                                 </tr>
                             </tbody>
                         </table>
@@ -149,17 +143,20 @@
                             </div>
                         </div>
 
-                        <!-- Nút chuyển PENDING → SERVING và Hủy Bàn -->
-                        <div th:if="${order.status.name() == 'PENDING'}" style="margin-bottom:12px; display: flex; gap: 10px;">
-                            <form th:action="@{'/staff/orders/' + ${order.id} + '/update-status'}" method="post" style="flex: 1;">
+                        <!-- Nút Bắt đầu Phục vụ (khi PENDING) -->
+                        <div th:if="${order.status.name() == 'PENDING'}" style="margin-bottom:12px;">
+                            <form th:action="@{'/staff/orders/' + ${order.id} + '/update-status'}" method="post">
                                 <input type="hidden" name="status" value="SERVING" />
                                 <button type="submit" class="btn btn-secondary"
                                         style="width:100%; padding:10px; font-size:15px;">
                                     🍽 Bắt đầu Phục vụ
                                 </button>
                             </form>
-                            
-                            <form th:action="@{'/staff/orders/' + ${order.id} + '/cancel'}" method="post" style="flex: 1;">
+                        </div>
+                        
+                        <!-- Nút Hủy Bàn (khi SERVING và CHƯA có món nào) -->
+                        <div th:if="${order.status.name() == 'SERVING' and #lists.isEmpty(orderItems)}" style="margin-bottom:12px;">
+                            <form th:action="@{'/staff/orders/' + ${order.id} + '/cancel'}" method="post">
                                 <button type="submit" class="btn btn-danger"
                                         style="width:100%; padding:10px; font-size:15px;"
                                         onclick="return confirm('Bạn có chắc muốn hủy bàn này? Trạng thái bàn sẽ chuyển về Trống.');">
