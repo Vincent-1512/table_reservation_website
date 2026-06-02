@@ -17,4 +17,14 @@ public interface ReservationRepository extends JpaRepository<Reservation, Long> 
     List<Reservation> findByStatusOrderByReservationTimeAsc(ReservationStatus status);
     List<Reservation> findAllByOrderByReservationTimeDesc();
     List<Reservation> findByReservationTimeBetweenAndStatusIn(LocalDateTime start, LocalDateTime end, List<ReservationStatus> statuses);
+    List<Reservation> findByReservationTimeGreaterThanEqualAndStatusInOrderByReservationTimeAsc(LocalDateTime start, List<ReservationStatus> statuses);
+
+    @org.springframework.data.jpa.repository.Query("SELECT r FROM Reservation r WHERE " +
+           "(:status IS NULL OR r.status = :status) AND " +
+           "(:date IS NULL OR DATE(r.reservationTime) = :date) AND " +
+           "(:phone IS NULL OR r.user.phone LIKE CONCAT('%', :phone, '%')) " +
+           "ORDER BY r.reservationTime DESC")
+    List<Reservation> searchReservations(@org.springframework.data.repository.query.Param("status") ReservationStatus status,
+                                         @org.springframework.data.repository.query.Param("date") java.time.LocalDate date,
+                                         @org.springframework.data.repository.query.Param("phone") String phone);
 }

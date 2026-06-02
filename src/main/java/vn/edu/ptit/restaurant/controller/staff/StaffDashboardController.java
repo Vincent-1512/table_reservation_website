@@ -39,7 +39,7 @@ public class StaffDashboardController {
         List<Reservation> reservations = reservationService.findAll();
         long todayReservationsCount = reservations.stream()
                 .filter(r -> r.getReservationTime() != null && r.getReservationTime().toLocalDate().isEqual(today))
-                .filter(r -> r.getStatus() == ReservationStatus.PENDING || r.getStatus() == ReservationStatus.CONFIRMED)
+                .filter(r -> r.getStatus() == ReservationStatus.PENDING || r.getStatus() == ReservationStatus.CONFIRMED || r.getStatus() == ReservationStatus.COMPLETED)
                 .count();
 
         // Count pending reservations (need attention)
