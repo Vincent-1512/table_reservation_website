@@ -85,6 +85,20 @@
         </div>
 
         <!-- Lưới món ăn phẳng (Unified Grid) -->
+        <div th:if="${success}" class="menu-alert success-alert" th:text="${success}">Da them mon vao gio hang</div>
+        <div th:if="${error}" class="menu-alert error-alert" th:text="${error}">Co loi xay ra</div>
+
+        <div class="booking-order-bar" th:if="${flow == 'booking' and reservationId != null}">
+            <div>
+                <div class="booking-order-title">Dang chon mon cho dat ban <span th:text="'#RES-' + ${reservationId}">#RES-1</span></div>
+                <div class="booking-order-subtitle">Gio hang hien co <strong th:text="${cartCount}">0</strong> mon. Hoan tat de chuyen sang thanh toan mon an.</div>
+            </div>
+            <form th:action="@{/reservation/order}" method="post">
+                <input type="hidden" name="reservationId" th:value="${reservationId}">
+                <button type="submit" class="btn-finish-order">Hoan tat chon mon</button>
+            </form>
+        </div>
+
         <div class="menu-grid" id="menu-grid">
             <div class="menu-item" th:each="item : ${menuItems}" th:if="${item.isAvailable}"
                  th:data-id="${item.id}"
@@ -92,6 +106,8 @@
                  th:data-category-name="${item.category.name}"
                  th:data-name="${item.name}"
                  th:data-desc="${item.description}"
+                 th:data-story="${item.story}"
+                 th:data-ingredients="${item.ingredients}"
                  th:data-price="${#numbers.formatDecimal(item.price, 0, 'COMMA', 0, 'POINT')} + ' VNĐ'"
                  th:data-img="${item.imageUrl != null and !item.imageUrl.isEmpty() ? item.imageUrl : '/images/restaurant_bg.png'}">
                  
@@ -114,7 +130,16 @@
 
                     <p class="menu-desc" th:text="${item.description}">Mô tả ngắn món ăn.</p>
                     <div class="menu-price" th:text="${#numbers.formatDecimal(item.price, 0, 'COMMA', 0, 'POINT')} + ' VNĐ'">100,000 VNĐ</div>
-                    <button type="button" class="btn-detail" onclick="openDetailModalFromButton(this)">Chi tiết</button>
+                    <div class="menu-card-actions">
+                        <button type="button" class="btn-detail" onclick="openDetailModalFromButton(this)">Chi tiết</button>
+                        <form th:action="@{/cart/add}" method="post" class="add-cart-form">
+                            <input type="hidden" name="menuItemId" th:value="${item.id}">
+                            <input type="hidden" name="quantity" value="1">
+                            <input type="hidden" name="flow" th:value="${flow}">
+                            <input type="hidden" name="reservationId" th:value="${reservationId}">
+                            <button type="submit" class="btn-add-cart">Them gio</button>
+                        </form>
+                    </div>
                 </div>
             </div>
             
@@ -145,6 +170,14 @@
                     </div>
 
                     <p id="modal-desc">Mô tả món ăn.</p>
+                    <div id="modal-story-wrap" class="modal-story-wrap" style="display:none;">
+                        <h4><span class="modal-section-icon">✨</span>Về món ăn</h4>
+                        <p id="modal-story"></p>
+                    </div>
+                    <div id="modal-ingredients-wrap" class="modal-ingredients-wrap" style="display:none;">
+                        <h4>Nguyên liệu</h4>
+                        <div id="modal-ingredients" class="ingredient-chips"></div>
+                    </div>
                     <div class="modal-price-row">
                         <span class="modal-price-label">Giá bán:</span>
                         <div id="modal-price">100,000 VNĐ</div>
@@ -270,6 +303,8 @@
         function fillAndShowModal(itemCard) {
             const name = itemCard.dataset.name;
             const desc = itemCard.dataset.desc;
+            const story = itemCard.dataset.story;
+            const ingredients = itemCard.dataset.ingredients;
             const price = itemCard.dataset.price;
             const img = itemCard.dataset.img;
             const category = itemCard.dataset.categoryName;
@@ -278,6 +313,33 @@
             
             document.getElementById('modal-title').textContent = name;
             document.getElementById('modal-desc').textContent = desc || "Không có mô tả chi tiết cho món ăn này.";
+            const storyWrap = document.getElementById('modal-story-wrap');
+            const storyText = document.getElementById('modal-story');
+            if (story && story.trim()) {
+                storyText.textContent = story;
+                storyWrap.style.display = 'block';
+            } else {
+                storyText.textContent = '';
+                storyWrap.style.display = 'none';
+            }
+            const ingredientsWrap = document.getElementById('modal-ingredients-wrap');
+            const ingredientsList = document.getElementById('modal-ingredients');
+            if (ingredients && ingredients.trim()) {
+                ingredientsList.innerHTML = '';
+                ingredients.split(',')
+                    .map(ingredient => ingredient.trim())
+                    .filter(Boolean)
+                    .forEach(ingredient => {
+                        const chip = document.createElement('span');
+                        chip.className = 'ingredient-chip';
+                        chip.textContent = ingredient;
+                        ingredientsList.appendChild(chip);
+                    });
+                ingredientsWrap.style.display = 'block';
+            } else {
+                ingredientsList.innerHTML = '';
+                ingredientsWrap.style.display = 'none';
+            }
             document.getElementById('modal-price').textContent = price;
             document.getElementById('modal-img').src = img;
             document.getElementById('modal-category').textContent = category;

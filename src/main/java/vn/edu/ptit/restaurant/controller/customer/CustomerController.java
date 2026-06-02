@@ -12,13 +12,16 @@ import vn.edu.ptit.restaurant.entity.MenuItem;
 import vn.edu.ptit.restaurant.entity.User;
 import vn.edu.ptit.restaurant.entity.Reservation;
 import vn.edu.ptit.restaurant.entity.Order;
+import vn.edu.ptit.restaurant.entity.DiningTable;
 import vn.edu.ptit.restaurant.entity.enums.OrderStatus;
+import vn.edu.ptit.restaurant.entity.enums.TableStatus;
 import vn.edu.ptit.restaurant.repository.OrderRepository;
 import vn.edu.ptit.restaurant.repository.OrderItemRepository;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import vn.edu.ptit.restaurant.service.*;
 
 import java.security.Principal;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.HashMap;
@@ -48,10 +51,15 @@ public class CustomerController {
 
     // ================== MENU & CART ================== //
     @GetMapping("/menu")
-    public String viewMenu(Model model, Principal principal) {
+    public String viewMenu(@RequestParam(required = false) String flow,
+                           @RequestParam(required = false) Long reservationId,
+                           Model model,
+                           Principal principal) {
         model.addAttribute("categories", categoryService.findAll());
         model.addAttribute("menuItems", menuItemService.findAll());
         model.addAttribute("cartCount", cartService.getCount());
+        model.addAttribute("flow", flow);
+        model.addAttribute("reservationId", reservationId);
         
         if (principal != null) {
             User user = userService.findByUsername(principal.getName()).orElse(null);
@@ -65,7 +73,11 @@ public class CustomerController {
     }
 
     @PostMapping("/cart/add")
-    public String addToCart(@RequestParam Long menuItemId, @RequestParam(defaultValue = "1") Integer quantity, RedirectAttributes redirectAttrs) {
+    public String addToCart(@RequestParam Long menuItemId,
+                            @RequestParam(defaultValue = "1") Integer quantity,
+                            @RequestParam(required = false) String flow,
+                            @RequestParam(required = false) Long reservationId,
+                            RedirectAttributes redirectAttrs) {
         MenuItem item = menuItemService.findById(menuItemId).orElseThrow();
         CartItem cartItem = CartItem.builder()
                 .menuItemId(item.getId())
@@ -76,6 +88,9 @@ public class CustomerController {
                 .build();
         cartService.add(cartItem);
         redirectAttrs.addFlashAttribute("success", "Đã thêm " + item.getName() + " vào giỏ hàng");
+        if ("booking".equals(flow) && reservationId != null) {
+            return "redirect:/menu?flow=booking&reservationId=" + reservationId;
+        }
         return "redirect:/menu";
     }
 
@@ -129,6 +144,24 @@ public class CustomerController {
             User user = userService.findByUsername(principal.getName()).orElseThrow();
 
             // Đồng bộ thông tin cá nhân của người dùng nếu có thay đổi
+            LocalDate bookingDate = LocalDate.parse(reservationDate);
+            LocalDate today = LocalDate.now();
+            if (bookingDate.isBefore(today)) {
+                redirectAttrs.addFlashAttribute("error", "Ngày đặt bàn không hợp lệ.");
+                return cartService.getItems().isEmpty() ? "redirect:/reservation" : "redirect:/menu";
+            }
+            if (bookingDate.isAfter(today.plusDays(14))) {
+                redirectAttrs.addFlashAttribute("error", "Nhà hàng hiện chỉ nhận đặt bàn trước tối đa 14 ngày.");
+                return cartService.getItems().isEmpty() ? "redirect:/reservation" : "redirect:/menu";
+            }
+
+            DiningTable selectedTable = diningTableService.findById(tableId)
+                    .orElseThrow(() -> new RuntimeException("Không tìm thấy bàn đã chọn."));
+            if (selectedTable.getStatus() != TableStatus.AVAILABLE || selectedTable.getCapacity() < numberOfGuests) {
+                redirectAttrs.addFlashAttribute("error", "Hiện không còn bàn phù hợp cho số lượng khách và khung giờ bạn đã chọn.");
+                return cartService.getItems().isEmpty() ? "redirect:/reservation" : "redirect:/menu";
+            }
+
             boolean profileChanged = false;
             if (!fullName.equals(user.getFullName())) {
                 user.setFullName(fullName);
@@ -233,6 +266,10 @@ public class CustomerController {
             return "redirect:/login";
         }
         try {
+            if (cartService.getItems().isEmpty()) {
+                redirectAttrs.addFlashAttribute("error", "Vui lòng chọn ít nhất một món ăn trước khi hoàn tất.");
+                return "redirect:/menu?flow=booking&reservationId=" + reservationId;
+            }
             reservationService.createOrderForReservation(reservationId, principal.getName());
             return "redirect:/reservation/payment/food?id=" + reservationId;
         } catch (Exception e) {

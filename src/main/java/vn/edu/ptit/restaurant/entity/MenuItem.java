@@ -28,6 +28,12 @@ public class MenuItem {
     @Column(columnDefinition = "TEXT")
     private String description;
 
+    @Column(columnDefinition = "TEXT")
+    private String story;
+
+    @Column(columnDefinition = "TEXT")
+    private String ingredients;
+
     @Column(nullable = false, precision = 10, scale = 2)
     private BigDecimal price;
 
