@@ -20,4 +20,5 @@ public interface UserService {
     Page<User> findPaginated(int page, int size);
     void updateProfile(String username, String fullName, String phone, String email);
     void changePassword(String username, String oldPassword, String newPassword);
+    User save(User user);
 }

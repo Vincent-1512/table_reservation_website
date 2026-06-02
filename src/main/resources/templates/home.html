@@ -1,0 +1,882 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+
+<head>
+  <meta charset="utf-8">
+  <meta content="width=device-width, initial-scale=1.0" name="viewport">
+  <title>Lumina - Nhà Hàng Sang Trọng & Đẳng Cấp</title>
+  <meta name="description" content="">
+  <meta name="keywords" content="">
+
+  <!-- Favicons -->
+  <link th:href="@{/img/favicon.png}" rel="icon">
+  <link th:href="@{/img/apple-touch-icon.png}" rel="apple-touch-icon">
+
+  <!-- Fonts -->
+  <link href="https://fonts.googleapis.com" rel="preconnect">
+  <link href="https://fonts.gstatic.com" rel="preconnect" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+  <!-- Vendor CSS Files -->
+  <link th:href="@{/vendor/bootstrap/css/bootstrap.min.css}" rel="stylesheet">
+  <link th:href="@{/vendor/bootstrap-icons/bootstrap-icons.css}" rel="stylesheet">
+  <link th:href="@{/vendor/aos/aos.css}" rel="stylesheet">
+  <link th:href="@{/vendor/glightbox/css/glightbox.min.css}" rel="stylesheet">
+  <link th:href="@{/vendor/swiper/swiper-bundle.min.css}" rel="stylesheet">
+
+  <!-- Main CSS File -->
+  <link th:href="@{/css/main.css}" rel="stylesheet">
+
+  <!-- =======================================================
+  * Template Name: Restaurantly
+  * Template URL: https://bootstrapmade.com/restaurantly-restaurant-template/
+  * Updated: Aug 07 2024 with Bootstrap v5.3.3
+  * Author: BootstrapMade.com
+  * License: https://bootstrapmade.com/license/
+  ======================================================== -->
+</head>
+
+<body class="index-page">
+
+  <header id="header" class="header fixed-top">
+
+    <div class="topbar d-flex align-items-center">
+      <div class="container d-flex justify-content-center justify-content-md-between">
+        <div class="contact-info d-flex align-items-center">
+          <i class="bi bi-envelope d-flex align-items-center"><a href="mailto:contact@lumina.vn">contact@lumina.vn</a></i>
+          <i class="bi bi-phone d-flex align-items-center ms-4"><span>+84 24 3385 6789</span></i>
+        </div>
+        <div class="languages d-none d-md-flex align-items-center">
+          <ul>
+            <li>Tiếng Việt</li>
+          </ul>
+        </div>
+      </div>
+    </div><!-- End Top Bar -->
+
+    <div class="branding d-flex align-items-cente">
+
+      <div class="container position-relative d-flex align-items-center justify-content-between">
+        <a href="/" class="logo d-flex align-items-center me-auto me-xl-0">
+          <!-- Uncomment the line below if you also wish to use an image logo -->
+          <!-- <img th:src="@{/img/logo.png}" alt=""> -->
+          <h1 class="sitename">Lumina</h1>
+        </a>
+
+        <nav id="navmenu" class="navmenu" aria-label="Primary navigation">
+          <ul>
+            <li><a href="/" class="active">Trang chủ</a></li>
+            <li><a href="/menu">Thực đơn</a></li>
+            <li><a href="/my-reservations">Thông tin đặt bàn</a></li>
+            
+            <!-- Hiển thị các chức năng Admin/Staff nếu có quyền -->
+            <li sec:authorize="hasAnyAuthority('ROLE_ADMIN', 'ROLE_STAFF')">
+              <a href="/staff/orders">Phục vụ (Staff)</a>
+            </li>
+            <li sec:authorize="hasAuthority('ROLE_ADMIN')">
+              <a href="/admin/menu">Quản trị (Admin)</a>
+            </li>
+
+            <!-- Hiển thị khi chưa đăng nhập -->
+            <li sec:authorize="!isAuthenticated()">
+              <a th:href="@{/login}">Đăng nhập</a>
+            </li>
+
+            <!-- Hiển thị thông tin chào mừng và Đăng xuất khi đã đăng nhập -->
+            <li sec:authorize="isAuthenticated()" class="dropdown">
+              <a href="#" class="d-flex align-items-center gap-2">
+                <img th:if="${currentUser != null and currentUser.avatarUrl != null}" th:src="${currentUser.avatarUrl}" class="nav-avatar-img" alt="Avatar">
+                <div th:unless="${currentUser != null and currentUser.avatarUrl != null}" class="nav-avatar-circle" th:text="${#strings.substring(#authentication.name, 0, 1).toUpperCase()}">U</div>
+                <span style="color: var(--accent-color); font-weight: 600;" th:text="${currentUser != null and currentUser.fullName != null and !currentUser.fullName.isEmpty() ? currentUser.fullName : #authentication.name}">[[${#authentication.name}]]</span>
+                <i class="bi bi-chevron-down toggle-dropdown"></i>
+              </a>
+              <ul>
+                <li>
+                  <a href="/profile">
+                    <i class="bi bi-person-circle"></i> Thông tin cá nhân
+                  </a>
+                </li>
+                <li>
+                  <form th:action="@{/logout}" method="post" id="logoutForm" style="padding: 0; margin: 0;">
+                    <button type="submit" onclick="return confirm('Quý khách có chắc chắn muốn đăng xuất?')" style="background: none; border: none; color: #fff; width: 100%; text-align: left; padding: 10px 20px; font-family: inherit; font-size: inherit; cursor: pointer; transition: 0.3s; display: flex; align-items: center; gap: 8px;" onmouseover="this.style.color='var(--accent-color)'" onmouseout="this.style.color='#fff'">
+                      <i class="bi bi-box-arrow-right"></i> Đăng xuất
+                    </button>
+                  </form>
+                </li>
+              </ul>
+            </li>
+          </ul>
+          <i class="mobile-nav-toggle d-xl-none bi bi-list"></i>
+        </nav>
+
+        <a class="btn-book-a-table d-none d-xl-block" href="/reservation">Đặt bàn ngay</a>
+
+      </div>
+
+    </div>
+
+  </header>
+
+  <main class="main">
+
+    <!-- Hero Section -->
+    <section id="hero" class="hero section dark-background">
+
+      <img th:src="@{/img/hero-bg.jpg}" alt="" data-aos="fade-in">
+
+      <div class="container">
+        <div class="row">
+          <div class="col-lg-8 d-flex flex-column align-items-center align-items-lg-start">
+            <h2 data-aos="fade-up" data-aos-delay="100">Chào mừng đến với <span>Lumina</span></h2>
+            <p data-aos="fade-up" data-aos-delay="200">Không gian ẩm thực sang trọng, đẳng cấp & tinh tế!</p>
+            <div class="d-flex mt-4" data-aos="fade-up" data-aos-delay="300">
+              <a href="/menu" class="cta-btn">Thực Đơn</a>
+              <a href="/reservation" class="cta-btn">Đặt Bàn Ngay</a>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+    </section><!-- /Hero Section -->
+
+    <!-- About Section -->
+    <section id="about" class="about section">
+
+      <div class="container" data-aos="fade-up" data-aos-delay="100">
+
+        <div class="row gy-4">
+          <div class="col-lg-6 order-1 order-lg-2">
+            <img th:src="@{/img/about.jpg}" class="img-fluid about-img" alt="">
+          </div>
+          <div class="col-lg-6 order-2 order-lg-1 content">
+            <h3>Hành Trình Kiến Tạo Hương Vị Thượng Hạng</h3>
+            <p class="fst-italic">
+              Nhà hàng Lumina tự hào mang đến cho quý khách những trải nghiệm ẩm thực tinh tế, kết hợp hài hòa giữa hương vị truyền thống và phong cách hiện đại.
+            </p>
+            <ul>
+              <li><i class="bi bi-check2-all"></i> <span>Sử dụng nguồn nguyên liệu tươi ngon nhất được tuyển chọn kỹ lưỡng mỗi ngày.</span></li>
+              <li><i class="bi bi-check2-all"></i> <span>Đội ngũ đầu bếp đạt chuẩn quốc tế với tay nghề cao và đam mê sáng tạo ẩm thực.</span></li>
+              <li><i class="bi bi-check2-all"></i> <span>Không gian sang trọng, dịch vụ chuyên nghiệp, tận tâm đem lại cảm giác thoải mái nhất cho quý khách.</span></li>
+            </ul>
+            <p>
+              Chúng tôi luôn nỗ lực không ngừng để mỗi bữa ăn tại Lumina không chỉ là thưởng thức món ăn, mà còn là một hành trình trải nghiệm đầy cảm xúc và đáng nhớ cho quý khách cùng người thân.
+            </p>
+          </div>
+        </div>
+
+      </div>
+
+    </section><!-- /About Section -->
+
+    <!-- Why Us Section -->
+    <section id="why-us" class="why-us section">
+
+      <!-- Section Title -->
+      <div class="container section-title" data-aos="fade-up">
+        <h2>TẠI SAO CHỌN LUMINA</h2>
+        <p>Điểm Khác Biệt Của Chúng Tôi</p>
+      </div><!-- End Section Title -->
+
+      <div class="container">
+
+        <div class="row gy-4">
+
+          <div class="col-lg-4" data-aos="fade-up" data-aos-delay="100">
+            <div class="card-item">
+              <span>01</span>
+              <h4><a href="" class="stretched-link">Không Gian Sang Trọng</a></h4>
+              <p>Không gian thiết kế theo phong cách hoàng gia tinh tế, lãng mạn, mang đến cảm giác thượng lưu hoàn hảo.</p>
+            </div>
+          </div><!-- Card Item -->
+
+          <div class="col-lg-4" data-aos="fade-up" data-aos-delay="200">
+            <div class="card-item">
+              <span>02</span>
+              <h4><a href="" class="stretched-link">Ẩm Thực Đỉnh Cao</a></h4>
+              <p>Thực đơn phong phú từ các món Á - Âu, được chế biến kỳ công và trình bày nghệ thuật bởi bếp trưởng đại tài.</p>
+            </div>
+          </div><!-- Card Item -->
+
+          <div class="col-lg-4" data-aos="fade-up" data-aos-delay="300">
+            <div class="card-item">
+              <span>03</span>
+              <h4><a href="" class="stretched-link">Phục Vụ Tận Tâm</a></h4>
+              <p>Dịch vụ chăm sóc khách hàng chuyên nghiệp, luôn lắng nghe và đáp ứng mọi yêu cầu nhỏ nhất của quý khách.</p>
+            </div>
+          </div><!-- Card Item -->
+
+        </div>
+
+      </div>
+
+    </section><!-- /Why Us Section -->
+
+    
+
+    <!-- Specials Section -->
+    <section id="specials" class="specials section">
+
+      <!-- Section Title -->
+      <div class="container section-title" data-aos="fade-up">
+        <h2>MÓN ĐẶC SẮC</h2>
+        <p>Gợi Ý Món Ngon Từ Bếp Trưởng</p>
+      </div><!-- End Section Title -->
+
+      <div class="container" data-aos="fade-up" data-aos-delay="100">
+
+        <div class="row">
+          <div class="col-lg-3">
+            <ul class="nav nav-tabs flex-column">
+              <li class="nav-item">
+                <a class="nav-link active show" data-bs-toggle="tab" href="#specials-tab-1">Tôm Hùm Đút Lò</a>
+              </li>
+              <li class="nav-item">
+                <a class="nav-link" data-bs-toggle="tab" href="#specials-tab-2">Bò Wagyu Thượng Hạng</a>
+              </li>
+              <li class="nav-item">
+                <a class="nav-link" data-bs-toggle="tab" href="#specials-tab-3">Cá Hồi Áp Chảo</a>
+              </li>
+              <li class="nav-item">
+                <a class="nav-link" data-bs-toggle="tab" href="#specials-tab-4">Gan Ngỗng Pháp</a>
+              </li>
+              <li class="nav-item">
+                <a class="nav-link" data-bs-toggle="tab" href="#specials-tab-5">Tráng Miệng Lumina</a>
+              </li>
+            </ul>
+          </div>
+          <div class="col-lg-9 mt-4 mt-lg-0">
+            <div class="tab-content">
+              <div class="tab-pane active show" id="specials-tab-1">
+                <div class="row">
+                  <div class="col-lg-8 details order-2 order-lg-1">
+                    <h3>Tôm Hùm Sauce Phô Mai Mozzarella Đút Lò</h3>
+                    <p class="fst-italic">Hương vị ngọt béo ngậy từ phô mai Mozzarella tan chảy hòa quyện cùng vị ngọt tự nhiên của thịt tôm hùm tươi sống.</p>
+                    <p>Tôm hùm được đánh bắt trong ngày và đút lò dưới nhiệt độ chuẩn xác, giữ trọn vẹn vị dai ngọt nguyên bản của từng thớ thịt tôm ngọt lịm, kết hợp tinh tế cùng sốt phô mai đặc chế riêng của nhà hàng Lumina.</p>
+                  </div>
+                  <div class="col-lg-4 text-center order-1 order-lg-2">
+                    <img th:src="@{/img/specials-1.png}" alt="" class="img-fluid">
+                  </div>
+                </div>
+              </div>
+              <div class="tab-pane" id="specials-tab-2">
+                <div class="row">
+                  <div class="col-lg-8 details order-2 order-lg-1">
+                    <h3>Thịt Bò Wagyu Áp Chảo Sốt Vang Đỏ Nồng Nàn</h3>
+                    <p class="fst-italic">Những thớ thịt bò Wagyu vân mỡ đều như cẩm thạch cực kỳ thượng hạng, mềm mại như tan ngay trên đầu lưỡi.</p>
+                    <p>Sự kết hợp hoàn hảo giữa những lát thịt bò Wagyu A5 cao cấp nhập khẩu trực tiếp từ Nhật Bản và nước sốt vang đỏ nồng nàn thơm lừng đậm đà, tạo nên một bản giao hưởng hương vị ẩm thực đầy quyến rũ tuyệt mỹ.</p>
+                  </div>
+                  <div class="col-lg-4 text-center order-1 order-lg-2">
+                    <img th:src="@{/img/specials-2.png}" alt="" class="img-fluid">
+                  </div>
+                </div>
+              </div>
+              <div class="tab-pane" id="specials-tab-3">
+                <div class="row">
+                  <div class="col-lg-8 details order-2 order-lg-1">
+                    <h3>Cá Hồi Nauy Áp Chảo Sốt Chanh Dây Chua Thanh</h3>
+                    <p class="fst-italic">Vị chua ngọt thanh mát của sốt chanh leo tươi giúp cân bằng hoàn hảo độ béo ngậy tự nhiên đặc trưng của cá hồi Nauy.</p>
+                    <p>Cá hồi được áp chảo vừa chín tới khéo léo để giữ lại lớp da giòn rụm bên ngoài và phần thịt ẩm mềm ngọt nước bên trong, ăn kèm với măng tây tươi giòn và nước sốt chanh leo chua ngọt quyến rũ đánh thức vị giác.</p>
+                  </div>
+                  <div class="col-lg-4 text-center order-1 order-lg-2">
+                    <img th:src="@{/img/specials-3.png}" alt="" class="img-fluid">
+                  </div>
+                </div>
+              </div>
+              <div class="tab-pane" id="specials-tab-4">
+                <div class="row">
+                  <div class="col-lg-8 details order-2 order-lg-1">
+                    <h3>Gan Ngỗng Pháp Áp Chảo Sốt Táo Caramel</h3>
+                    <p class="fst-italic">Đỉnh cao tinh hoa của nền ẩm thực Pháp cổ điển với lớp gan béo ngậy đặc trưng và hương vị ngọt dịu thơm mát từ táo.</p>
+                    <p>Món gan ngỗng Pháp hảo hạng áp chảo khéo léo để đạt độ mềm mượt hoàn mỹ như lụa, kết hợp tinh tế với những lát táo ninh nhừ và sốt táo caramel thanh ngọt nhẹ nhàng giúp đánh thức trọn vẹn mọi giác quan.</p>
+                  </div>
+                  <div class="col-lg-4 text-center order-1 order-lg-2">
+                    <img th:src="@{/img/specials-4.png}" alt="" class="img-fluid">
+                  </div>
+                </div>
+              </div>
+              <div class="tab-pane" id="specials-tab-5">
+                <div class="row">
+                  <div class="col-lg-8 details order-2 order-lg-1">
+                    <h3>Bánh Soufflé Sô-cô-la Bỉ Nóng Chảy Ngọt Ngào</h3>
+                    <p class="fst-italic">Món tráng miệng lãng mạn kết hợp tinh tế giữa cốt bánh xốp mềm mịn và nhân sô-cô-la Bỉ cao cấp.</p>
+                    <p>Chiếc bánh soufflé nở xốp tuyệt hảo được phục vụ ngay khi còn nóng hổi. Khi cắt nhẹ lớp vỏ bánh, dòng sô-cô-la Bỉ nguyên chất đậm đà ấm áp tuôn chảy nhẹ nhàng, ăn kèm tuyệt vời với kem vani mát lạnh sảng khoái.</p>
+                  </div>
+                  <div class="col-lg-4 text-center order-1 order-lg-2">
+                    <img th:src="@{/img/specials-5.png}" alt="" class="img-fluid">
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+    </section><!-- /Specials Section -->
+
+    <!-- Events Section -->
+    <section id="events" class="events section">
+
+      <img class="slider-bg" th:src="@{/img/events-bg.jpg}" alt="" data-aos="fade-in">
+
+      <div class="container">
+
+        <div class="swiper init-swiper" data-aos="fade-up" data-aos-delay="100">
+          <script type="application/json" class="swiper-config">
+            {
+              "loop": true,
+              "speed": 600,
+              "autoplay": {
+                "delay": 5000
+              },
+              "slidesPerView": "auto",
+              "pagination": {
+                "el": ".swiper-pagination",
+                "type": "bullets",
+                "clickable": true
+              }
+            }
+          </script>
+          <div class="swiper-wrapper">
+
+            <div class="swiper-slide">
+              <div class="row gy-4 event-item">
+                <div class="col-lg-6">
+                  <img th:src="@{/img/events-slider/events-slider-1.jpg}" class="img-fluid" alt="">
+                </div>
+                <div class="col-lg-6 pt-4 pt-lg-0 content">
+                  <h3>Tiệc Sinh Nhật</h3>
+                  <div class="price">
+                    <p><span>Từ 4,999,000 đ</span></p>
+                  </div>
+                  <p class="fst-italic">
+                    Lumina là địa điểm lý tưởng để lưu giữ những khoảnh khắc ấm áp bên người thân và bạn bè trong ngày sinh nhật đặc biệt của bạn.
+                  </p>
+                  <ul>
+                    <li><i class="bi bi-check2-circle"></i> <span>Thiết kế và trang trí không gian tiệc theo chủ đề yêu cầu.</span></li>
+                    <li><i class="bi bi-check2-circle"></i> <span>Thực đơn tiệc tự chọn phong phú và cực kỳ sang trọng.</span></li>
+                    <li><i class="bi bi-check2-circle"></i> <span>Hỗ trợ miễn phí hệ thống âm thanh, ánh sáng hiện đại.</span></li>
+                  </ul>
+                  <p>
+                    Đội ngũ nhân viên chuyên nghiệp của chúng tôi sẽ đồng hành cùng quý khách từ khâu lên ý tưởng đến thực thi, đảm bảo mang đến một bữa tiệc sinh nhật trọn vẹn và đáng nhớ nhất.
+                  </p>
+                </div>
+              </div>
+            </div><!-- End Slider item -->
+
+            <div class="swiper-slide">
+              <div class="row gy-4 event-item">
+                <div class="col-lg-6">
+                  <img th:src="@{/img/events-slider/events-slider-2.jpg}" class="img-fluid" alt="">
+                </div>
+                <div class="col-lg-6 pt-4 pt-lg-0 content">
+                  <h3>Tiệc Riêng Tư & Họp Mặt</h3>
+                  <div class="price">
+                    <p><span>Từ 9,999,000 đ</span></p>
+                  </div>
+                  <p class="fst-italic">
+                    Không gian các phòng VIP riêng tư sang trọng đáp ứng hoàn hảo cho các cuộc gặp gỡ đối tác thương mại hoặc họp mặt gia đình ấm cúng.
+                  </p>
+                  <ul>
+                    <li><i class="bi bi-check2-circle"></i> <span>Phòng VIP sang trọng, cách âm tốt đảm bảo riêng tư tuyệt đối.</span></li>
+                    <li><i class="bi bi-check2-circle"></i> <span>Phục vụ món ăn theo chuẩn phong cách Fine Dining cao cấp độc đáo.</span></li>
+                    <li><i class="bi bi-check2-circle"></i> <span>Có nhân viên quản lý tiệc riêng phục vụ chu đáo suốt buổi tiệc.</span></li>
+                  </ul>
+                  <p>
+                    Lumina cung cấp không gian đẳng cấp tuyệt đối riêng tư, nơi quý khách có thể thoải mái đàm phán kinh doanh hay chia sẻ những câu chuyện thân mật trong bữa tối ấm cúng cùng người thân.
+                  </p>
+                </div>
+              </div>
+            </div><!-- End Slider item -->
+
+            <div class="swiper-slide">
+              <div class="row gy-4 event-item">
+                <div class="col-lg-6">
+                  <img th:src="@{/img/events-slider/events-slider-3.jpg}" class="img-fluid" alt="">
+                </div>
+                <div class="col-lg-6 pt-4 pt-lg-0 content">
+                  <h3>Tiệc Theo Yêu Cầu</h3>
+                  <div class="price">
+                    <p><span>Liên hệ báo giá</span></p>
+                  </div>
+                  <p class="fst-italic">
+                    Thiết kế sự kiện cá nhân hóa, tiệc cưới sang trọng, hoặc buổi cầu hôn lãng mạn mang đậm dấu ấn phong cách cá nhân của bạn.
+                  </p>
+                  <ul>
+                    <li><i class="bi bi-check2-circle"></i> <span>Không gian sảnh tiệc rộng lớn linh hoạt thích hợp cho nhiều concept.</span></li>
+                    <li><i class="bi bi-check2-circle"></i> <span>Lên thực đơn cá nhân hóa phù hợp với ngân sách của quý khách.</span></li>
+                    <li><i class="bi bi-check2-circle"></i> <span>Thiết kế hoa tươi và concept độc bản theo sở thích riêng biệt.</span></li>
+                  </ul>
+                  <p>
+                    Chúng tôi hiểu rằng mỗi sự kiện đều là một câu chuyện riêng biệt vô giá. Lumina cam kết hiện thực hóa mọi ý tưởng của bạn thành một đêm tiệc hoàn mỹ, ấn tượng sâu sắc đến từng chi tiết nhỏ.
+                  </p>
+                </div>
+              </div>
+            </div><!-- End Slider item -->
+
+          </div>
+          <div class="swiper-pagination"></div>
+        </div>
+
+      </div>
+
+    </section><!-- /Events Section -->
+
+    
+
+    <!-- Testimonials Section -->
+    <section id="testimonials" class="testimonials section">
+
+      <!-- Section Title -->
+      <div class="container section-title" data-aos="fade-up">
+        <h2>ĐÁNH GIÁ</h2>
+        <p>Khách Hàng Nói Gì Về Lumina</p>
+      </div><!-- End Section Title -->
+
+      <div class="container" data-aos="fade-up" data-aos-delay="100">
+
+        <div class="swiper init-swiper" data-speed="600" data-delay="5000" data-breakpoints="{ &quot;320&quot;: { &quot;slidesPerView&quot;: 1, &quot;spaceBetween&quot;: 40 }, &quot;1200&quot;: { &quot;slidesPerView&quot;: 3, &quot;spaceBetween&quot;: 40 } }">
+          <script type="application/json" class="swiper-config">
+            {
+              "loop": true,
+              "speed": 600,
+              "autoplay": {
+                "delay": 5000
+              },
+              "slidesPerView": "auto",
+              "pagination": {
+                "el": ".swiper-pagination",
+                "type": "bullets",
+                "clickable": true
+              },
+              "breakpoints": {
+                "320": {
+                  "slidesPerView": 1,
+                  "spaceBetween": 40
+                },
+                "1200": {
+                  "slidesPerView": 3,
+                  "spaceBetween": 20
+                }
+              }
+            }
+          </script>
+          <div class="swiper-wrapper">
+
+            <div class="swiper-slide">
+              <div class="testimonial-item">
+            <p>
+              <i class=" bi bi-quote quote-icon-left"></i>
+                <span>Tôi cực kỳ ấn tượng với không gian mờ kính hoàng gia sang trọng tại Lumina. Món tôm hùm đút lò phô mai ngon tuyệt vời, phục vụ vô cùng chu đáo và tinh tế!</span>
+                <i class="bi bi-quote quote-icon-right"></i>
+                </p>
+                <img th:src="@{/img/testimonials/testimonials-1.jpg}" class="testimonial-img" alt="">
+                <h3>Nguyễn Hoàng Long</h3>
+                <h4>Doanh nhân</h4>
+              </div>
+            </div><!-- End testimonial item -->
+
+            <div class="swiper-slide">
+              <div class="testimonial-item">
+                <p>
+                  <i class="bi bi-quote quote-icon-left"></i>
+                  <span>Một địa điểm tuyệt vời cho những buổi tối lãng mạn. Thịt bò Wagyu áp chảo cực kỳ mềm mọng nước, sốt vang đỏ nồng nàn thơm phức. Nhất định tôi sẽ quay lại!</span>
+                  <i class="bi bi-quote quote-icon-right"></i>
+                </p>
+                <img th:src="@{/img/testimonials/testimonials-2.jpg}" class="testimonial-img" alt="">
+                <h3>Trần Thu Trang</h3>
+                <h4>Nhà thiết kế thời trang</h4>
+              </div>
+            </div><!-- End testimonial item -->
+
+            <div class="swiper-slide">
+              <div class="testimonial-item">
+                <p>
+                  <i class="bi bi-quote quote-icon-left"></i>
+                  <span>Nhà hàng có phong cách phục vụ đẳng cấp chuyên nghiệp châu Âu. Phòng VIP sang trọng, riêng tư rất thích hợp để tiếp đón các đối tác kinh doanh quan trọng.</span>
+                  <i class="bi bi-quote quote-icon-right"></i>
+                </p>
+                <img th:src="@{/img/testimonials/testimonials-3.jpg}" class="testimonial-img" alt="">
+                <h3>Phạm Minh Đức</h3>
+                <h4>Chủ chuỗi cửa hàng</h4>
+              </div>
+            </div><!-- End testimonial item -->
+
+            <div class="swiper-slide">
+              <div class="testimonial-item">
+                <p>
+                  <i class="bi bi-quote quote-icon-left"></i>
+                  <span>Hệ thống đặt bàn trực tuyến cực kỳ nhanh chóng và tiện lợi. Món tráng miệng Soufflé sô-cô-la Bỉ nóng chảy là đỉnh cao nghệ thuật thực sự, không thể bỏ qua.</span>
+                  <i class="bi bi-quote quote-icon-right"></i>
+                </p>
+                <img th:src="@{/img/testimonials/testimonials-4.jpg}" class="testimonial-img" alt="">
+                <h3>Lê Anh Tuấn</h3>
+                <h4>Lập trình viên tự do</h4>
+              </div>
+            </div><!-- End testimonial item -->
+
+            <div class="swiper-slide">
+              <div class="testimonial-item">
+                <p>
+                  <i class="bi bi-quote quote-icon-left"></i>
+                  <span>Dịch vụ tiệc sinh nhật trọn gói ở đây làm gia đình tôi vô cùng hài lòng. Tất cả các khách mời đều khen đồ ăn ngon miệng và không gian trang hoàng sang quý.</span>
+                  <i class="bi bi-quote quote-icon-right"></i>
+                </p>
+                <img th:src="@{/img/testimonials/testimonials-5.jpg}" class="testimonial-img" alt="">
+                <h3>Hoàng Lan Anh</h3>
+                <h4>Quản lý dự án</h4>
+              </div>
+            </div><!-- End testimonial item -->
+
+          </div>
+          <div class="swiper-pagination"></div>
+        </div>
+
+      </div>
+
+    </section><!-- /Testimonials Section -->
+
+    <!-- Gallery Section -->
+    <section id="gallery" class="gallery section">
+
+      <!-- Section Title -->
+      <div class="container section-title" data-aos="fade-up">
+        <h2>THƯ VIỆN ẢNH</h2>
+        <p>Hình Ảnh Không Gian & Món Ăn Tại Lumina</p>
+      </div><!-- End Section Title -->
+
+      <div class="container-fluid" data-aos="fade-up" data-aos-delay="100">
+
+        <div class="row g-0">
+
+          <div class="col-lg-3 col-md-4">
+            <div class="gallery-item">
+              <a th:href="@{/img/gallery/gallery-1.jpg}" class="glightbox" data-gallery="images-gallery">
+                <img th:src="@{/img/gallery/gallery-1.jpg}" alt="" class="img-fluid">
+              </a>
+            </div>
+          </div><!-- End Gallery Item -->
+
+          <div class="col-lg-3 col-md-4">
+            <div class="gallery-item">
+              <a th:href="@{/img/gallery/gallery-2.jpg}" class="glightbox" data-gallery="images-gallery">
+                <img th:src="@{/img/gallery/gallery-2.jpg}" alt="" class="img-fluid">
+              </a>
+            </div>
+          </div><!-- End Gallery Item -->
+
+          <div class="col-lg-3 col-md-4">
+            <div class="gallery-item">
+              <a th:href="@{/img/gallery/gallery-3.jpg}" class="glightbox" data-gallery="images-gallery">
+                <img th:src="@{/img/gallery/gallery-3.jpg}" alt="" class="img-fluid">
+              </a>
+            </div>
+          </div><!-- End Gallery Item -->
+
+          <div class="col-lg-3 col-md-4">
+            <div class="gallery-item">
+              <a th:href="@{/img/gallery/gallery-4.jpg}" class="glightbox" data-gallery="images-gallery">
+                <img th:src="@{/img/gallery/gallery-4.jpg}" alt="" class="img-fluid">
+              </a>
+            </div>
+          </div><!-- End Gallery Item -->
+
+          <div class="col-lg-3 col-md-4">
+            <div class="gallery-item">
+              <a th:href="@{/img/gallery/gallery-5.jpg}" class="glightbox" data-gallery="images-gallery">
+                <img th:src="@{/img/gallery/gallery-5.jpg}" alt="" class="img-fluid">
+              </a>
+            </div>
+          </div><!-- End Gallery Item -->
+
+          <div class="col-lg-3 col-md-4">
+            <div class="gallery-item">
+              <a th:href="@{/img/gallery/gallery-6.jpg}" class="glightbox" data-gallery="images-gallery">
+                <img th:src="@{/img/gallery/gallery-6.jpg}" alt="" class="img-fluid">
+              </a>
+            </div>
+          </div><!-- End Gallery Item -->
+
+          <div class="col-lg-3 col-md-4">
+            <div class="gallery-item">
+              <a th:href="@{/img/gallery/gallery-7.jpg}" class="glightbox" data-gallery="images-gallery">
+                <img th:src="@{/img/gallery/gallery-7.jpg}" alt="" class="img-fluid">
+              </a>
+            </div>
+          </div><!-- End Gallery Item -->
+
+          <div class="col-lg-3 col-md-4">
+            <div class="gallery-item">
+              <a th:href="@{/img/gallery/gallery-8.jpg}" class="glightbox" data-gallery="images-gallery">
+                <img th:src="@{/img/gallery/gallery-8.jpg}" alt="" class="img-fluid">
+              </a>
+            </div>
+          </div><!-- End Gallery Item -->
+
+        </div>
+
+      </div>
+
+    </section><!-- /Gallery Section -->
+
+    <!-- Chefs Section -->
+    <section id="chefs" class="chefs section">
+
+      <!-- Section Title -->
+      <div class="container section-title" data-aos="fade-up">
+        <h2>ĐỘI NGŨ ĐẦU BẾP</h2>
+        <p>Những Nghệ Nhân Kiến Tạo Hương Vị</p>
+      </div><!-- End Section Title -->
+
+      <div class="container">
+
+        <div class="row gy-4">
+
+          <div class="col-lg-4" data-aos="fade-up" data-aos-delay="100">
+            <div class="member">
+              <img th:src="@{/img/chefs/chefs-1.jpg}" class="img-fluid" alt="">
+              <div class="member-info">
+                <div class="member-info-content">
+                  <h4>Trần Quốc Bảo</h4>
+                  <span>Bếp Trưởng Điều Hành</span>
+                </div>
+                <div class="social">
+                  <a href=""><i class="bi bi-twitter-x"></i></a>
+                  <a href=""><i class="bi bi-facebook"></i></a>
+                  <a href=""><i class="bi bi-instagram"></i></a>
+                  <a href=""><i class="bi bi-linkedin"></i></a>
+                </div>
+              </div>
+            </div>
+          </div><!-- End Team Member -->
+
+          <div class="col-lg-4" data-aos="fade-up" data-aos-delay="200">
+            <div class="member">
+              <img th:src="@{/img/chefs/chefs-2.jpg}" class="img-fluid" alt="">
+              <div class="member-info">
+                <div class="member-info-content">
+                  <h4>Lê Minh Thư</h4>
+                  <span>Chuyên Gia Bánh Ngọt</span>
+                </div>
+                <div class="social">
+                  <a href=""><i class="bi bi-twitter-x"></i></a>
+                  <a href=""><i class="bi bi-facebook"></i></a>
+                  <a href=""><i class="bi bi-instagram"></i></a>
+                  <a href=""><i class="bi bi-linkedin"></i></a>
+                </div>
+              </div>
+            </div>
+          </div><!-- End Team Member -->
+
+          <div class="col-lg-4" data-aos="fade-up" data-aos-delay="300">
+            <div class="member">
+              <img th:src="@{/img/chefs/chefs-3.jpg}" class="img-fluid" alt="">
+              <div class="member-info">
+                <div class="member-info-content">
+                  <h4>Nguyễn Duy Anh</h4>
+                  <span>Bếp Trưởng Món Âu</span>
+                </div>
+                <div class="social">
+                  <a href=""><i class="bi bi-twitter-x"></i></a>
+                  <a href=""><i class="bi bi-facebook"></i></a>
+                  <a href=""><i class="bi bi-instagram"></i></a>
+                  <a href=""><i class="bi bi-linkedin"></i></a>
+                </div>
+              </div>
+            </div>
+          </div><!-- End Team Member -->
+
+        </div>
+
+      </div>
+
+    </section><!-- /Chefs Section -->
+
+    <!-- Contact Section -->
+    <section id="contact" class="contact section">
+
+      <!-- Section Title -->
+      <div class="container section-title" data-aos="fade-up">
+        <h2>LIÊN HỆ</h2>
+        <p>Kết Nối Với Nhà Hàng Lumina</p>
+      </div><!-- End Section Title -->
+
+      <div class="mb-5" data-aos="fade-up" data-aos-delay="200">
+        <iframe style="border:0; width: 100%; height: 400px;" src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3725.292559648937!2d105.78745307593683!3d20.980907489417852!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x3135accdd8624571%3A0xa117f6ab2f6c9d08!2zSOG7jWMgdmnhu4duIEPDtG5nIG5naOG7hyBCxrB1IGNowaduaCBWaeG7hW4gdGjDtG5n!5e0!3m2!1svi!2svn!4v1700000000000!5m2!1svi!2svn" frameborder="0" allowfullscreen="" loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>
+      </div><!-- End Google Maps -->
+
+      <div class="container" data-aos="fade-up" data-aos-delay="100">
+
+        <div class="row gy-4">
+
+          <div class="col-lg-4">
+            <div class="info-item d-flex" data-aos="fade-up" data-aos-delay="300">
+              <i class="bi bi-geo-alt flex-shrink-0"></i>
+              <div>
+                <h3>Địa Chỉ</h3>
+                <p>Km 10, Đường Nguyễn Trãi, Hà Đông, Hà Nội</p>
+              </div>
+            </div><!-- End Info Item -->
+
+            <div class="info-item d-flex" data-aos="fade-up" data-aos-delay="400">
+              <i class="bi bi-telephone flex-shrink-0"></i>
+              <div>
+                <h3>Giờ Mở Cửa</h3>
+                <p>Thứ Hai - Chủ Nhật:<br>08:00 AM - 23:00 PM</p>
+              </div>
+            </div><!-- End Info Item -->
+
+            <div class="info-item d-flex" data-aos="fade-up" data-aos-delay="400">
+              <i class="bi bi-telephone flex-shrink-0"></i>
+              <div>
+                <h3>Điện Thoại</h3>
+                <p>+84 24 3385 6789</p>
+              </div>
+            </div><!-- End Info Item -->
+
+            <div class="info-item d-flex" data-aos="fade-up" data-aos-delay="500">
+              <i class="bi bi-envelope flex-shrink-0"></i>
+              <div>
+                <h3>Email</h3>
+                <p>contact@lumina.vn</p>
+              </div>
+            </div><!-- End Info Item -->
+
+          </div>
+
+          <div class="col-lg-8">
+            <form action="forms/contact.php" method="post" class="php-email-form" data-aos="fade-up" data-aos-delay="200" aria-labelledby="contact-form-title">
+              <fieldset>
+                <legend id="contact-form-title" class="visually-hidden">Form liên hệ</legend>
+                <div class="row gy-4">
+
+                  <div class="col-md-6">
+                    <label for="contact-name" class="form-label">Họ tên của bạn</label>
+                    <input type="text" name="name" class="form-control" id="contact-name" placeholder="Họ tên của bạn" autocomplete="name" required>
+                  </div>
+
+                  <div class="col-md-6">
+                    <label for="contact-email" class="form-label">Email</label>
+                    <input type="email" class="form-control" name="email" id="contact-email" placeholder="Địa chỉ Email" autocomplete="email" required>
+                  </div>
+
+                  <div class="col-md-12">
+                    <label for="contact-subject" class="form-label">Tiêu đề</label>
+                    <input type="text" class="form-control" name="subject" id="contact-subject" placeholder="Tiêu đề lời nhắn" required>
+                  </div>
+
+                  <div class="col-md-12">
+                    <label for="contact-message" class="form-label">Nội dung</label>
+                    <textarea class="form-control" name="message" rows="6" id="contact-message" placeholder="Nội dung tin nhắn..." required></textarea>
+                  </div>
+
+                  <div class="col-md-12 text-center">
+                    <div class="loading">Đang gửi...</div>
+                    <div class="error-message"></div>
+                    <div class="sent-message">Lời nhắn của bạn đã được gửi thành công. Cảm ơn bạn!</div>
+
+                    <button type="submit">Gửi Lời Nhắn</button>
+                  </div>
+
+                </div>
+              </fieldset>
+            </form>
+          </div><!-- End Contact Form -->
+
+        </div>
+
+      </div>
+
+    </section><!-- /Contact Section -->
+
+  </main>
+
+  <footer id="footer" class="footer">
+
+    <div class="container footer-top">
+      <div class="row gy-4">
+        <div class="col-lg-4 col-md-6 footer-about">
+          <a href="/" class="logo d-flex align-items-center">
+            <span class="sitename">Lumina</span>
+          </a>
+          <div class="footer-contact pt-3">
+            <p>Km 10, Đường Nguyễn Trãi</p>
+            <p>Hà Đông, Hà Nội</p>
+            <p class="mt-3"><strong>Điện thoại:</strong> <span>+84 24 3385 6789</span></p>
+            <p><strong>Email:</strong> <span>contact@lumina.vn</span></p>
+          </div>
+          <div class="social-links d-flex mt-4">
+            <a href=""><i class="bi bi-twitter-x"></i></a>
+            <a href=""><i class="bi bi-facebook"></i></a>
+            <a href=""><i class="bi bi-instagram"></i></a>
+            <a href=""><i class="bi bi-linkedin"></i></a>
+          </div>
+        </div>
+
+        <div class="col-lg-2 col-md-3 footer-links">
+          <h4>Liên Kết Hữu Ích</h4>
+          <ul>
+            <li><a href="/">Trang chủ</a></li>
+            <li><a href="#about">Giới thiệu</a></li>
+            <li><a href="/menu">Thực đơn</a></li>
+            <li><a href="#">Điều khoản dịch vụ</a></li>
+            <li><a href="#">Chính sách bảo mật</a></li>
+          </ul>
+        </div>
+
+        <div class="col-lg-2 col-md-3 footer-links">
+          <h4>Dịch Vụ Của Chúng Tôi</h4>
+          <ul>
+            <li><a href="#">Phục vụ tiệc cao cấp</a></li>
+            <li><a href="#">Tiệc cưới trọn gói</a></li>
+            <li><a href="#">Tiệc sinh nhật ấm cúng</a></li>
+            <li><a href="#">Hội nghị & Sự kiện</a></li>
+            <li><a href="#">Phòng VIP gia đình</a></li>
+          </ul>
+        </div>
+
+        <div class="col-lg-4 col-md-12 footer-newsletter">
+          <h4>Đăng Ký Nhận Bản Tin</h4>
+          <p>Đăng ký nhận bản tin để nhận những chương trình ưu đãi và thông tin mới nhất từ nhà hàng Lumina!</p>
+          <form action="forms/newsletter.php" method="post" class="php-email-form">
+            <div class="newsletter-form"><input type="email" name="email"><input type="submit" value="Đăng Ký"></div>
+            <div class="loading">Đang đăng ký...</div>
+            <div class="error-message"></div>
+            <div class="sent-message">Yêu cầu đăng ký của bạn đã được gửi thành công. Cảm ơn bạn!</div>
+          </form>
+        </div>
+
+      </div>
+    </div>
+
+    <div class="container copyright text-center mt-4">
+      <p>© <span>Bản quyền</span> <strong class="px-1 sitename">Lumina</strong> <span>Đã được bảo lưu</span></p>
+      <div class="credits">
+        Thiết kế và phát triển bởi <a href="https://bootstrapmade.com/">BootstrapMade</a> &amp; <a href="https://themewagon.com" target="_blank">ThemeWagon</a>
+      </div>
+    </div>
+
+  </footer>
+
+  <!-- Scroll Top -->
+  <a href="#" id="scroll-top" class="scroll-top d-flex align-items-center justify-content-center"><i class="bi bi-arrow-up-short"></i></a>
+
+  <!-- Preloader -->
+  <div id="preloader"></div>
+
+  <!-- Vendor JS Files -->
+  <script th:src="@{/vendor/bootstrap/js/bootstrap.bundle.min.js}"></script>
+  <script th:src="@{/vendor/php-email-form/validate.js}"></script>
+  <script th:src="@{/vendor/aos/aos.js}"></script>
+  <script th:src="@{/vendor/glightbox/js/glightbox.min.js}"></script>
+  <script th:src="@{/vendor/imagesloaded/imagesloaded.pkgd.min.js}"></script>
+  <script th:src="@{/vendor/isotope-layout/isotope.pkgd.min.js}"></script>
+  <script th:src="@{/vendor/swiper/swiper-bundle.min.js}"></script>
+
+  <!-- Main JS File -->
+  <script th:src="@{/js/main.js}"></script>
+
+</body>
+
+</html>

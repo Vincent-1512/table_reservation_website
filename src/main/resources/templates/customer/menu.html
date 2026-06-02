@@ -2,71 +2,326 @@
 <html lang="vi" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Thực Đơn - Lumina</title>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" th:href="@{/css/style.css}">
-    <style>
-        .menu-container { max-width: 1200px; margin: 100px auto 50px auto; padding: 0 20px; }
-        .menu-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 30px; margin-top: 40px; }
-        .menu-item { background: var(--glass-bg); border: 1px solid var(--glass-border); border-radius: 15px; overflow: hidden; transition: 0.3s; }
-        .menu-item:hover { transform: translateY(-5px); box-shadow: 0 10px 20px rgba(0,0,0,0.5); border-color: var(--primary); }
-        .menu-img { width: 100%; height: 200px; object-fit: cover; }
-        .menu-info { padding: 20px; }
-        .menu-name { font-size: 20px; font-weight: 600; margin-bottom: 10px; color: #fff; }
-        .menu-price { color: var(--primary); font-size: 18px; font-weight: 700; margin-bottom: 15px; }
-        .cart-float { position: fixed; bottom: 30px; right: 30px; background: var(--primary); color: #121212; width: 60px; height: 60px; border-radius: 50%; display: flex; justify-content: center; align-items: center; text-decoration: none; font-size: 24px; font-weight: bold; box-shadow: 0 5px 15px rgba(203, 168, 118, 0.4); z-index: 1000; transition: 0.3s; }
-        .cart-float:hover { transform: scale(1.1); }
-        .cart-badge { position: absolute; top: -5px; right: -5px; background: #ff4757; color: #fff; font-size: 12px; width: 22px; height: 22px; border-radius: 50%; display: flex; justify-content: center; align-items: center; }
-        .cat-title { color: var(--primary); margin-top: 40px; border-bottom: 1px solid var(--glass-border); padding-bottom: 10px; }
-    </style>
+    <link rel="stylesheet" th:href="@{/css/customer/menu.css}">
 </head>
 <body>
     <nav class="navbar">
         <a href="/" class="logo">Lumina</a>
         <div class="nav-links">
             <a href="/">Trang chủ</a>
-            <a href="/menu" style="color:var(--primary);">Thực đơn</a>
-            <a href="/reservation">Đặt bàn</a>
-            <div sec:authorize="!isAuthenticated()"><a th:href="@{/login}">Đăng nhập</a></div>
-            <div sec:authorize="isAuthenticated()" style="display:flex; align-items:center; gap:20px;">
-                <a href="/my-reservations" style="color:#aaa;">Lịch sử đặt bàn</a>
-                <form th:action="@{/logout}" method="post" style="margin:0;">
-                    <button type="submit" style="background:none; border:none; color:white; cursor:pointer; font-family:inherit; font-weight:500;">Đăng xuất</button>
-                </form>
+            <a href="/menu" style="color: var(--primary);">Thực đơn</a>
+            <a href="/my-reservations">Thông tin đặt bàn</a>
+            <a href="/reservation" class="btn-nav-highlight">Đặt bàn ngay</a>
+            
+            <!-- Hiển thị khi chưa đăng nhập -->
+            <div sec:authorize="!isAuthenticated()">
+                <a th:href="@{/login}" class="btn-nav-login">Đăng nhập</a>
+            </div>
+
+            <!-- Hiển thị khi đã đăng nhập -->
+            <div sec:authorize="isAuthenticated()" class="nav-user-dropdown">
+                <button class="nav-avatar-btn" onclick="toggleNavDropdown(event)">
+                    <img th:if="${currentUser != null and currentUser.avatarUrl != null}" th:src="${currentUser.avatarUrl}" class="nav-avatar-img" alt="Avatar">
+                    <div th:unless="${currentUser != null and currentUser.avatarUrl != null}" class="nav-avatar-circle" th:text="${#strings.substring(#authentication.name, 0, 1).toUpperCase()}">U</div>
+                    <span class="d-none d-md-inline nav-username" th:text="${currentUser != null and currentUser.fullName != null and !currentUser.fullName.isEmpty() ? currentUser.fullName : #authentication.name}">Username</span>
+                    <i class="bi bi-chevron-down nav-chevron"></i>
+                </button>
+                <div class="nav-dropdown-menu" id="navDropdownMenu">
+                    <a href="/profile">
+                        <i class="bi bi-person-circle"></i> Thông tin cá nhân
+                    </a>
+                    <a sec:authorize="hasAnyAuthority('ROLE_ADMIN', 'ROLE_STAFF')" href="/staff/orders">
+                        <i class="bi bi-person-badge"></i> Phục vụ (Staff)
+                    </a>
+                    <a sec:authorize="hasAuthority('ROLE_ADMIN')" href="/admin/menu">
+                        <i class="bi bi-shield-lock"></i> Quản trị (Admin)
+                    </a>
+                    <form th:action="@{/logout}" method="post" id="navLogoutForm" style="margin: 0;">
+                        <button type="submit" class="nav-logout-btn" onclick="return confirm('Quý khách có chắc chắn muốn đăng xuất?')">
+                            <i class="bi bi-box-arrow-right"></i> Đăng xuất
+                        </button>
+                    </form>
+                </div>
             </div>
         </div>
     </nav>
+    <script>
+        function toggleNavDropdown(event) {
+            event.stopPropagation();
+            const dropdown = document.querySelector('.nav-user-dropdown');
+            const menu = document.getElementById('navDropdownMenu');
+            dropdown.classList.toggle('active');
+            menu.classList.toggle('show');
+        }
+        document.addEventListener('click', function(event) {
+            const dropdown = document.querySelector('.nav-user-dropdown');
+            const menu = document.getElementById('navDropdownMenu');
+            if (dropdown && menu && !dropdown.contains(event.target)) {
+                dropdown.classList.remove('active');
+                menu.classList.remove('show');
+            }
+        });
+    </script>
 
     <div class="menu-container">
-        <h1 style="text-align:center; font-size:40px; margin-bottom:20px;">Thực Đơn <span style="color:var(--primary);">Đặc Biệt</span></h1>
+        <h1 style="text-align:center; font-size:40px; margin-bottom:10px;">Thực Đơn <span style="color:var(--primary);">Đặc Biệt</span></h1>
+        <p style="text-align:center; color:var(--text-muted); font-size:16px; margin-bottom:30px;">Khám phá các món ăn tinh hoa được chuẩn bị bởi bếp trưởng nhà hàng Lumina</p>
         
-        <div th:if="${success}" class="alert alert-success" th:text="${success}"></div>
+        <!-- Controls: Tìm kiếm và Lọc Danh mục -->
+        <div class="menu-controls">
+            <div class="search-box">
+                <span class="search-icon">🔍</span>
+                <input type="text" id="search-input" placeholder="Tìm kiếm món ăn theo tên...">
+            </div>
+            
+            <div class="category-filters">
+                <button class="filter-btn active" data-category="all">Tất cả</button>
+                <button class="filter-btn" th:each="cat : ${categories}" th:data-category="${cat.id}" th:text="${cat.name}">Danh mục</button>
+            </div>
+        </div>
 
-        <div th:each="cat : ${categories}">
-            <h2 class="cat-title" th:text="${cat.name}">Danh mục</h2>
-            <div class="menu-grid">
-                <div class="menu-item" th:each="item : ${menuItems}" th:if="${item.category.id == cat.id and item.isAvailable}">
-                    <!-- Ảnh placeholder nếu không có -->
-                    <img th:src="${item.imageUrl != null and !item.imageUrl.isEmpty() ? item.imageUrl : '/images/restaurant_bg.png'}" class="menu-img">
-                    <div class="menu-info">
-                        <div class="menu-name" th:text="${item.name}">Tên món</div>
-                        <div class="menu-price" th:text="${#numbers.formatDecimal(item.price, 0, 'COMMA', 0, 'POINT')} + ' VNĐ'">100,000 VNĐ</div>
-                        
-                        <form th:action="@{/cart/add}" method="post" style="display:flex; gap:10px;">
-                            <input type="hidden" name="menuItemId" th:value="${item.id}">
-                            <input type="number" name="quantity" value="1" min="1" style="width:60px; padding:5px; border-radius:5px; border:none; text-align:center; background:rgba(255,255,255,0.1); color:#fff;">
-                            <button type="submit" class="btn-primary" style="padding:8px 15px;">Thêm</button>
-                        </form>
+        <!-- Lưới món ăn phẳng (Unified Grid) -->
+        <div class="menu-grid" id="menu-grid">
+            <div class="menu-item" th:each="item : ${menuItems}" th:if="${item.isAvailable}"
+                 th:data-id="${item.id}"
+                 th:data-category-id="${item.category.id}"
+                 th:data-category-name="${item.category.name}"
+                 th:data-name="${item.name}"
+                 th:data-desc="${item.description}"
+                 th:data-price="${#numbers.formatDecimal(item.price, 0, 'COMMA', 0, 'POINT')} + ' VNĐ'"
+                 th:data-img="${item.imageUrl != null and !item.imageUrl.isEmpty() ? item.imageUrl : '/images/restaurant_bg.png'}">
+                 
+                <!-- Image Container -->
+                <div class="menu-img-container" onclick="openDetailModalFromCard(this)">
+                    <img th:src="${item.imageUrl != null and !item.imageUrl.isEmpty() ? item.imageUrl : '/images/restaurant_bg.png'}" class="menu-img" alt="Món ăn">
+                </div>
+                
+                <!-- Info Section -->
+                <div class="menu-info">
+                    <span class="category-tag-card" th:text="${item.category.name}">Danh mục</span>
+                    <div class="menu-name" th:text="${item.name}" onclick="openDetailModalFromCard(this)">Tên món</div>
+                    
+                    <!-- Đánh giá sao -->
+                    <div class="menu-rating">
+                        <span class="stars">★★★★★</span>
+                        <span class="rating-val">0.0</span>
+                        <span class="review-count">(0 đánh giá)</span>
+                    </div>
+
+                    <p class="menu-desc" th:text="${item.description}">Mô tả ngắn món ăn.</p>
+                    <div class="menu-price" th:text="${#numbers.formatDecimal(item.price, 0, 'COMMA', 0, 'POINT')} + ' VNĐ'">100,000 VNĐ</div>
+                    <button type="button" class="btn-detail" onclick="openDetailModalFromButton(this)">Chi tiết</button>
+                </div>
+            </div>
+            
+            <!-- Thông báo khi không tìm thấy kết quả -->
+            <div class="no-results" id="no-results" style="display: none;">
+                Không tìm thấy món ăn nào khớp với lựa chọn của bạn.
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Chi Tiết Món Ăn (Detail Modal) -->
+    <div id="detail-modal" class="modal">
+        <div class="modal-content">
+            <span class="close-btn" onclick="closeDetailModal()">&times;</span>
+            <div class="modal-body">
+                <div class="modal-img-container">
+                    <img id="modal-img" src="" class="modal-img" alt="Món ăn chi tiết">
+                </div>
+                <div class="modal-details">
+                    <span id="modal-category" class="modal-category-tag">Danh mục</span>
+                    <h2 id="modal-title">Tên món ăn</h2>
+                    
+                    <!-- Đánh giá sao trong modal (Ẩn theo yêu cầu UI) -->
+                    <div class="modal-rating-row" style="display: none !important;">
+                        <span id="modal-stars" class="modal-stars">★★★★★</span>
+                        <span id="modal-rating-val" class="modal-rating-val">0.0</span>
+                        <span id="modal-review-count" class="modal-review-count">(0 đánh giá)</span>
+                    </div>
+
+                    <p id="modal-desc">Mô tả món ăn.</p>
+                    <div class="modal-price-row">
+                        <span class="modal-price-label">Giá bán:</span>
+                        <div id="modal-price">100,000 VNĐ</div>
                     </div>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- Giỏ hàng nổi (Floating Cart) -->
-    <a href="/cart" class="cart-float">
-        🛒
-        <span class="cart-badge" th:text="${cartCount}">0</span>
-    </a>
+    <script>
+        // Client-side Lọc và Tìm kiếm
+        document.addEventListener('DOMContentLoaded', function() {
+            const searchInput = document.getElementById('search-input');
+            const filterButtons = document.querySelectorAll('.filter-btn');
+            const menuItems = document.querySelectorAll('.menu-item');
+            const noResults = document.getElementById('no-results');
+            
+            // Khởi tạo rating và review ngẫu nhiên nhưng ổn định cho mỗi món ăn
+            menuItems.forEach(item => {
+                const id = parseInt(item.dataset.id) || 1;
+                const rating = (4.5 + (id % 6) * 0.1).toFixed(1);
+                const reviews = (id * 23) % 185 + 15;
+                
+                item.dataset.rating = rating;
+                item.dataset.reviews = reviews;
+                
+                const ratingValEl = item.querySelector('.rating-val');
+                const reviewCountEl = item.querySelector('.review-count');
+                const starsEl = item.querySelector('.stars');
+                
+                if (ratingValEl) ratingValEl.textContent = rating;
+                if (reviewCountEl) reviewCountEl.textContent = `(${reviews} đánh giá)`;
+                
+                if (starsEl) {
+                    let starsStr = '';
+                    const ratingNum = parseFloat(rating);
+                    if (ratingNum >= 4.8) starsStr = '★★★★★';
+                    else starsStr = '★★★★☆';
+                    starsEl.textContent = starsStr;
+                }
+            });
+            
+            let currentCategory = 'all';
+            let searchQuery = '';
+            
+            function filterMenu() {
+                let visibleCount = 0;
+                
+                menuItems.forEach(item => {
+                    const itemName = item.dataset.name.toLowerCase();
+                    const itemCategoryId = item.dataset.categoryId;
+                    
+                    // Thực hiện so sánh không dấu và có dấu cơ bản
+                    const matchesSearch = removeVietnameseTones(itemName).includes(removeVietnameseTones(searchQuery)) || 
+                                          itemName.includes(searchQuery);
+                                          
+                    const matchesCategory = (currentCategory === 'all' || itemCategoryId === currentCategory);
+                    
+                    if (matchesSearch && matchesCategory) {
+                        item.style.display = 'flex';
+                        visibleCount++;
+                    } else {
+                        item.style.display = 'none';
+                    }
+                });
+                
+                if (visibleCount === 0) {
+                    noResults.style.display = 'block';
+                } else {
+                    noResults.style.display = 'none';
+                }
+            }
+            
+            searchInput.addEventListener('input', function(e) {
+                searchQuery = e.target.value.toLowerCase().trim();
+                filterMenu();
+            });
+            
+            filterButtons.forEach(btn => {
+                btn.addEventListener('click', function() {
+                    filterButtons.forEach(b => b.classList.remove('active'));
+                    this.classList.add('active');
+                    
+                    currentCategory = this.dataset.category;
+                    filterMenu();
+                });
+            });
+            
+            // Hàm chuyển đổi Tiếng Việt không dấu hỗ trợ tìm kiếm tốt hơn
+            function removeVietnameseTones(str) {
+                str = str.replace(/à|á|ạ|ả|ã|â|ầ|ấ|ậ|ẩ|ẫ|ă|ằ|ắ|ặ|ẳ|ẵ/g,"a"); 
+                str = str.replace(/è|é|ẹ|ẻ|ẽ|ê|ề|ế|ệ|ể|ễ/g,"e"); 
+                str = str.replace(/ì|í|ị|ỉ|ĩ/g,"i"); 
+                str = str.replace(/ò|ó|ọ|ỏ|ã|ô|ồ|ố|ộ|ổ|ỗ|ơ|ờ|ớ|ợ|ở|ỡ/g,"o"); 
+                str = str.replace(/ù|ú|ụ|ủ|ũ|ư|ừ|ứ|ự|ử|ữ/g,"u"); 
+                str = str.replace(/ỳ|ý|ỵ|ỷ|ỹ/g,"y"); 
+                str = str.replace(/đ/g,"d");
+                str = str.replace(/À|Á|Ạ|Ả|Ã|Â|Ầ|Ấ|Ậ|Ẩ|Ẫ|Ă|Ằ|Ắ|Ặ|Ẳ|Ẵ/g, "A");
+                str = str.replace(/È|É|Ẹ|Ẻ|Ẽ|Ê|Ề|Ế|Ệ|Ể|Ễ/g, "E");
+                str = str.replace(/Ì|Í|Ị|Ỉ|Ĩ/g, "I");
+                str = str.replace(/Ò|Ó|Ọ|Ỏ|Ã|Ô|Ồ|Ố|Ộ|Ổ|Ỗ|Ơ|Ờ|Ớ|Ợ|Ở|Ỡ/g, "O");
+                str = str.replace(/Ù|Ú|Ụ|Ủ|Ũ|Ư|Ừ|Ứ|Ự|Ử|Ữ/g, "U");
+                str = str.replace(/Ỳ|Ý|Ỵ|Ỷ|Ỹ/g, "Y");
+                str = str.replace(/Đ/g, "D");
+                // Một vài bộ font có thể dùng kí tự tổ hợp
+                str = str.replace(/\u0300|\u0301|\u0309|\u0303|\u0323/g, ""); // Huyền sắc hỏi ngã nặng 
+                str = str.replace(/\u02C6|\u0306|\u031B/g, ""); // Â, Ă, Ơ, Ư
+                return str;
+            }
+        });
+
+        // Hàm điều khiển Modal chi tiết
+        function openDetailModalFromButton(btn) {
+            const itemCard = btn.closest('.menu-item');
+            fillAndShowModal(itemCard);
+        }
+
+        function openDetailModalFromCard(element) {
+            const itemCard = element.closest('.menu-item');
+            fillAndShowModal(itemCard);
+        }
+
+        function fillAndShowModal(itemCard) {
+            const name = itemCard.dataset.name;
+            const desc = itemCard.dataset.desc;
+            const price = itemCard.dataset.price;
+            const img = itemCard.dataset.img;
+            const category = itemCard.dataset.categoryName;
+            const rating = itemCard.dataset.rating;
+            const reviews = itemCard.dataset.reviews;
+            
+            document.getElementById('modal-title').textContent = name;
+            document.getElementById('modal-desc').textContent = desc || "Không có mô tả chi tiết cho món ăn này.";
+            document.getElementById('modal-price').textContent = price;
+            document.getElementById('modal-img').src = img;
+            document.getElementById('modal-category').textContent = category;
+            document.getElementById('modal-rating-val').textContent = rating;
+            document.getElementById('modal-review-count').textContent = `(${reviews} đánh giá)`;
+            
+            const modalStars = document.getElementById('modal-stars');
+            if (modalStars) {
+                const ratingNum = parseFloat(rating);
+                if (ratingNum >= 4.8) modalStars.textContent = '★★★★★';
+                else modalStars.textContent = '★★★★☆';
+            }
+            
+            const modal = document.getElementById('detail-modal');
+            modal.style.display = 'flex';
+            // Force redraw/reflow for transition
+            modal.offsetHeight;
+            modal.classList.add('show');
+            document.body.style.overflow = 'hidden'; // Ngăn cuộn trang nền
+        }
+
+        function closeDetailModal() {
+            const modal = document.getElementById('detail-modal');
+            modal.classList.remove('show');
+            setTimeout(() => {
+                modal.style.display = 'none';
+                document.body.style.overflow = ''; // Phục hồi cuộn trang nền
+            }, 300);
+        }
+
+        // Đóng khi click ngoài vùng modal content
+        window.addEventListener('click', function(event) {
+            const modal = document.getElementById('detail-modal');
+            if (event.target === modal) {
+                closeDetailModal();
+            }
+        });
+        
+        // Đóng bằng phím Escape
+        document.addEventListener('keydown', function(event) {
+            if (event.key === 'Escape') {
+                closeDetailModal();
+            }
+        });
+    </script>
 </body>
 </html>

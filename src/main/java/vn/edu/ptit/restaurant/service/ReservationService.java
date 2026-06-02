@@ -21,4 +21,5 @@ public interface ReservationService {
     void adminCancelReservation(Long reservationId);
     void completeReservation(Long reservationId);
     void checkinReservation(Long reservationId, String staffUsername);
+    vn.edu.ptit.restaurant.entity.Order createOrderForReservation(Long reservationId, String username);
 }

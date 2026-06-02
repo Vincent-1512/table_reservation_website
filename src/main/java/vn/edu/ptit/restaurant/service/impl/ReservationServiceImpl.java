@@ -86,7 +86,8 @@ public class ReservationServiceImpl implements ReservationService {
 
     @Override
     public List<Reservation> findByUserId(Long userId) {
-        return reservationRepository.findByUserIdOrderByReservationTimeDesc(userId);
+        java.time.LocalDateTime startOfToday = java.time.LocalDate.now().atStartOfDay();
+        return reservationRepository.findByUserIdAndReservationTimeGreaterThanEqualOrderByReservationTimeDesc(userId, startOfToday);
     }
 
     @Override
@@ -216,5 +217,47 @@ public class ReservationServiceImpl implements ReservationService {
                     .build();
             orderRepository.save(order);
         }
+    }
+
+    @Override
+    @Transactional
+    public Order createOrderForReservation(Long reservationId, String username) {
+        Reservation reservation = reservationRepository.findById(reservationId)
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy đặt bàn với ID: " + reservationId));
+        User user = userRepository.findByUsername(username)
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy người dùng với username: " + username));
+
+        // Hủy/xóa Order cũ đã liên kết với reservation này nếu có
+        orderRepository.findByReservationId(reservationId).ifPresent(existingOrder -> {
+            List<OrderItem> items = orderItemRepository.findByOrderId(existingOrder.getId());
+            orderItemRepository.deleteAll(items);
+            orderRepository.delete(existingOrder);
+        });
+
+        // Tạo Order mới từ giỏ hàng hiện tại
+        Order order = Order.builder()
+                .table(reservation.getTable())
+                .user(user)
+                .reservation(reservation)
+                .totalAmount(cartService.getAmount())
+                .status(OrderStatus.PENDING)
+                .build();
+        Order savedOrder = orderRepository.save(order);
+
+        for (CartItem item : cartService.getItems()) {
+            MenuItem menuItem = menuItemRepository.findById(item.getMenuItemId()).orElseThrow();
+            OrderItem orderItem = OrderItem.builder()
+                    .order(savedOrder)
+                    .menuItem(menuItem)
+                    .quantity(item.getQuantity())
+                    .priceAtTime(item.getPrice())
+                    .build();
+            orderItemRepository.save(orderItem);
+        }
+
+        // Xóa giỏ hàng sau khi đã lưu đơn đặt món
+        cartService.clear();
+
+        return savedOrder;
     }
 }

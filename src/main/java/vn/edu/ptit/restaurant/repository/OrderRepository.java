@@ -35,6 +35,8 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
             LocalDateTime end,
             Pageable pageable
     );
+
+    List<Order> findByUserIdOrderByCreatedAtDesc(Long userId);
 }
 
 

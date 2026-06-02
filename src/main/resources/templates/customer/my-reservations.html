@@ -2,19 +2,841 @@
 <html lang="vi" xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta charset="UTF-8">
-    <title>Lịch sử Đặt Bàn - Lumina</title>
+    <title>Thông Tin Đặt Bàn - Lumina</title>
+    <meta name="_csrf" th:content="${_csrf.token}"/>
+    <meta name="_csrf_header" th:content="${_csrf.headerName}"/>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" th:href="@{/css/style.css}">
+    <!-- Bootstrap Icons -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+    
     <style>
-        .container { max-width: 1000px; margin: 120px auto 50px auto; padding: 40px; background: var(--glass-bg); border-radius: 15px; border: 1px solid var(--glass-border); }
-        .table { width: 100%; border-collapse: collapse; margin-top: 20px; color: #fff; }
-        .table th, .table td { padding: 15px; text-align: left; border-bottom: 1px solid rgba(255,255,255,0.1); }
-        .table th { color: var(--primary); font-weight: 600; }
-        .status-badge { padding: 5px 10px; border-radius: 20px; font-size: 12px; font-weight: 600; }
-        .status-PENDING { background: rgba(255, 193, 7, 0.2); color: #ffc107; }
-        .status-CONFIRMED { background: rgba(40, 167, 69, 0.2); color: #28a745; }
-        .status-COMPLETED { background: rgba(23, 162, 184, 0.2); color: #17a2b8; }
-        .status-CANCELLED { background: rgba(220, 53, 69, 0.2); color: #dc3545; }
+        :root {
+            --primary: #cba876;
+            --primary-dark: #b18e5b;
+            --bg-dark: #121212;
+            --text-light: #ffffff;
+            --text-muted: #a0a0a0;
+            --glass-bg: rgba(18, 18, 18, 0.75);
+            --glass-border: rgba(255, 255, 255, 0.08);
+            --card-glow: rgba(203, 168, 118, 0.05);
+        }
+
+        body {
+            background-color: var(--bg-dark);
+            background-image: radial-gradient(circle at 50% -20%, #2a2218 0%, var(--bg-dark) 60%);
+            background-attachment: fixed;
+        }
+
+        .dashboard-container {
+            max-width: 1150px;
+            margin: 120px auto 60px auto;
+            padding: 0 20px;
+        }
+
+        .dashboard-card {
+            background: var(--glass-bg);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid var(--glass-border);
+            border-radius: 24px;
+            padding: 40px;
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.6);
+            position: relative;
+            overflow: hidden;
+            animation: fadeIn 0.6s ease-out;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .dashboard-header {
+            text-align: center;
+            margin-bottom: 35px;
+        }
+
+        .dashboard-header h2 {
+            font-size: 32px;
+            font-weight: 700;
+            color: #fff;
+            margin-bottom: 10px;
+            letter-spacing: 0.5px;
+        }
+
+        .dashboard-header h2 span {
+            color: var(--primary);
+        }
+
+        .dashboard-header p {
+            color: var(--text-muted);
+            font-size: 15px;
+        }
+
+        /* Tabs Navigation */
+        .dashboard-tabs {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            margin-bottom: 30px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+            padding-bottom: 15px;
+        }
+
+        .tab-btn {
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            color: var(--text-muted);
+            padding: 12px 24px;
+            border-radius: 12px;
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .tab-btn i {
+            font-size: 18px;
+        }
+
+        .tab-btn:hover {
+            background: rgba(255, 255, 255, 0.05);
+            color: #fff;
+            border-color: rgba(255, 255, 255, 0.15);
+        }
+
+        .tab-btn.active {
+            background: rgba(203, 168, 118, 0.1);
+            color: var(--primary);
+            border-color: var(--primary);
+            box-shadow: 0 0 15px rgba(203, 168, 118, 0.15);
+        }
+
+        .tab-panel {
+            display: none;
+        }
+
+        .tab-panel.active {
+            display: block;
+            animation: panelFade 0.4s ease-out;
+        }
+
+        @keyframes panelFade {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Responsive Table Design */
+        .table-wrapper {
+            overflow-x: auto;
+            border-radius: 16px;
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            background: rgba(0, 0, 0, 0.2);
+        }
+
+        .custom-table {
+            width: 100%;
+            border-collapse: collapse;
+            color: #fff;
+            text-align: left;
+            min-width: 800px;
+        }
+
+        .custom-table th {
+            background: rgba(255, 255, 255, 0.03);
+            padding: 18px 20px;
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--primary);
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+        }
+
+        .custom-table td {
+            padding: 16px 20px;
+            font-size: 14px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+            vertical-align: middle;
+            transition: background 0.2s ease;
+        }
+
+        .custom-table tr:hover td {
+            background: rgba(255, 255, 255, 0.015);
+        }
+
+        .custom-table tr:last-child td {
+            border-bottom: none;
+        }
+
+        /* Status Badges with glowing backdrops */
+        .status-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 6px 12px;
+            border-radius: 30px;
+            font-size: 12px;
+            font-weight: 600;
+            letter-spacing: 0.2px;
+        }
+
+        /* Color configurations for Reservation statuses */
+        .status-res-PENDING {
+            background: rgba(243, 156, 18, 0.15);
+            color: #ffb830;
+            border: 1px solid rgba(243, 156, 18, 0.25);
+            box-shadow: 0 0 10px rgba(243, 156, 18, 0.08);
+        }
+        .status-res-CONFIRMED {
+            background: rgba(46, 204, 113, 0.15);
+            color: #2ecc71;
+            border: 1px solid rgba(46, 204, 113, 0.25);
+            box-shadow: 0 0 10px rgba(46, 204, 113, 0.08);
+        }
+        .status-res-COMPLETED {
+            background: rgba(52, 152, 219, 0.15);
+            color: #3498db;
+            border: 1px solid rgba(52, 152, 219, 0.25);
+            box-shadow: 0 0 10px rgba(52, 152, 219, 0.08);
+        }
+        .status-res-CANCELLED {
+            background: rgba(231, 76, 60, 0.15);
+            color: #e74c3c;
+            border: 1px solid rgba(231, 76, 60, 0.25);
+            box-shadow: 0 0 10px rgba(231, 76, 60, 0.08);
+        }
+
+        /* Color configurations for Order statuses */
+        .status-order-PENDING {
+            background: rgba(243, 156, 18, 0.15);
+            color: #ffb830;
+            border: 1px solid rgba(243, 156, 18, 0.25);
+        }
+        .status-order-PREPARING {
+            background: rgba(230, 126, 34, 0.15);
+            color: #ff9f43;
+            border: 1px solid rgba(230, 126, 34, 0.25);
+        }
+        .status-order-SERVED {
+            background: rgba(52, 152, 219, 0.15);
+            color: #54a0ff;
+            border: 1px solid rgba(52, 152, 219, 0.25);
+        }
+        .status-order-COMPLETED {
+            background: rgba(46, 204, 113, 0.15);
+            color: #2ecc71;
+            border: 1px solid rgba(46, 204, 113, 0.25);
+        }
+        .status-order-CANCELLED {
+            background: rgba(231, 76, 60, 0.15);
+            color: #e74c3c;
+            border: 1px solid rgba(231, 76, 60, 0.25);
+        }
+
+        /* Luminous Payment Status Badges */
+        .pay-status-paid {
+            background: rgba(46, 204, 113, 0.15);
+            color: #2ecc71;
+            border: 1px solid rgba(46, 204, 113, 0.25);
+            font-size: 12px;
+            font-weight: 500;
+        }
+
+        .pay-status-later {
+            background: rgba(243, 156, 18, 0.12);
+            color: #f39c12;
+            border: 1px solid rgba(243, 156, 18, 0.2);
+            font-size: 12px;
+            font-weight: 500;
+        }
+
+        .pay-status-cancelled {
+            background: rgba(231, 76, 60, 0.12);
+            color: #e74c3c;
+            border: 1px solid rgba(231, 76, 60, 0.2);
+            font-size: 12px;
+            font-weight: 500;
+        }
+
+        /* Action Buttons styling */
+        .btn-action-group {
+            display: flex;
+            gap: 8px;
+        }
+
+        .btn-table-action {
+            padding: 8px 14px;
+            border-radius: 8px;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+            border: 1px solid transparent;
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            text-decoration: none;
+        }
+
+        .btn-view-details {
+            background: rgba(255, 255, 255, 0.05);
+            color: #fff;
+            border-color: rgba(255, 255, 255, 0.1);
+        }
+
+        .btn-view-details:hover {
+            background: rgba(255, 255, 255, 0.12);
+            border-color: rgba(255, 255, 255, 0.2);
+            transform: translateY(-1px);
+        }
+
+        .btn-cancel {
+            background: rgba(231, 76, 60, 0.15);
+            color: #ff6b6b;
+            border-color: rgba(231, 76, 60, 0.25);
+        }
+
+        .btn-cancel:hover {
+            background: rgba(231, 76, 60, 0.25);
+            border-color: rgba(231, 76, 60, 0.4);
+            box-shadow: 0 0 10px rgba(231, 76, 60, 0.15);
+            transform: translateY(-1px);
+        }
+
+        /* Smooth Glass Modals */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.6);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            z-index: 1000;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .modal-overlay.active {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        .modal-content {
+            background: rgba(18, 18, 18, 0.95);
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            border-radius: 24px;
+            width: 92%;
+            max-width: 680px;
+            max-height: 82vh;
+            box-shadow: 0 25px 60px rgba(0, 0, 0, 0.8);
+            transform: scale(0.92);
+            transition: transform 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .modal-content::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 4px;
+            background: linear-gradient(90deg, var(--primary), var(--primary-dark));
+        }
+
+        .modal-overlay.active .modal-content {
+            transform: scale(1);
+        }
+
+        .modal-header {
+            padding: 24px 28px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .modal-title {
+            color: var(--primary);
+            font-size: 20px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .btn-close-modal {
+            background: none;
+            border: none;
+            color: var(--text-muted);
+            font-size: 24px;
+            cursor: pointer;
+            transition: all 0.2s;
+            line-height: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 32px;
+            height: 32px;
+            border-radius: 50px;
+            background: rgba(255, 255, 255, 0.02);
+        }
+
+        .btn-close-modal:hover {
+            color: #fff;
+            background: rgba(255, 255, 255, 0.08);
+        }
+
+        .modal-body {
+            padding: 28px;
+            overflow-y: auto;
+            flex: 1;
+        }
+
+        .modal-body::-webkit-scrollbar {
+            width: 6px;
+        }
+        .modal-body::-webkit-scrollbar-track {
+            background: rgba(255, 255, 255, 0.01);
+        }
+        .modal-body::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.12);
+            border-radius: 4px;
+        }
+
+        /* Detail Elements inside Modals */
+        .detail-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+
+        @media (max-width: 576px) {
+            .detail-grid {
+                grid-template-columns: 1fr;
+                gap: 12px;
+            }
+        }
+
+        .detail-item {
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid rgba(255, 255, 255, 0.04);
+            border-radius: 12px;
+            padding: 14px 18px;
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+
+        .detail-label {
+            font-size: 11px;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+            font-weight: 500;
+        }
+
+        .detail-value {
+            font-size: 15px;
+            color: #fff;
+            font-weight: 550;
+        }
+
+        .detail-item-full {
+            grid-column: 1 / -1;
+        }
+
+        /* Modal Table styling */
+        .modal-table-container {
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            border-radius: 14px;
+            overflow: hidden;
+            background: rgba(0, 0, 0, 0.15);
+            margin-top: 15px;
+        }
+
+        .modal-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .modal-table th {
+            padding: 12px 16px;
+            color: var(--primary);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+            font-size: 12px;
+            text-align: left;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            background: rgba(255, 255, 255, 0.02);
+        }
+
+        .modal-table td {
+            padding: 12px 16px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+            font-size: 14px;
+            vertical-align: middle;
+        }
+
+        .modal-table tr:last-child td {
+            border-bottom: none;
+        }
+
+        .modal-food-img {
+            width: 48px;
+            height: 48px;
+            border-radius: 8px;
+            object-fit: cover;
+            border: 1px solid rgba(255, 255, 255, 0.08);
+        }
+
+        .modal-food-info {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+        }
+
+        .food-name {
+            font-weight: 600;
+            color: #fff;
+        }
+
+        .food-note {
+            font-size: 11px;
+            color: #ff9f43;
+            font-weight: 400;
+        }
+
+        .grand-total-section {
+            font-size: 17px;
+            font-weight: 700;
+            color: var(--primary);
+            display: flex;
+            justify-content: flex-end;
+            align-items: center;
+            gap: 15px;
+            margin-top: 25px;
+            padding-top: 20px;
+            border-top: 1px solid rgba(255, 255, 255, 0.08);
+        }
+
+        /* Alert notifications */
+        .custom-alert {
+            background: rgba(46, 204, 113, 0.15);
+            border: 1px solid rgba(46, 204, 113, 0.3);
+            color: #2ecc71;
+            padding: 14px 20px;
+            border-radius: 12px;
+            margin-bottom: 25px;
+            font-size: 14px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            animation: fadeIn 0.4s ease-out;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: var(--text-muted);
+        }
+
+        .empty-state i {
+            font-size: 48px;
+            color: rgba(255, 255, 255, 0.1);
+            margin-bottom: 15px;
+            display: block;
+        }
+
+        /* Profile Layout styles */
+        .profile-wrapper {
+            display: grid;
+            grid-template-columns: 320px 1fr;
+            gap: 30px;
+            margin-top: 20px;
+            align-items: start;
+        }
+
+        @media (max-width: 992px) {
+            .profile-wrapper {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .profile-sidebar {
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            border-radius: 20px;
+            padding: 30px 24px;
+            text-align: center;
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+        }
+
+        .profile-avatar-container {
+            position: relative;
+            width: 100px;
+            height: 100px;
+            margin: 0 auto 20px auto;
+        }
+
+        .profile-avatar-circle {
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--primary) 0%, #2a2218 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 36px;
+            font-weight: 700;
+            color: #fff;
+            border: 2px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 0 8px 24px rgba(203, 168, 118, 0.2);
+            text-transform: uppercase;
+        }
+
+        .profile-avatar-glow {
+            position: absolute;
+            top: -5px;
+            left: -5px;
+            right: -5px;
+            bottom: -5px;
+            border-radius: 50%;
+            background: radial-gradient(circle, rgba(203,168,118,0.2) 0%, transparent 70%);
+            z-index: -1;
+            animation: pulseGlow 3s infinite ease-in-out;
+        }
+
+        @keyframes pulseGlow {
+            0%, 100% { transform: scale(1); opacity: 0.6; }
+            50% { transform: scale(1.08); opacity: 0.9; }
+        }
+
+        .profile-name {
+            font-size: 20px;
+            font-weight: 600;
+            color: #fff;
+            margin-bottom: 5px;
+        }
+
+        .profile-role-badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 11px;
+            font-weight: 600;
+            background: rgba(203, 168, 118, 0.12);
+            color: var(--primary);
+            border: 1px solid rgba(203, 168, 118, 0.25);
+            margin-bottom: 25px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .profile-meta-list {
+            text-align: left;
+            border-top: 1px solid rgba(255, 255, 255, 0.06);
+            padding-top: 20px;
+            margin-bottom: 30px;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .profile-meta-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            color: var(--text-muted);
+            font-size: 14px;
+        }
+
+        .profile-meta-item i {
+            font-size: 16px;
+            color: var(--primary);
+        }
+
+        .profile-meta-value {
+            color: #fff;
+            font-weight: 500;
+        }
+
+        .profile-logout-btn {
+            width: 100%;
+            background: rgba(231, 76, 60, 0.1);
+            color: #ff6b6b;
+            border: 1px solid rgba(231, 76, 60, 0.2);
+            padding: 12px;
+            border-radius: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .profile-logout-btn:hover {
+            background: rgba(231, 76, 60, 0.2);
+            border-color: rgba(231, 76, 60, 0.4);
+            box-shadow: 0 0 15px rgba(231, 76, 60, 0.15);
+            transform: translateY(-2px);
+        }
+
+        .profile-content {
+            display: flex;
+            flex-direction: column;
+            gap: 30px;
+        }
+
+        .profile-card {
+            background: rgba(255, 255, 255, 0.01);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            border-radius: 20px;
+            padding: 30px;
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+        }
+
+        .profile-card-title {
+            font-size: 18px;
+            font-weight: 600;
+            color: var(--primary);
+            margin-bottom: 25px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+            padding-bottom: 15px;
+        }
+
+        .profile-card-title i {
+            font-size: 20px;
+        }
+
+        .form-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+
+        @media (max-width: 768px) {
+            .form-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .form-group-full {
+            grid-column: 1 / -1;
+        }
+
+        .profile-form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .profile-form-group label {
+            font-size: 13px;
+            color: var(--text-muted);
+            font-weight: 500;
+        }
+
+        .profile-input-wrapper {
+            position: relative;
+            display: flex;
+            align-items: center;
+        }
+
+        .profile-input-wrapper i {
+            position: absolute;
+            left: 15px;
+            color: var(--text-muted);
+            font-size: 16px;
+            pointer-events: none;
+            transition: color 0.3s;
+        }
+
+        .profile-input {
+            width: 100%;
+            padding: 12px 16px 12px 45px;
+            background: rgba(0, 0, 0, 0.2);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 12px;
+            color: #fff;
+            font-size: 14px;
+            font-family: inherit;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .profile-input:focus {
+            outline: none;
+            border-color: var(--primary);
+            background: rgba(0, 0, 0, 0.35);
+            box-shadow: 0 0 10px rgba(203, 168, 118, 0.15);
+        }
+
+        .profile-input:focus + i {
+            color: var(--primary);
+        }
+
+        .btn-profile-save {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+            color: #fff;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 12px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            align-self: flex-start;
+            box-shadow: 0 4px 15px rgba(203, 168, 118, 0.15);
+        }
+
+        .btn-profile-save:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(203, 168, 118, 0.3);
+        }
+
+        .btn-profile-save:active {
+            transform: translateY(0);
+        }
+
+        /* Custom error alerts styling */
+        .custom-alert-danger {
+            background: rgba(231, 76, 60, 0.15);
+            border: 1px solid rgba(231, 76, 60, 0.3);
+            color: #ff6b6b;
+            padding: 14px 20px;
+            border-radius: 12px;
+            margin-bottom: 25px;
+            font-size: 14px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            animation: fadeIn 0.4s ease-out;
+        }
     </style>
 </head>
 <body>
@@ -23,47 +845,496 @@
         <div class="nav-links">
             <a href="/">Trang chủ</a>
             <a href="/menu">Thực đơn</a>
-            <a href="/reservation">Đặt bàn</a>
+            <a href="/my-reservations" style="color:var(--primary);">Thông tin đặt bàn</a>
+            <a href="/reservation" class="btn-nav-highlight">Đặt bàn ngay</a>
+            
+            <!-- Hiển thị khi chưa đăng nhập -->
+            <div sec:authorize="!isAuthenticated()">
+                <a th:href="@{/login}" class="btn-nav-login">Đăng nhập</a>
+            </div>
+
+            <!-- Hiển thị khi đã đăng nhập -->
+            <div sec:authorize="isAuthenticated()" class="nav-user-dropdown">
+                <button class="nav-avatar-btn" onclick="toggleNavDropdown(event)">
+                    <img th:if="${currentUser != null and currentUser.avatarUrl != null}" th:src="${currentUser.avatarUrl}" class="nav-avatar-img" alt="Avatar">
+                    <div th:unless="${currentUser != null and currentUser.avatarUrl != null}" class="nav-avatar-circle" th:text="${#strings.substring(#authentication.name, 0, 1).toUpperCase()}">U</div>
+                    <span class="d-none d-md-inline nav-username" th:text="${currentUser != null and currentUser.fullName != null and !currentUser.fullName.isEmpty() ? currentUser.fullName : #authentication.name}">Username</span>
+                    <i class="bi bi-chevron-down nav-chevron"></i>
+                </button>
+                <div class="nav-dropdown-menu" id="navDropdownMenu">
+                    <a href="/profile">
+                        <i class="bi bi-person-circle"></i> Thông tin cá nhân
+                    </a>
+                    <a sec:authorize="hasAnyAuthority('ROLE_ADMIN', 'ROLE_STAFF')" href="/staff/orders">
+                        <i class="bi bi-person-badge"></i> Phục vụ (Staff)
+                    </a>
+                    <a sec:authorize="hasAuthority('ROLE_ADMIN')" href="/admin/menu">
+                        <i class="bi bi-shield-lock"></i> Quản trị (Admin)
+                    </a>
+                    <form th:action="@{/logout}" method="post" id="navLogoutForm" style="margin: 0;">
+                        <button type="submit" class="nav-logout-btn" onclick="return confirm('Quý khách có chắc chắn muốn đăng xuất?')">
+                            <i class="bi bi-box-arrow-right"></i> Đăng xuất
+                        </button>
+                    </form>
+                </div>
+            </div>
         </div>
     </nav>
+    <script>
+        function toggleNavDropdown(event) {
+            event.stopPropagation();
+            const dropdown = document.querySelector('.nav-user-dropdown');
+            const menu = document.getElementById('navDropdownMenu');
+            dropdown.classList.toggle('active');
+            menu.classList.toggle('show');
+        }
+        document.addEventListener('click', function(event) {
+            const dropdown = document.querySelector('.nav-user-dropdown');
+            const menu = document.getElementById('navDropdownMenu');
+            if (dropdown && menu && !dropdown.contains(event.target)) {
+                dropdown.classList.remove('active');
+                menu.classList.remove('show');
+            }
+        });
+    </script>
+ 
+    <div class="dashboard-container">
+        <div class="dashboard-card">
+            <div class="dashboard-header">
+                <h2>Lịch Sử & <span>Thông Tin Đặt Bàn</span></h2>
+                <p>Quản lý các lượt đặt bàn và thực đơn ăn trước của quý khách tại Lumina</p>
+            </div>
 
-    <div class="container">
-        <h2 style="text-align:center; margin-bottom: 30px;">Lịch sử Đặt Bàn của bạn</h2>
+            <!-- Custom success notifications -->
+            <div th:if="${success}" class="custom-alert">
+                <i class="bi bi-check-circle-fill"></i>
+                <span th:text="${success}">Đã xử lý thành công.</span>
+            </div>
 
-        <div th:if="${success}" class="alert alert-success" th:text="${success}"></div>
+            <!-- Custom error notifications -->
+            <div th:if="${error}" class="custom-alert-danger">
+                <i class="bi bi-exclamation-triangle-fill"></i>
+                <span th:text="${error}">Đã xảy ra lỗi.</span>
+            </div>
 
-        <table class="table">
-            <thead>
-                <tr>
-                    <th>Mã Đặt bàn</th>
-                    <th>Thời gian đến</th>
-                    <th>Số khách</th>
-                    <th>Khu vực / Bàn</th>
-                    <th>Trạng thái</th>
-                    <th>Hành động</th>
-                </tr>
-            </thead>
-            <tbody>
-                <tr th:each="res : ${reservations}">
-                    <td th:text="'#RES-' + ${res.id}">#RES-1</td>
-                    <td th:text="${#temporals.format(res.reservationTime, 'HH:mm - dd/MM/yyyy')}">10:00 20/10/2026</td>
-                    <td th:text="${res.numberOfGuests} + ' người'">2 người</td>
-                    <td th:text="${res.table.area.name} + ' - ' + ${res.table.tableName}">Tầng 1 - Bàn 01</td>
-                    <td>
-                        <span th:class="'status-badge status-' + ${res.status.name()}" th:text="${res.status}">PENDING</span>
-                    </td>
-                    <td>
-                        <form th:if="${res.status.name() == 'PENDING'}" th:action="@{/reservation/cancel}" method="post" style="margin:0;">
-                            <input type="hidden" name="reservationId" th:value="${res.id}">
-                            <button type="submit" class="btn-primary" style="background:#ff4757; color:#fff; padding:5px 10px; font-size:12px; width:auto;" onclick="return confirm('Bạn có chắc chắn muốn hủy đặt bàn này?');">Hủy bàn</button>
-                        </form>
-                    </td>
-                </tr>
-                <tr th:if="${#lists.isEmpty(reservations)}">
-                    <td colspan="6" style="text-align:center; color:#aaa;">Bạn chưa có lịch sử đặt bàn nào.</td>
-                </tr>
-            </tbody>
-        </table>
+            <!-- Dashboard Switcher Tabs -->
+            <div class="dashboard-tabs">
+                <button class="tab-btn active" id="tab-reservations-btn" onclick="switchTab('reservations')">
+                    <i class="bi bi-calendar-check"></i> Đơn đặt bàn
+                </button>
+                <button class="tab-btn" id="tab-orders-btn" onclick="switchTab('orders')">
+                    <i class="bi bi-receipt"></i> Đơn món ăn
+                </button>
+            </div>
+
+            <!-- TAB 1: RESERVATIONS PANEL -->
+            <div class="tab-panel active" id="panel-reservations">
+                <div class="table-wrapper" th:if="${not #lists.isEmpty(reservations)}">
+                    <table class="custom-table">
+                        <thead>
+                            <tr>
+                                <th>Mã đặt bàn</th>
+                                <th>Thời gian đến</th>
+                                <th>Số khách</th>
+                                <th>Khu vực / Bàn</th>
+                                <th>Trạng thái</th>
+                                <th>Hành động</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr th:each="res : ${reservations}">
+                                <td style="font-weight: 700; color: var(--primary);" th:text="'#RES-' + ${res.id}">#RES-101</td>
+                                <td th:text="${#temporals.format(res.reservationTime, 'HH:mm - dd/MM/yyyy')}">18:30 - 24/12/2026</td>
+                                <td th:text="${res.numberOfGuests} + ' người'">4 người</td>
+                                <td th:text="${res.table.area.name} + ' - ' + ${res.table.tableName}">Tầng 1 - Bàn 04</td>
+                                <td>
+                                    <span th:class="'status-badge status-res-' + ${res.status.name()}" th:text="${res.status}">PENDING</span>
+                                </td>
+                                <td>
+                                    <div class="btn-action-group">
+                                        <!-- Xem Chi Tiết Booking -->
+                                        <button class="btn-table-action btn-view-details"
+                                                th:data-id="${res.id}"
+                                                th:data-time="${#temporals.format(res.reservationTime, 'HH:mm - dd/MM/yyyy')}"
+                                                th:data-guests="${res.numberOfGuests}"
+                                                th:data-table="${res.table.area.name} + ' - ' + ${res.table.tableName}"
+                                                th:data-fullname="${res.user.fullName}"
+                                                th:data-phone="${res.user.phone}"
+                                                th:data-email="${res.user.email}"
+                                                th:data-note="${res.note != null ? res.note : 'Không có ghi chú'}"
+                                                th:data-status="${res.status.name()}"
+                                                onclick="openReservationModal(this)">
+                                            <i class="bi bi-eye"></i> Xem chi tiết
+                                        </button>
+
+                                        <!-- Hủy Bàn (Chỉ hiện khi PENDING) -->
+                                        <form th:if="${res.status.name() == 'PENDING'}" th:action="@{/reservation/cancel}" method="post" style="margin:0;">
+                                            <input type="hidden" name="reservationId" th:value="${res.id}">
+                                            <button type="submit" class="btn-table-action btn-cancel" onclick="return confirm('Qúy khách có chắc chắn muốn hủy lượt đặt bàn này?');">
+                                                <i class="bi bi-x-circle"></i> Hủy bàn
+                                            </button>
+                                        </form>
+                                    </div>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Empty Reservations list -->
+                <div class="empty-state" th:if="${#lists.isEmpty(reservations)}">
+                    <i class="bi bi-calendar-x"></i>
+                    <p>Quý khách chưa có đơn đặt bàn nào sắp tới.</p>
+                </div>
+            </div>
+
+            <!-- TAB 2: ORDERS PANEL -->
+            <div class="tab-panel" id="panel-orders">
+                <div class="table-wrapper" th:if="${not #lists.isEmpty(orders)}">
+                    <table class="custom-table">
+                        <thead>
+                            <tr>
+                                <th>Mã đơn hàng</th>
+                                <th>Mã đặt bàn</th>
+                                <th>Ngày đặt món</th>
+                                <th>Tổng tiền món</th>
+                                <th>Trạng thái món</th>
+                                <th>Trạng thái thanh toán</th>
+                                <th>Hành động</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr th:each="order : ${orders}">
+                                <td style="font-weight: 700; color: var(--primary);" th:text="'#ORD-' + ${order.id}">#ORD-501</td>
+                                <td th:text="${order.reservation != null ? '#RES-' + order.reservation.id : 'Trực tiếp'}">#RES-101</td>
+                                <td th:text="${#temporals.format(order.createdAt, 'HH:mm - dd/MM/yyyy')}">18:00 - 23/12/2026</td>
+                                <td style="font-weight: 600; color: #fff;" th:text="${#numbers.formatDecimal(order.totalAmount, 0, 'COMMA', 0, 'POINT')} + ' VNĐ'">150,000 đ</td>
+                                <td>
+                                    <!-- Mapping Status in customer dashboard -->
+                                    <span th:if="${order.status.name() == 'PENDING'}" class="status-badge status-order-PENDING"><i class="bi bi-hourglass-split"></i> Chờ phục vụ</span>
+                                    <span th:if="${order.status.name() == 'CONFIRMED'}" class="status-badge status-order-PREPARING"><i class="bi bi-fire"></i> Đang chuẩn bị</span>
+                                    <span th:if="${order.status.name() == 'SERVING'}" class="status-badge status-order-SERVED"><i class="bi bi-clock-history"></i> Đang phục vụ</span>
+                                    <span th:if="${order.status.name() == 'COMPLETED'}" class="status-badge status-order-COMPLETED"><i class="bi bi-check-circle-fill"></i> Đã hoàn thành</span>
+                                    <span th:if="${order.status.name() == 'CANCELLED'}" class="status-badge status-order-CANCELLED"><i class="bi bi-x-circle-fill"></i> Đã hủy</span>
+                                </td>
+                                <td>
+                                    <!-- Mapping Payment Status -->
+                                    <span th:if="${order.status.name() == 'CONFIRMED' or order.status.name() == 'COMPLETED'}" class="status-badge pay-status-paid">
+                                        <i class="bi bi-shield-fill-check"></i> Đã thanh toán (Trả trước)
+                                    </span>
+                                    <span th:if="${order.status.name() == 'PENDING' or order.status.name() == 'SERVING'}" class="status-badge pay-status-later">
+                                        <i class="bi bi-wallet2"></i> Thanh toán sau tại nhà hàng
+                                    </span>
+                                    <span th:if="${order.status.name() == 'CANCELLED'}" class="status-badge pay-status-cancelled">
+                                        <i class="bi bi-x-octagon-fill"></i> Đã hủy
+                                    </span>
+                                </td>
+                                <td>
+                                    <!-- Xem chi tiết món ăn (Thymeleaf renders item attributes inside hidden template to copy over to order modal) -->
+                                    <button class="btn-table-action btn-view-details"
+                                            th:data-order-id="${order.id}"
+                                            th:data-order-code="'#ORD-' + ${order.id}"
+                                            th:data-res-code="${order.reservation != null ? '#RES-' + order.reservation.id : 'Trực tiếp'}"
+                                            th:data-total="${#numbers.formatDecimal(order.totalAmount, 0, 'COMMA', 0, 'POINT')} + ' VNĐ'"
+                                            th:data-date="${#temporals.format(order.createdAt, 'HH:mm - dd/MM/yyyy')}"
+                                            th:data-status="${order.status.name()}"
+                                            th:onclick="'openOrderModal(' + ${order.id} + ', this)'">
+                                        <i class="bi bi-egg-fried"></i> Xem món ăn
+                                    </button>
+
+                                    <!-- Hidden template holding table rows for this specific order items -->
+                                    <table th:id="'order-items-template-' + ${order.id}" style="display: none;">
+                                        <tbody>
+                                            <tr th:each="item : ${orderItemsMap.get(order.id)}">
+                                                <td>
+                                                    <img th:src="${item.menuItem.imageUrl != null ? item.menuItem.imageUrl : '/images/default-food.png'}" 
+                                                         alt="Món ăn" class="modal-food-img">
+                                                </td>
+                                                <td>
+                                                    <div class="modal-food-info">
+                                                        <span class="food-name" th:text="${item.menuItem.name}">Tên món ăn</span>
+                                                        <span class="food-note" th:if="${item.note != null and !item.note.isEmpty()}" th:text="'Ghi chú: ' + ${item.note}"></span>
+                                                    </div>
+                                                </td>
+                                                <td th:text="${item.quantity}">1</td>
+                                                <td th:text="${#numbers.formatDecimal(item.priceAtTime, 0, 'COMMA', 0, 'POINT')} + ' VNĐ'">100,000 VNĐ</td>
+                                                <td style="font-weight: 600; color: var(--primary);" th:text="${#numbers.formatDecimal(item.priceAtTime * item.quantity, 0, 'COMMA', 0, 'POINT')} + ' VNĐ'">100,000 VNĐ</td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Empty Orders list -->
+                <div class="empty-state" th:if="${#lists.isEmpty(orders)}">
+                    <i class="bi bi-journal-x"></i>
+                    <p>Quý khách chưa có đơn đặt món ăn nào.</p>
+                </div>
+            </div>
+        </div>
     </div>
+
+    <!-- MODAL 1: RESERVATION DETAILS MODAL -->
+    <div class="modal-overlay" id="reservationDetailModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div class="modal-title">
+                    <i class="bi bi-calendar-event"></i> Chi Tiết Đơn Đặt Bàn <span id="mres-id-title" style="color: #fff; font-weight: 700; margin-left: 5px;"></span>
+                </div>
+                <button class="btn-close-modal" onclick="closeModal('reservationDetailModal')">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="detail-grid">
+                    <div class="detail-item">
+                        <span class="detail-label">Họ và Tên</span>
+                        <span class="detail-value" id="mres-fullname">Nguyễn Văn A</span>
+                    </div>
+                    <div class="detail-item">
+                        <span class="detail-label">Số Điện Thoại</span>
+                        <span class="detail-value" id="mres-phone">0987654321</span>
+                    </div>
+                    <div class="detail-item">
+                        <span class="detail-label">Địa Chỉ Email</span>
+                        <span class="detail-value" id="mres-email">customer@gmail.com</span>
+                    </div>
+                    <div class="detail-item">
+                        <span class="detail-label">Thời Gian Đến</span>
+                        <span class="detail-value" id="mres-time" style="color: var(--primary);">18:30 - 24/12/2026</span>
+                    </div>
+                    <div class="detail-item">
+                        <span class="detail-label">Số Lượng Khách</span>
+                        <span class="detail-value" id="mres-guests">4 người</span>
+                    </div>
+                    <div class="detail-item">
+                        <span class="detail-label">Bàn & Khu Vực</span>
+                        <span class="detail-value" id="mres-table">Tầng 1 - Bàn 04</span>
+                    </div>
+                    <div class="detail-item">
+                        <span class="detail-label">Trạng Thái Đơn</span>
+                        <span class="detail-value" id="mres-status">PENDING</span>
+                    </div>
+                    <div class="detail-item detail-item-full">
+                        <span class="detail-label">Ghi Chú Đặt Bàn</span>
+                        <span class="detail-value" id="mres-note" style="font-style: italic; font-weight: normal; color: #ddd;">Không có ghi chú</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL 2: ORDER DETAILS MODAL -->
+    <div class="modal-overlay" id="orderDetailModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div class="modal-title">
+                    <i class="bi bi-receipt"></i> Chi Tiết Đơn Món Ăn <span id="mord-id-title" style="color: #fff; font-weight: 700; margin-left: 5px;"></span>
+                </div>
+                <button class="btn-close-modal" onclick="closeModal('orderDetailModal')">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="detail-grid">
+                    <div class="detail-item">
+                        <span class="detail-label">Mã đặt bàn liên kết</span>
+                        <span class="detail-value" id="mord-res-code">#RES-101</span>
+                    </div>
+                    <div class="detail-item">
+                        <span class="detail-label">Thời gian gọi món</span>
+                        <span class="detail-value" id="mord-date">18:00 - 23/12/2026</span>
+                    </div>
+                    <div class="detail-item">
+                        <span class="detail-label">Trạng thái món</span>
+                        <span class="detail-value" id="mord-status">Đang chuẩn bị</span>
+                    </div>
+                    <div class="detail-item">
+                        <span class="detail-label">Thanh toán</span>
+                        <span class="detail-value" id="mord-pay-status" style="color: #2ecc71;">Đã thanh toán (Trả trước)</span>
+                    </div>
+                </div>
+
+                <div style="margin-top: 20px;">
+                    <span class="detail-label">Danh Sách Món Ăn Đặt Trước</span>
+                    <div class="modal-table-container">
+                        <table class="modal-table">
+                            <thead>
+                                <tr>
+                                    <th style="width: 70px;">Hình ảnh</th>
+                                    <th>Tên món ăn</th>
+                                    <th style="width: 80px;">Số lượng</th>
+                                    <th>Đơn giá</th>
+                                    <th>Thành tiền</th>
+                                </tr>
+                            </thead>
+                            <tbody id="mord-items-body">
+                                <!-- Populated dynamically via JS -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div class="grand-total-section">
+                    <span>Tổng tiền món ăn:</span>
+                    <span id="mord-grand-total" style="font-size: 22px; color: #fff;">150,000 đ</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tab & Modal Controller Script -->
+    <script>
+        // Switch between Tabs
+        function switchTab(tabName) {
+            // Remove active classes
+            document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+            document.querySelectorAll('.tab-panel').forEach(panel => panel.classList.remove('active'));
+
+            // Add active class to targets
+            if (tabName === 'reservations') {
+                document.getElementById('tab-reservations-btn').classList.add('active');
+                document.getElementById('panel-reservations').classList.add('active');
+            } else if (tabName === 'orders') {
+                document.getElementById('tab-orders-btn').classList.add('active');
+                document.getElementById('panel-orders').classList.add('active');
+            }
+            
+            // Save current tab in localStorage
+            localStorage.setItem('activeReservationsTab', tabName);
+        }
+
+        // Restore tab state on page load
+        window.addEventListener('DOMContentLoaded', () => {
+            const urlParams = new URLSearchParams(window.location.search);
+            const urlTab = urlParams.get('tab');
+            if (urlTab && (urlTab === 'reservations' || urlTab === 'orders')) {
+                switchTab(urlTab);
+            } else {
+                const savedTab = localStorage.getItem('activeReservationsTab');
+                if (savedTab && (savedTab === 'reservations' || savedTab === 'orders')) {
+                    switchTab(savedTab);
+                } else {
+                    switchTab('reservations'); // default fallback
+                }
+            }
+        });
+
+        // Open Reservation detail Modal
+        function openReservationModal(btn) {
+            const id = btn.getAttribute('data-id');
+            const time = btn.getAttribute('data-time');
+            const guests = btn.getAttribute('data-guests');
+            const table = btn.getAttribute('data-table');
+            const fullname = btn.getAttribute('data-fullname');
+            const phone = btn.getAttribute('data-phone');
+            const email = btn.getAttribute('data-email');
+            const note = btn.getAttribute('data-note');
+            const status = btn.getAttribute('data-status');
+
+            document.getElementById('mres-id-title').innerText = '#RES-' + id;
+            document.getElementById('mres-fullname').innerText = fullname;
+            document.getElementById('mres-phone').innerText = phone;
+            document.getElementById('mres-email').innerText = email;
+            document.getElementById('mres-time').innerText = time;
+            document.getElementById('mres-guests').innerText = guests + ' người';
+            document.getElementById('mres-table').innerText = table;
+            document.getElementById('mres-note').innerText = note;
+
+            // Render status with color classes
+            const statusSpan = document.getElementById('mres-status');
+            statusSpan.innerText = status;
+            statusSpan.className = 'detail-value status-badge status-res-' + status;
+
+            openModal('reservationDetailModal');
+        }
+
+        // Open Order detail Modal
+        function openOrderModal(orderId, btn) {
+            const orderCode = btn.getAttribute('data-order-code');
+            const resCode = btn.getAttribute('data-res-code');
+            const total = btn.getAttribute('data-total');
+            const date = btn.getAttribute('data-date');
+            const status = btn.getAttribute('data-status');
+
+            document.getElementById('mord-id-title').innerText = orderCode;
+            document.getElementById('mord-res-code').innerText = resCode;
+            document.getElementById('mord-date').innerText = date;
+            document.getElementById('mord-grand-total').innerText = total;
+
+            // Map order status to friendly names
+            let statusText = '';
+            let statusClass = '';
+            if (status === 'PENDING') {
+                statusText = 'Chờ phục vụ';
+                statusClass = 'status-badge status-order-PENDING';
+            } else if (status === 'CONFIRMED') {
+                statusText = 'Đang chuẩn bị';
+                statusClass = 'status-badge status-order-PREPARING';
+            } else if (status === 'SERVING') {
+                statusText = 'Đang phục vụ';
+                statusClass = 'status-badge status-order-SERVED';
+            } else if (status === 'COMPLETED') {
+                statusText = 'Đã hoàn thành';
+                statusClass = 'status-badge status-order-COMPLETED';
+            } else if (status === 'CANCELLED') {
+                statusText = 'Đã hủy';
+                statusClass = 'status-badge status-order-CANCELLED';
+            }
+
+            const statusContainer = document.getElementById('mord-status');
+            statusContainer.innerHTML = `<span class="${statusClass}">${statusText}</span>`;
+
+            // Map payment status based on order status
+            let payText = '';
+            let payClass = '';
+            if (status === 'CONFIRMED' || status === 'COMPLETED') {
+                payText = 'Đã thanh toán (Trả trước)';
+                payClass = 'status-badge pay-status-paid';
+            } else if (status === 'PENDING' || status === 'SERVING') {
+                payText = 'Thanh toán sau tại nhà hàng';
+                payClass = 'status-badge pay-status-later';
+            } else if (status === 'CANCELLED') {
+                payText = 'Đã hủy';
+                payClass = 'status-badge pay-status-cancelled';
+            }
+
+            const payContainer = document.getElementById('mord-pay-status');
+            payContainer.innerHTML = `<span class="${payClass}">${payText}</span>`;
+
+            // Clone items table row from template
+            const templateTbody = document.querySelector(`#order-items-template-${orderId} tbody`);
+            const targetTbody = document.getElementById('mord-items-body');
+            targetTbody.innerHTML = '';
+
+            if (templateTbody) {
+                targetTbody.innerHTML = templateTbody.innerHTML;
+            } else {
+                targetTbody.innerHTML = `<tr><td colspan="5" style="text-align:center; color:var(--text-muted);">Không tải được danh sách món ăn.</td></tr>`;
+            }
+
+            openModal('orderDetailModal');
+        }
+
+        // General helper to show modal and lock scrolling
+        function openModal(modalId) {
+            document.getElementById(modalId).classList.add('active');
+            document.body.style.overflow = 'hidden';
+        }
+
+        // General helper to close modal and unlock scrolling
+        function closeModal(modalId) {
+            document.getElementById(modalId).classList.remove('active');
+            document.body.style.overflow = '';
+        }
+
+        // Close when clicking outside of modal content
+        document.querySelectorAll('.modal-overlay').forEach(overlay => {
+            overlay.addEventListener('click', function(e) {
+                if (e.target === this) {
+                    closeModal(this.id);
+                }
+            });
+        });
+    </script>
 </body>
 </html>
