@@ -13,6 +13,7 @@ public interface ReservationRepository extends JpaRepository<Reservation, Long> 
     List<Reservation> findByUserIdOrderByReservationTimeDesc(Long userId);
     List<Reservation> findByUserIdAndReservationTimeBetweenOrderByReservationTimeDesc(Long userId, java.time.LocalDateTime start, java.time.LocalDateTime end);
     List<Reservation> findByUserIdAndReservationTimeGreaterThanEqualOrderByReservationTimeDesc(Long userId, java.time.LocalDateTime start);
+    List<Reservation> findByUserIdAndReservationTimeGreaterThanEqualAndStatusInOrderByReservationTimeDesc(Long userId, java.time.LocalDateTime start, List<ReservationStatus> statuses);
     List<Reservation> findByStatus(ReservationStatus status);
     List<Reservation> findByStatusOrderByReservationTimeAsc(ReservationStatus status);
     List<Reservation> findAllByOrderByReservationTimeDesc();

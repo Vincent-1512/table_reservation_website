@@ -37,6 +37,17 @@ public class CartService {
         }
     }
 
+    public void update(Long menuItemId, int quantity, String note) {
+        CartItem item = map.get(menuItemId);
+        if (item != null) {
+            item.setQuantity(quantity);
+            item.setNote(note);
+            if (item.getQuantity() <= 0) {
+                map.remove(menuItemId);
+            }
+        }
+    }
+
     public void clear() {
         map.clear();
     }

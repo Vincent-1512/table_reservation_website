@@ -917,162 +917,93 @@
                 <span th:text="${error}">Đã xảy ra lỗi.</span>
             </div>
 
-            <!-- Dashboard Switcher Tabs -->
-            <div class="dashboard-tabs">
-                <button class="tab-btn active" id="tab-reservations-btn" onclick="switchTab('reservations')">
-                    <i class="bi bi-calendar-check"></i> Đơn đặt bàn
-                </button>
-                <button class="tab-btn" id="tab-orders-btn" onclick="switchTab('orders')">
-                    <i class="bi bi-receipt"></i> Đơn món ăn
-                </button>
-            </div>
-
-            <!-- TAB 1: RESERVATIONS PANEL -->
-            <div class="tab-panel active" id="panel-reservations">
-                <div class="table-wrapper" th:if="${not #lists.isEmpty(reservations)}">
-                    <table class="custom-table">
-                        <thead>
-                            <tr>
-                                <th>Mã đặt bàn</th>
-                                <th>Thời gian đến</th>
-                                <th>Số khách</th>
-                                <th>Khu vực / Bàn</th>
-                                <th>Trạng thái</th>
-                                <th>Hành động</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <tr th:each="res : ${reservations}">
-                                <td style="font-weight: 700; color: var(--primary);" th:text="'#RES-' + ${res.id}">#RES-101</td>
-                                <td th:text="${#temporals.format(res.reservationTime, 'HH:mm - dd/MM/yyyy')}">18:30 - 24/12/2026</td>
-                                <td th:text="${res.numberOfGuests} + ' người'">4 người</td>
-                                <td th:text="${res.table.area.name} + ' - ' + ${res.table.tableName}">Tầng 1 - Bàn 04</td>
-                                <td>
-                                    <span th:class="'status-badge status-res-' + ${res.status.name()}" th:text="${res.status}">PENDING</span>
-                                </td>
-                                <td>
-                                    <div class="btn-action-group">
-                                        <!-- Xem Chi Tiết Booking -->
-                                        <button class="btn-table-action btn-view-details"
-                                                th:data-id="${res.id}"
-                                                th:data-time="${#temporals.format(res.reservationTime, 'HH:mm - dd/MM/yyyy')}"
-                                                th:data-guests="${res.numberOfGuests}"
-                                                th:data-table="${res.table.area.name} + ' - ' + ${res.table.tableName}"
-                                                th:data-fullname="${res.user.fullName}"
-                                                th:data-phone="${res.user.phone}"
-                                                th:data-email="${res.user.email}"
-                                                th:data-note="${res.note != null ? res.note : 'Không có ghi chú'}"
-                                                th:data-status="${res.status.name()}"
-                                                onclick="openReservationModal(this)">
-                                            <i class="bi bi-eye"></i> Xem chi tiết
-                                        </button>
-
-                                        <!-- Hủy Bàn (Chỉ hiện khi PENDING) -->
-                                        <form th:if="${res.status.name() == 'PENDING'}" th:action="@{/reservation/cancel}" method="post" style="margin:0;">
-                                            <input type="hidden" name="reservationId" th:value="${res.id}">
-                                            <button type="submit" class="btn-table-action btn-cancel" onclick="return confirm('Qúy khách có chắc chắn muốn hủy lượt đặt bàn này?');">
-                                                <i class="bi bi-x-circle"></i> Hủy bàn
-                                            </button>
-                                        </form>
-                                    </div>
-                                </td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
-
-                <!-- Empty Reservations list -->
-                <div class="empty-state" th:if="${#lists.isEmpty(reservations)}">
-                    <i class="bi bi-calendar-x"></i>
-                    <p>Quý khách chưa có đơn đặt bàn nào sắp tới.</p>
-                </div>
-            </div>
-
-            <!-- TAB 2: ORDERS PANEL -->
-            <div class="tab-panel" id="panel-orders">
-                <div class="table-wrapper" th:if="${not #lists.isEmpty(orders)}">
-                    <table class="custom-table">
-                        <thead>
-                            <tr>
-                                <th>Mã đơn hàng</th>
-                                <th>Mã đặt bàn</th>
-                                <th>Ngày đặt món</th>
-                                <th>Tổng tiền món</th>
-                                <th>Trạng thái món</th>
-                                <th>Trạng thái thanh toán</th>
-                                <th>Hành động</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <tr th:each="order : ${orders}">
-                                <td style="font-weight: 700; color: var(--primary);" th:text="'#ORD-' + ${order.id}">#ORD-501</td>
-                                <td th:text="${order.reservation != null ? '#RES-' + order.reservation.id : 'Trực tiếp'}">#RES-101</td>
-                                <td th:text="${#temporals.format(order.createdAt, 'HH:mm - dd/MM/yyyy')}">18:00 - 23/12/2026</td>
-                                <td style="font-weight: 600; color: #fff;" th:text="${#numbers.formatDecimal(order.totalAmount, 0, 'COMMA', 0, 'POINT')} + ' VNĐ'">150,000 đ</td>
-                                <td>
-                                    <!-- Mapping Status in customer dashboard -->
-                                    <span th:if="${order.status.name() == 'PENDING'}" class="status-badge status-order-PENDING"><i class="bi bi-hourglass-split"></i> Chờ phục vụ</span>
-                                    <span th:if="${order.status.name() == 'CONFIRMED'}" class="status-badge status-order-PREPARING"><i class="bi bi-fire"></i> Đang chuẩn bị</span>
-                                    <span th:if="${order.status.name() == 'SERVING'}" class="status-badge status-order-SERVED"><i class="bi bi-clock-history"></i> Đang phục vụ</span>
-                                    <span th:if="${order.status.name() == 'COMPLETED'}" class="status-badge status-order-COMPLETED"><i class="bi bi-check-circle-fill"></i> Đã hoàn thành</span>
-                                    <span th:if="${order.status.name() == 'CANCELLED'}" class="status-badge status-order-CANCELLED"><i class="bi bi-x-circle-fill"></i> Đã hủy</span>
-                                </td>
-                                <td>
-                                    <!-- Mapping Payment Status -->
-                                    <span th:if="${order.status.name() == 'CONFIRMED' or order.status.name() == 'COMPLETED'}" class="status-badge pay-status-paid">
-                                        <i class="bi bi-shield-fill-check"></i> Đã thanh toán (Trả trước)
-                                    </span>
-                                    <span th:if="${order.status.name() == 'PENDING' or order.status.name() == 'SERVING'}" class="status-badge pay-status-later">
-                                        <i class="bi bi-wallet2"></i> Thanh toán sau tại nhà hàng
-                                    </span>
-                                    <span th:if="${order.status.name() == 'CANCELLED'}" class="status-badge pay-status-cancelled">
-                                        <i class="bi bi-x-octagon-fill"></i> Đã hủy
-                                    </span>
-                                </td>
-                                <td>
-                                    <!-- Xem chi tiết món ăn (Thymeleaf renders item attributes inside hidden template to copy over to order modal) -->
+            <!-- Single active reservations list -->
+            <div class="table-wrapper" th:if="${not #lists.isEmpty(reservations)}">
+                <table class="custom-table">
+                    <thead>
+                        <tr>
+                            <th>Mã đặt bàn</th>
+                            <th>Trạng thái</th>
+                            <th>Hành động</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr th:each="res : ${reservations}">
+                            <td style="font-weight: 700; color: var(--primary);" th:text="'#RES-' + ${res.id}">#RES-101</td>
+                            <td>
+                                <span th:class="'status-badge status-res-' + ${res.status.name()}" th:text="${res.status}">PENDING</span>
+                            </td>
+                            <td>
+                                <div class="btn-action-group" style="align-items: center;">
+                                    <!-- Xem Chi Tiết Booking -->
                                     <button class="btn-table-action btn-view-details"
-                                            th:data-order-id="${order.id}"
-                                            th:data-order-code="'#ORD-' + ${order.id}"
-                                            th:data-res-code="${order.reservation != null ? '#RES-' + order.reservation.id : 'Trực tiếp'}"
-                                            th:data-total="${#numbers.formatDecimal(order.totalAmount, 0, 'COMMA', 0, 'POINT')} + ' VNĐ'"
-                                            th:data-date="${#temporals.format(order.createdAt, 'HH:mm - dd/MM/yyyy')}"
-                                            th:data-status="${order.status.name()}"
-                                            th:onclick="'openOrderModal(' + ${order.id} + ', this)'">
-                                        <i class="bi bi-egg-fried"></i> Xem món ăn
+                                            th:data-id="${res.id}"
+                                            th:data-time="${#temporals.format(res.reservationTime, 'HH:mm - dd/MM/yyyy')}"
+                                            th:data-guests="${res.numberOfGuests}"
+                                            th:data-table="${res.table.area.name} + ' - ' + ${res.table.tableName}"
+                                            th:data-fullname="${res.user.fullName}"
+                                            th:data-phone="${res.user.phone}"
+                                            th:data-email="${res.user.email}"
+                                            th:data-note="${res.note != null ? res.note : 'Không có ghi chú'}"
+                                            th:data-status="${res.status.name()}"
+                                            onclick="openReservationModal(this)">
+                                        <i class="bi bi-eye"></i> Xem chi tiết
                                     </button>
 
-                                    <!-- Hidden template holding table rows for this specific order items -->
-                                    <table th:id="'order-items-template-' + ${order.id}" style="display: none;">
-                                        <tbody>
-                                            <tr th:each="item : ${orderItemsMap.get(order.id)}">
-                                                <td>
-                                                    <img th:src="${item.menuItem.imageUrl != null ? item.menuItem.imageUrl : '/images/default-food.png'}" 
-                                                         alt="Món ăn" class="modal-food-img">
-                                                </td>
-                                                <td>
-                                                    <div class="modal-food-info">
-                                                        <span class="food-name" th:text="${item.menuItem.name}">Tên món ăn</span>
-                                                        <span class="food-note" th:if="${item.note != null and !item.note.isEmpty()}" th:text="'Ghi chú: ' + ${item.note}"></span>
-                                                    </div>
-                                                </td>
-                                                <td th:text="${item.quantity}">1</td>
-                                                <td th:text="${#numbers.formatDecimal(item.priceAtTime, 0, 'COMMA', 0, 'POINT')} + ' VNĐ'">100,000 VNĐ</td>
-                                                <td style="font-weight: 600; color: var(--primary);" th:text="${#numbers.formatDecimal(item.priceAtTime * item.quantity, 0, 'COMMA', 0, 'POINT')} + ' VNĐ'">100,000 VNĐ</td>
-                                            </tr>
-                                        </tbody>
-                                    </table>
-                                </td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
+                                    <!-- Nút Đơn món ăn đi kèm (Xem món ăn) -->
+                                    <div th:if="${reservationOrderMap.containsKey(res.id)}" th:with="order=${reservationOrderMap.get(res.id)}" style="display: inline-block;">
+                                        <button class="btn-table-action btn-view-details"
+                                                style="background: rgba(203, 168, 118, 0.12); color: var(--primary); border-color: rgba(203, 168, 118, 0.25);"
+                                                th:data-order-id="${order.id}"
+                                                th:data-order-code="'#ORD-' + ${order.id}"
+                                                th:data-res-code="'#RES-' + ${res.id}"
+                                                th:data-total="${#numbers.formatDecimal(order.totalAmount, 0, 'COMMA', 0, 'POINT')} + ' VNĐ'"
+                                                th:data-date="${#temporals.format(order.createdAt, 'HH:mm - dd/MM/yyyy')}"
+                                                th:data-status="${order.status.name()}"
+                                                th:onclick="'openOrderModal(' + ${order.id} + ', this)'">
+                                            <i class="bi bi-egg-fried"></i> Xem món ăn
+                                        </button>
+                                        
+                                        <!-- Hidden template holding table rows for this specific order items -->
+                                        <table th:id="'order-items-template-' + ${order.id}" style="display: none;">
+                                            <tbody>
+                                                <tr th:each="item : ${orderItemsMap.get(order.id)}">
+                                                    <td>
+                                                        <img th:src="${item.menuItem.imageUrl != null ? item.menuItem.imageUrl : '/images/default-food.png'}" 
+                                                             alt="Món ăn" class="modal-food-img">
+                                                    </td>
+                                                    <td>
+                                                        <div class="modal-food-info">
+                                                            <span class="food-name" th:text="${item.menuItem.name}">Tên món ăn</span>
+                                                            <span class="food-note" th:if="${item.note != null and !item.note.isEmpty()}" th:text="'Ghi chú: ' + ${item.note}"></span>
+                                                        </div>
+                                                    </td>
+                                                    <td th:text="${item.quantity}">1</td>
+                                                    <td th:text="${#numbers.formatDecimal(item.priceAtTime, 0, 'COMMA', 0, 'POINT')} + ' VNĐ'">100,000 VNĐ</td>
+                                                    <td style="font-weight: 600; color: var(--primary);" th:text="${#numbers.formatDecimal(item.priceAtTime * item.quantity, 0, 'COMMA', 0, 'POINT')} + ' VNĐ'">100,000 VNĐ</td>
+                                                </tr>
+                                            </tbody>
+                                        </table>
+                                    </div>
 
-                <!-- Empty Orders list -->
-                <div class="empty-state" th:if="${#lists.isEmpty(orders)}">
-                    <i class="bi bi-journal-x"></i>
-                    <p>Quý khách chưa có đơn đặt món ăn nào.</p>
-                </div>
+                                    <!-- Hủy Bàn (Chỉ hiện khi PENDING) -->
+                                    <form th:if="${res.status.name() == 'PENDING'}" th:action="@{/reservation/cancel}" method="post" style="margin:0;">
+                                        <input type="hidden" name="reservationId" th:value="${res.id}">
+                                        <button type="submit" class="btn-table-action btn-cancel" onclick="return confirm('Qúy khách có chắc chắn muốn hủy lượt đặt bàn này?');">
+                                            <i class="bi bi-x-circle"></i> Hủy bàn
+                                        </button>
+                                    </form>
+                                </div>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Empty Reservations list -->
+            <div class="empty-state" th:if="${#lists.isEmpty(reservations)}">
+                <i class="bi bi-calendar-x"></i>
+                <p>Quý khách chưa có đơn đặt bàn nào sắp tới.</p>
             </div>
         </div>
     </div>

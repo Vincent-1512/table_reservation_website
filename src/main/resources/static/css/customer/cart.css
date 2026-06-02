@@ -10,6 +10,7 @@
 .cart-item {
     display: flex;
     align-items: center;
+    gap: 18px;
     padding: 20px 0;
     border-bottom: 1px solid rgba(255,255,255,0.1);
 }
@@ -19,7 +20,6 @@
     height: 80px;
     border-radius: 8px;
     object-fit: cover;
-    margin-right: 20px;
 }
 
 .item-info {
@@ -46,9 +46,67 @@
     text-align: center;
 }
 
+.cart-update-form {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.qty-note-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.note-input {
+    width: 220px;
+    min-height: 42px;
+    padding: 8px 10px;
+    border-radius: 8px;
+    border: 1px solid rgba(255,255,255,0.2);
+    background: rgba(255,255,255,0.04);
+    color: #fff;
+    resize: vertical;
+    font-family: inherit;
+}
+
+.note-input:focus,
+.qty-input:focus {
+    outline: none;
+    border-color: var(--primary);
+}
+
+.btn-cart-update {
+    padding: 8px 12px;
+    width: auto;
+}
+
+.btn-remove-cart {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    color: #ff6b6b;
+    text-decoration: none;
+    font-weight: 600;
+    white-space: nowrap;
+}
+
 .total-box {
     margin-top: 30px;
     text-align: right;
     font-size: 24px;
     font-weight: 600;
+}
+
+@media (max-width: 768px) {
+    .cart-item,
+    .cart-update-form,
+    .qty-note-row {
+        align-items: stretch;
+        flex-direction: column;
+    }
+
+    .note-input {
+        width: 100%;
+    }
 }

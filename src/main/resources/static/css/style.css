@@ -43,13 +43,20 @@ body {
     padding: 40px;
     width: 100%;
     max-width: 450px;
-    box-shadow: 0 15px 35px rgba(0,0,0,0.5);
+    box-shadow: 0 15px 35px rgba(0, 0, 0, 0.5);
     animation: fadeIn 0.8s ease-out;
 }
 
 @keyframes fadeIn {
-    from { opacity: 0; transform: translateY(20px); }
-    to { opacity: 1; transform: translateY(0); }
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
 }
 
 .auth-header {
@@ -82,8 +89,8 @@ body {
 .form-control {
     width: 100%;
     padding: 12px 15px;
-    background: rgba(255,255,255,0.05);
-    border: 1px solid rgba(255,255,255,0.1);
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
     border-radius: 8px;
     color: #fff;
     font-size: 16px;
@@ -93,7 +100,7 @@ body {
 .form-control:focus {
     outline: none;
     border-color: var(--primary);
-    background: rgba(255,255,255,0.1);
+    background: rgba(255, 255, 255, 0.1);
     box-shadow: 0 0 10px rgba(203, 168, 118, 0.2);
 }
 
@@ -163,7 +170,7 @@ body {
     top: 0;
     width: 100%;
     z-index: 100;
-    border-bottom: 1px solid rgba(255,255,255,0.05);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
 }
 
 .logo {
@@ -194,7 +201,7 @@ body {
 
 .hero {
     height: 100vh;
-    background-image: linear-gradient(rgba(0,0,0,0.6), rgba(0,0,0,0.8)), url('/images/restaurant_bg.png');
+    background-image: linear-gradient(rgba(0, 0, 0, 0.6), rgba(0, 0, 0, 0.8)), url('/images/restaurant_bg.png');
     background-size: cover;
     background-position: center;
     display: flex;
@@ -371,7 +378,8 @@ body {
     opacity: 1;
 }
 
-.nav-dropdown-menu a, .nav-logout-btn {
+.nav-dropdown-menu a,
+.nav-logout-btn {
     display: flex;
     align-items: center;
     gap: 10px;
@@ -390,7 +398,8 @@ body {
     font-family: inherit;
 }
 
-.nav-dropdown-menu a:hover, .nav-logout-btn:hover {
+.nav-dropdown-menu a:hover,
+.nav-logout-btn:hover {
     background: rgba(203, 168, 118, 0.12);
     color: var(--primary) !important;
 }
