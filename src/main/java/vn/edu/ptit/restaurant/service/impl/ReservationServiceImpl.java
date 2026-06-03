@@ -214,10 +214,10 @@ public class ReservationServiceImpl implements ReservationService {
 
     @Override
     public List<Reservation> findUpcoming(int limit) {
-        LocalDateTime now = LocalDateTime.now();
-        LocalDateTime endOfDay = now.toLocalDate().atTime(23, 59, 59);
+        // Lấy từ đầu ngày hôm nay để không bị mất các đặt bàn bị trễ một chút
+        LocalDateTime startOfDay = java.time.LocalDate.now().atStartOfDay();
         List<ReservationStatus> activeStatuses = List.of(ReservationStatus.PENDING, ReservationStatus.CONFIRMED);
-        List<Reservation> upcoming = reservationRepository.findByReservationTimeBetweenAndStatusIn(now, endOfDay, activeStatuses);
+        List<Reservation> upcoming = reservationRepository.findByReservationTimeGreaterThanEqualAndStatusInOrderByReservationTimeAsc(startOfDay, activeStatuses);
         return upcoming.stream().limit(limit).toList();
     }
 
@@ -251,9 +251,15 @@ public class ReservationServiceImpl implements ReservationService {
                     .user(staff)
                     .reservation(res)
                     .totalAmount(java.math.BigDecimal.ZERO)
-                    .status(OrderStatus.PENDING)
+                    .status(OrderStatus.SERVING)
                     .build();
             orderRepository.save(order);
+        } else {
+            Order order = existingOrder.get();
+            if (order.getStatus() == OrderStatus.PENDING) {
+                order.setStatus(OrderStatus.SERVING);
+                orderRepository.save(order);
+            }
         }
     }
 

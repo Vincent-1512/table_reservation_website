@@ -90,8 +90,12 @@
                                 style="font-weight:600; color:#51cf66;">0 ₫</td>
                             <td th:text="${#temporals.format(payment.createdAt, 'HH:mm dd/MM/yyyy')}">10:00 01/01</td>
                             <td>
-                                <a th:href="@{'/staff/invoices/' + ${payment.id}}"
-                                   class="btn btn-primary" style="padding: 4px 10px; font-size: 12px;">Xem</a>
+                                <div style="display: flex; gap: 5px;">
+                                    <a th:href="@{'/staff/invoices/' + ${payment.id}}"
+                                       class="btn btn-primary" style="padding: 4px 10px; font-size: 12px;">Xem</a>
+                                    <a th:href="@{'/staff/orders/' + ${payment.order.id} + '/print'}" target="_blank"
+                                       class="btn btn-secondary" style="padding: 4px 10px; font-size: 12px; background-color: #f8f9fa; color: #333; border: 1px solid #ccc;">In</a>
+                                </div>
                             </td>
                         </tr>
                         <tr th:if="${#lists.isEmpty(payments)}">

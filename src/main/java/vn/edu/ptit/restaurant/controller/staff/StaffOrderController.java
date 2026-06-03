@@ -150,4 +150,13 @@ public class StaffOrderController {
         }
         return "redirect:/staff/orders";
     }
+    // In hóa đơn
+    @GetMapping("/{id}/print")
+    public String printOrder(@PathVariable Long id, Model model) {
+        Order order = orderService.findById(id).orElseThrow();
+        model.addAttribute("order", order);
+        model.addAttribute("orderItems", orderItemService.findByOrderId(id));
+        model.addAttribute("payment", paymentService.findByOrderId(id).orElse(null));
+        return "staff/order/print";
+    }
 }

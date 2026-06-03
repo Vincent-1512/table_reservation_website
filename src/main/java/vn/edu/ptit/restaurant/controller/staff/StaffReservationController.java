@@ -18,14 +18,22 @@ public class StaffReservationController {
     private final ReservationService reservationService;
 
     @GetMapping
-    public String index(@RequestParam(required = false) ReservationStatus status, Model model) {
-        if (status != null) {
-            model.addAttribute("reservations", reservationService.findByStatus(status));
-        } else {
-            model.addAttribute("reservations", reservationService.findAllSorted());
+    public String index(
+            @RequestParam(required = false) ReservationStatus status,
+            @RequestParam(required = false) @org.springframework.format.annotation.DateTimeFormat(iso = org.springframework.format.annotation.DateTimeFormat.ISO.DATE) java.time.LocalDate date,
+            @RequestParam(required = false) String phone,
+            Model model) {
+        
+        // Trim phone if it's not null but empty
+        if (phone != null && phone.trim().isEmpty()) {
+            phone = null;
         }
+
+        model.addAttribute("reservations", reservationService.searchReservations(status, date, phone));
         model.addAttribute("statuses", ReservationStatus.values());
         model.addAttribute("selectedStatus", status);
+        model.addAttribute("selectedDate", date);
+        model.addAttribute("selectedPhone", phone);
         return "staff/reservation/index";
     }
 

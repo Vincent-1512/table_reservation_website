@@ -17,6 +17,7 @@ public interface ReservationService {
     List<Reservation> findAllSorted();
     Optional<Reservation> findById(Long id);
     List<Reservation> findUpcoming(int limit);
+    List<Reservation> searchReservations(ReservationStatus status, java.time.LocalDate date, String phone);
     void cancelReservation(Long reservationId, Long userId);
     // Admin/Staff actions
     void confirmReservation(Long reservationId);

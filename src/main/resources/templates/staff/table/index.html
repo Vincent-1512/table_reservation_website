@@ -103,7 +103,8 @@
                         <label>Lọc theo trạng thái</label>
                         <select name="statusFilter" class="form-control">
                             <option value="">-- Tất cả --</option>
-                            <option th:each="s : ${statuses}" th:value="${s}" th:text="${s}"
+                            <option th:each="s : ${statuses}" th:value="${s}" 
+                                    th:text="${s.name() == 'AVAILABLE' ? 'Trống' : (s.name() == 'OCCUPIED' ? 'Đang dùng' : (s.name() == 'RESERVED' ? 'Đã đặt' : 'Bảo trì'))}"
                                     th:selected="${selectedStatus != null and selectedStatus == s.name()}">STATUS</option>
                         </select>
                     </div>
