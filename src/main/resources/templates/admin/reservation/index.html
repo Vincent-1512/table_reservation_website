@@ -6,15 +6,120 @@
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" th:href="@{/css/admin.css}">
     <style>
-        .status-badge { padding: 4px 10px; border-radius: 20px; font-size: 12px; font-weight: 600; }
-        .status-PENDING   { background: #fff3cd; color: #856404; }
-        .status-CONFIRMED { background: #cff4fc; color: #055160; }
-        .status-CANCELLED { background: #f8d7da; color: #842029; }
-        .status-COMPLETED { background: #d1e7dd; color: #0a3622; }
-        .action-btns { display: flex; gap: 6px; flex-wrap: wrap; }
-        .alert { padding: 12px 16px; border-radius: 8px; margin-bottom: 20px; font-weight: 500; }
-        .alert-success { background: #d1fae5; color: #065f46; border: 1px solid #a7f3d0; }
-        .alert-error   { background: #fee2e2; color: #991b1b; border: 1px solid #fca5a5; }
+        .status-badge {
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .status-PENDING {
+            background: #fff3cd;
+            color: #856404;
+        }
+
+        .status-CONFIRMED {
+            background: #cff4fc;
+            color: #055160;
+        }
+
+        .status-CANCELLED {
+            background: #f8d7da;
+            color: #842029;
+        }
+
+        .status-COMPLETED {
+            background: #d1e7dd;
+            color: #0a3622;
+        }
+
+        .action-btns {
+            display: flex;
+            gap: 6px;
+            flex-wrap: wrap;
+        }
+
+        .alert {
+            padding: 12px 16px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            font-weight: 500;
+        }
+
+        .alert-success {
+            background: #d1fae5;
+            color: #065f46;
+            border: 1px solid #a7f3d0;
+        }
+
+        .alert-error {
+            background: #fee2e2;
+            color: #991b1b;
+            border: 1px solid #fca5a5;
+        }
+
+        .filter-form {
+            margin-bottom: 20px;
+            display: grid;
+            grid-template-columns: 2fr 1fr 1fr 1fr auto auto;
+            gap: 12px;
+            align-items: end;
+        }
+
+        .filter-group {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .filter-group label {
+            font-weight: 600;
+            font-size: 14px;
+        }
+
+        .filter-group input,
+        .filter-group select {
+            padding: 10px 14px;
+            border-radius: 8px;
+            border: 1px solid #ddd;
+            font-family: inherit;
+        }
+
+        .pagination {
+            display: flex;
+            gap: 6px;
+            margin-top: 20px;
+            align-items: center;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .pagination a,
+        .pagination span {
+            padding: 8px 12px;
+            border-radius: 8px;
+            border: 1px solid #ddd;
+            text-decoration: none;
+            color: #333;
+        }
+
+        .pagination .active {
+            background: #222;
+            color: #fff;
+            border-color: #222;
+        }
+
+        .pagination .disabled {
+            color: #aaa;
+            pointer-events: none;
+            background: #f5f5f5;
+        }
+
+        @media (max-width: 1100px) {
+            .filter-form {
+                grid-template-columns: 1fr 1fr;
+            }
+        }
     </style>
 </head>
 <body>
@@ -24,46 +129,69 @@
         <a th:href="@{/admin/reports}">Dashboard</a>
         <a th:href="@{/admin/menu}">Quản lý Thực đơn</a>
         <a th:href="@{/admin/tables}">Quản lý Bàn/Khu vực</a>
-        <a th:href="@{/admin/reservations}" class="active">Lịch sử Đặt bàn</a>
+        <a th:href="@{/admin/reservations}" class="active">Quản lý Đặt bàn</a>
         <a th:href="@{/admin/users}">Quản lý Người dùng</a>
         <a th:href="@{/admin/orders}">Lịch sử Hóa đơn</a>
         <a th:href="@{/admin/payments}">Quản lý Thanh toán</a>
+
         <form th:action="@{/logout}" method="post" style="margin:0;">
-            <button type="submit" style="background:none; border:none; color:#a0a0a0;; cursor:pointer; font-family:inherit; font-weight:500;
-                        display: block;
-                        color: #a0a0a0;
-                        text-decoration: none;
-                        padding: 12px 15px;
-                        margin-bottom: 10px;
-                        border-radius: 8px;
-                        transition: 0.3s;
-                        font-size: 16px;">Đăng xuất</button>
+            <button type="submit"
+                    style="background:none; border:none; cursor:pointer; font-family:inherit; font-weight:500;
+                           display:block; color:#a0a0a0; text-decoration:none; padding:12px 15px;
+                           margin-bottom:10px; border-radius:8px; transition:0.3s; font-size:16px;">
+                Đăng xuất
+            </button>
         </form>
     </div>
 
     <div class="main-content">
-        <!-- Flash messages -->
         <div class="alert alert-success" th:if="${success}" th:text="${success}"></div>
-        <div class="alert alert-error"   th:if="${error}"   th:text="${error}"></div>
+        <div class="alert alert-error" th:if="${error}" th:text="${error}"></div>
 
         <div class="card">
             <div class="card-header">
                 <h3>Danh sách đặt bàn</h3>
             </div>
 
-            <form th:action="@{/admin/reservations}" method="get"
-                  style="margin-bottom: 20px; display:flex; gap:12px; align-items:center; flex-wrap:wrap;">
-                <label for="status"><strong>Lọc theo trạng thái:</strong></label>
+            <form th:action="@{/admin/reservations}" method="get" class="filter-form">
+                <div class="filter-group">
+                    <label for="keyword">Tìm kiếm</label>
+                    <input type="text"
+                           id="keyword"
+                           name="keyword"
+                           placeholder="Tên khách, SĐT, bàn, khu vực..."
+                           th:value="${keyword}">
+                </div>
 
-                <select name="status" id="status"
-                        style="padding:10px 14px; border-radius:8px; border:1px solid #ddd; font-family:inherit;">
-                    <option value="">Tất cả</option>
-                    <option th:each="st : ${statuses}"
-                            th:value="${st}"
-                            th:text="${st}"
-                            th:selected="${selectedStatus != null and selectedStatus == st}">
-                    </option>
-                </select>
+                <div class="filter-group">
+                    <label for="status">Trạng thái</label>
+                    <select name="status" id="status">
+                        <option value="">Tất cả</option>
+                        <option th:each="st : ${statuses}"
+                                th:value="${st}"
+                                th:text="${st}"
+                                th:selected="${selectedStatus != null and selectedStatus == st}">
+                        </option>
+                    </select>
+                </div>
+
+                <div class="filter-group">
+                    <label for="startDate">Từ ngày</label>
+                    <input type="date"
+                           id="startDate"
+                           name="startDate"
+                           th:value="${startDate}">
+                </div>
+
+                <div class="filter-group">
+                    <label for="endDate">Đến ngày</label>
+                    <input type="date"
+                           id="endDate"
+                           name="endDate"
+                           th:value="${endDate}">
+                </div>
+
+                <input type="hidden" name="size" th:value="${size}">
 
                 <button type="submit" class="btn btn-primary">Lọc</button>
                 <a th:href="@{/admin/reservations}" class="btn btn-secondary">Xóa lọc</a>
@@ -99,37 +227,42 @@
                     <td>
                         <span class="status-badge"
                               th:classappend="'status-' + ${reservation.status.name()}"
-                              th:text="${reservation.status}">PENDING</span>
+                              th:text="${reservation.status}">
+                            PENDING
+                        </span>
                     </td>
                     <td th:text="${reservation.note != null ? reservation.note : '-'}">Ghi chú</td>
                     <td>
                         <div class="action-btns">
-                            <!-- Xác nhận (chỉ khi PENDING) -->
                             <form th:if="${reservation.status.name() == 'PENDING'}"
                                   th:action="@{'/admin/reservations/' + ${reservation.id} + '/confirm'}"
-                                  method="post" style="display:inline;">
-                                <button type="submit" class="btn btn-primary"
+                                  method="post"
+                                  style="display:inline;">
+                                <button type="submit"
+                                        class="btn btn-primary"
                                         style="padding:4px 10px; font-size:12px;"
                                         onclick="return confirm('Xác nhận đặt bàn này?')">
                                     ✓ Xác nhận
                                 </button>
                             </form>
 
-                            <!-- Hoàn thành (khi CONFIRMED) -->
                             <form th:if="${reservation.status.name() == 'CONFIRMED'}"
                                   th:action="@{'/admin/reservations/' + ${reservation.id} + '/complete'}"
-                                  method="post" style="display:inline;">
-                                <button type="submit" class="btn btn-primary"
+                                  method="post"
+                                  style="display:inline;">
+                                <button type="submit"
+                                        class="btn btn-primary"
                                         style="padding:4px 10px; font-size:12px; background:#51cf66;">
                                     ✓ Hoàn thành
                                 </button>
                             </form>
 
-                            <!-- Hủy (khi PENDING hoặc CONFIRMED) -->
                             <form th:if="${reservation.status.name() == 'PENDING' or reservation.status.name() == 'CONFIRMED'}"
                                   th:action="@{'/admin/reservations/' + ${reservation.id} + '/cancel'}"
-                                  method="post" style="display:inline;">
-                                <button type="submit" class="btn btn-danger"
+                                  method="post"
+                                  style="display:inline;">
+                                <button type="submit"
+                                        class="btn btn-danger"
                                         style="padding:4px 10px; font-size:12px;"
                                         onclick="return confirm('Hủy đặt bàn này? Bàn sẽ được trả về trạng thái trống.')">
                                     ✗ Hủy
@@ -140,10 +273,33 @@
                 </tr>
 
                 <tr th:if="${#lists.isEmpty(reservations)}">
-                    <td colspan="10" style="text-align: center;">Chưa có đơn đặt bàn nào.</td>
+                    <td colspan="10" style="text-align:center;">Không tìm thấy đơn đặt bàn phù hợp.</td>
                 </tr>
                 </tbody>
             </table>
+
+            <div class="pagination" th:if="${totalPages > 1}">
+                <a th:classappend="${currentPage == 0} ? 'disabled'"
+                   th:href="${currentPage > 0}
+                            ? @{/admin/reservations(page=${currentPage - 1}, size=${size}, keyword=${keyword}, status=${selectedStatus}, startDate=${startDate}, endDate=${endDate})}
+                            : '#'}">
+                    Trước
+                </a>
+
+                <a th:each="i : ${#numbers.sequence(0, totalPages - 1)}"
+                   th:text="${i + 1}"
+                   th:classappend="${i == currentPage} ? 'active'"
+                   th:href="@{/admin/reservations(page=${i}, size=${size}, keyword=${keyword}, status=${selectedStatus}, startDate=${startDate}, endDate=${endDate})}">
+                    1
+                </a>
+
+                <a th:classappend="${currentPage >= totalPages - 1} ? 'disabled'"
+                   th:href="${currentPage < totalPages - 1}
+                            ? @{/admin/reservations(page=${currentPage + 1}, size=${size}, keyword=${keyword}, status=${selectedStatus}, startDate=${startDate}, endDate=${endDate})}
+                            : '#'}">
+                    Sau
+                </a>
+            </div>
         </div>
     </div>
 </div>

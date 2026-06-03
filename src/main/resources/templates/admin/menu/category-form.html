@@ -2,46 +2,131 @@
 <html lang="vi" xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta charset="UTF-8">
-    <title>Thêm/Sửa Danh Mục</title>
+    <title>Danh mục món ăn - Lumina Admin</title>
+
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" th:href="@{/css/admin.css}">
+
+    <style>
+        .form-container {
+            max-width: 720px;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 7px;
+            margin-bottom: 18px;
+        }
+
+        .form-group label {
+            font-weight: 600;
+            font-size: 14px;
+            color: #333;
+        }
+
+        .form-group input,
+        .form-group textarea {
+            padding: 12px 14px;
+            border-radius: 10px;
+            border: 1px solid #ddd;
+            font-family: inherit;
+            font-size: 15px;
+            outline: none;
+        }
+
+        .form-group textarea {
+            min-height: 120px;
+            resize: vertical;
+        }
+
+        .form-group input:focus,
+        .form-group textarea:focus {
+            border-color: #cba876;
+            box-shadow: 0 0 0 3px rgba(203, 168, 118, 0.15);
+        }
+
+        .form-actions {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin-top: 24px;
+        }
+
+        .hint {
+            font-size: 13px;
+            color: #777;
+        }
+    </style>
 </head>
+
 <body>
-    <div class="admin-layout">
-        <!-- Sidebar -->
-        <div class="sidebar">
-            <h2>Lumina Admin</h2>
-            <a th:href="@{/admin/menu}" class="active">Quản lý Thực đơn</a>
-        </div>
+<div class="admin-layout">
+    <div class="sidebar">
+        <h2>Lumina Admin</h2>
 
-        <!-- Main Content -->
-        <div class="main-content">
-            <div class="card" style="max-width: 600px; margin: 0 auto;">
-                <div class="card-header">
-                    <h3 th:text="${category.id != null ? 'Chỉnh sửa Danh mục' : 'Thêm mới Danh mục'}"></h3>
-                </div>
-                
-                <form th:action="@{/admin/menu/category/save}" th:object="${category}" method="post">
-                    <!-- Hidden field for ID (update) -->
-                    <input type="hidden" th:field="*{id}" />
+        <a th:href="@{/admin/reports}">Dashboard</a>
+        <a th:href="@{/admin/menu}" class="active">Quản lý Thực đơn</a>
+        <a th:href="@{/admin/tables}">Quản lý Bàn/Khu vực</a>
+        <a th:href="@{/admin/reservations}">Quản lý Đặt bàn</a>
+        <a th:href="@{/admin/users}">Quản lý Người dùng</a>
+        <a th:href="@{/admin/orders}">Lịch sử Hóa đơn</a>
+        <a th:href="@{/admin/payments}">Quản lý Thanh toán</a>
 
-                    <div class="form-group">
-                        <label>Tên Danh mục</label>
-                        <input type="text" th:field="*{name}" class="form-control" required placeholder="Ví dụ: Món Khai Vị">
-                    </div>
+        <form th:action="@{/logout}" method="post" style="margin:0;">
+            <button type="submit"
+                    style="background:none; border:none; cursor:pointer; font-family:inherit; font-weight:500;
+                           display:block; color:#a0a0a0; text-decoration:none; padding:12px 15px;
+                           margin-bottom:10px; border-radius:8px; transition:0.3s; font-size:16px;">
+                Đăng xuất
+            </button>
+        </form>
+    </div>
 
-                    <div class="form-group">
-                        <label>Mô tả chi tiết</label>
-                        <textarea th:field="*{description}" class="form-control" rows="4" placeholder="Mô tả về danh mục..."></textarea>
-                    </div>
+    <div class="main-content">
+        <div class="card form-container">
+            <div class="card-header">
+                <h3 th:text="${category.id == null ? 'Thêm danh mục' : 'Cập nhật danh mục'}">
+                    Thêm danh mục
+                </h3>
 
-                    <div style="display:flex; gap:10px; margin-top:30px;">
-                        <button type="submit" class="btn btn-primary">Lưu Danh Mục</button>
-                        <a th:href="@{/admin/menu}" class="btn" style="background:#eee; color:#333;">Hủy bỏ</a>
-                    </div>
-                </form>
+                <a th:href="@{/admin/menu}" class="btn btn-secondary">
+                    Quay lại
+                </a>
             </div>
+
+            <form th:action="@{/admin/menu/category/save}" th:object="${category}" method="post">
+                <input type="hidden" th:field="*{id}">
+
+                <div class="form-group">
+                    <label for="name">Tên danh mục *</label>
+                    <input type="text"
+                           id="name"
+                           th:field="*{name}"
+                           required
+                           placeholder="Ví dụ: Món chính, Khai vị, Tráng miệng">
+                    <span class="hint">Tên danh mục nên ngắn gọn, dễ hiểu.</span>
+                </div>
+
+                <div class="form-group">
+                    <label for="description">Mô tả</label>
+                    <textarea id="description"
+                              th:field="*{description}"
+                              placeholder="Mô tả ngắn về nhóm món ăn này..."></textarea>
+                </div>
+
+                <div class="form-actions">
+                    <button type="submit" class="btn btn-primary">
+                        Lưu danh mục
+                    </button>
+
+                    <a th:href="@{/admin/menu}" class="btn btn-secondary">
+                        Hủy
+                    </a>
+                </div>
+            </form>
         </div>
     </div>
+</div>
 </body>
 </html>

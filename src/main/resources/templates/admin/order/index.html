@@ -5,82 +5,174 @@
     <title>Lịch sử hóa đơn - Lumina Admin</title>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" th:href="@{/css/admin.css}">
+
     <style>
-        .filter-form { margin-bottom: 20px; display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
-        .filter-form select, .filter-form input[type="date"] {
-            padding: 8px 12px; border-radius: 8px; border: 1px solid #ddd; font-family: inherit;
+        .filter-form {
+            margin-bottom: 20px;
+            display: grid;
+            grid-template-columns: 1.7fr 1fr 1fr 1fr auto auto;
+            gap: 12px;
+            align-items: end;
         }
-        .filter-form button { padding: 8px 16px; background: #cba876; color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: 600; }
-        .filter-form a.btn-secondary { padding: 8px 16px; }
-        .status-badge { padding: 4px 10px; border-radius: 20px; font-size: 12px; font-weight: 600; }
-        .status-PENDING    { background: #fff3cd; color: #856404; }
-        .status-CONFIRMED  { background: #cff4fc; color: #055160; }
-        .status-SERVING    { background: #d1e7dd; color: #0a3622; }
-        .status-COMPLETED  { background: #d1e7dd; color: #0a3622; }
-        .status-CANCELLED  { background: #f8d7da; color: #842029; }
-        .pagination-wrapper { display: flex; gap: 8px; justify-content: center; margin-top: 20px; flex-wrap: wrap; }
-        .pagination-btn { padding: 6px 14px; border-radius: 6px; border: 1px solid #ddd; background: #fff; cursor: pointer; text-decoration: none; color: #333; font-weight: 500; }
-        .pagination-btn.active-page { background: #cba876; color: #fff; border-color: #cba876; }
-        .pagination-btn.disabled-btn { opacity: 0.4; pointer-events: none; }
+
+        .filter-group {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .filter-group label {
+            font-weight: 600;
+            font-size: 14px;
+        }
+
+        .filter-group input,
+        .filter-group select {
+            padding: 10px 14px;
+            border-radius: 8px;
+            border: 1px solid #ddd;
+            font-family: inherit;
+        }
+
+        .summary-line {
+            margin-bottom: 12px;
+            color: #666;
+            font-size: 14px;
+        }
+
+        .status-badge {
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .status-PENDING { background: #fff3cd; color: #856404; }
+        .status-CONFIRMED { background: #cff4fc; color: #055160; }
+        .status-SERVING { background: #d1e7dd; color: #0a3622; }
+        .status-COMPLETED { background: #d1e7dd; color: #0a3622; }
+        .status-CANCELLED { background: #f8d7da; color: #842029; }
+
+        .pagination {
+            display: flex;
+            gap: 6px;
+            margin-top: 20px;
+            align-items: center;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .pagination a,
+        .pagination span {
+            padding: 8px 12px;
+            border-radius: 8px;
+            border: 1px solid #ddd;
+            text-decoration: none;
+            color: #333;
+        }
+
+        .pagination .active {
+            background: #222;
+            color: #fff;
+            border-color: #222;
+        }
+
+        .pagination .disabled {
+            color: #aaa;
+            pointer-events: none;
+            background: #f5f5f5;
+        }
+
+        @media (max-width: 1100px) {
+            .filter-form {
+                grid-template-columns: 1fr 1fr;
+            }
+        }
     </style>
 </head>
+
 <body>
 <div class="admin-layout">
     <div class="sidebar">
         <h2>Lumina Admin</h2>
         <a th:href="@{/admin/reports}">Dashboard</a>
-        <a th:href="@{/admin/menu}" >Quản lý Thực đơn</a>
+        <a th:href="@{/admin/menu}">Quản lý Thực đơn</a>
         <a th:href="@{/admin/tables}">Quản lý Bàn/Khu vực</a>
-        <a th:href="@{/admin/reservations}">Lịch sử Đặt bàn</a>
+        <a th:href="@{/admin/reservations}">Quản lý Đặt bàn</a>
         <a th:href="@{/admin/users}">Quản lý Người dùng</a>
         <a th:href="@{/admin/orders}" class="active">Lịch sử Hóa đơn</a>
         <a th:href="@{/admin/payments}">Quản lý Thanh toán</a>
+
         <form th:action="@{/logout}" method="post" style="margin:0;">
-            <button type="submit" style="background:none; border:none; color:#a0a0a0;; cursor:pointer; font-family:inherit; font-weight:500;
-                        display: block;
-                        color: #a0a0a0;
-                        text-decoration: none;
-                        padding: 12px 15px;
-                        margin-bottom: 10px;
-                        border-radius: 8px;
-                        transition: 0.3s;
-                        font-size: 16px;">Đăng xuất</button>
+            <button type="submit"
+                    style="background:none; border:none; cursor:pointer; font-family:inherit; font-weight:500;
+                           display:block; color:#a0a0a0; text-decoration:none; padding:12px 15px;
+                           margin-bottom:10px; border-radius:8px; transition:0.3s; font-size:16px;">
+                Đăng xuất
+            </button>
         </form>
     </div>
+
     <div class="main-content">
         <div class="card">
             <div class="card-header">
                 <h3>Lịch sử hóa đơn</h3>
             </div>
 
-            <!-- Filter Form -->
             <form method="get" th:action="@{/admin/orders}" class="filter-form">
-                <label><strong>Trạng thái:</strong></label>
-                <select name="status">
-                    <option value="">Tất cả</option>
-                    <option th:each="s : ${statuses}"
-                            th:value="${s}"
-                            th:text="${s}"
-                            th:selected="${s == selectedStatus}">
-                    </option>
-                </select>
+                <div class="filter-group">
+                    <label for="keyword">Tìm kiếm</label>
+                    <input type="text"
+                           id="keyword"
+                           name="keyword"
+                           placeholder="Mã hóa đơn, tên người tạo, username, tên bàn..."
+                           th:value="${keyword}">
+                </div>
 
-                <label><strong>Từ ngày:</strong></label>
-                <input type="date" name="startDate" th:value="${startDate}">
+                <div class="filter-group">
+                    <label for="status">Trạng thái</label>
+                    <select name="status" id="status">
+                        <option value="">Tất cả</option>
+                        <option th:each="s : ${statuses}"
+                                th:value="${s}"
+                                th:text="${s}"
+                                th:selected="${selectedStatus != null and selectedStatus == s}">
+                        </option>
+                    </select>
+                </div>
 
-                <label><strong>Đến ngày:</strong></label>
-                <input type="date" name="endDate" th:value="${endDate}">
+                <div class="filter-group">
+                    <label for="startDate">Từ ngày</label>
+                    <input type="date"
+                           id="startDate"
+                           name="startDate"
+                           th:value="${startDate}">
+                </div>
+
+                <div class="filter-group">
+                    <label for="endDate">Đến ngày</label>
+                    <input type="date"
+                           id="endDate"
+                           name="endDate"
+                           th:value="${endDate}">
+                </div>
+
+                <input type="hidden" name="size" th:value="${size}">
 
                 <button type="submit" class="btn btn-primary">Lọc</button>
                 <a th:href="@{/admin/orders}" class="btn btn-secondary">Xóa lọc</a>
             </form>
+
+            <div class="summary-line">
+                Tìm thấy <strong th:text="${totalItems}">0</strong> hóa đơn phù hợp.
+            </div>
 
             <table class="table">
                 <thead>
                 <tr>
                     <th>ID</th>
                     <th>Bàn</th>
-                    <th>Nhân viên / Khách</th>
+                    <th>Người tạo đơn</th>
                     <th>Thời gian tạo</th>
                     <th>Tổng tiền</th>
                     <th>Trạng thái</th>
@@ -90,14 +182,21 @@
 
                 <tbody>
                 <tr th:each="order : ${orders}">
-                    <td th:text="'#' + ${order.id}">1</td>
+                    <td th:text="'#' + ${order.id}">#1</td>
 
                     <td th:text="${order.table != null ? order.table.tableName : 'Không có'}">
                         Bàn 01
                     </td>
 
-                    <td th:text="${order.user != null ? order.user.fullName : 'Khách lẻ'}">
-                        Nguyễn Văn A
+                    <td>
+                        <span th:text="${order.user != null ? order.user.fullName : 'Khách lẻ'}">
+                            Nguyễn Văn A
+                        </span>
+                        <div th:if="${order.user != null}"
+                             style="font-size:12px; color:#777; margin-top:3px;"
+                             th:text="${order.user.username}">
+                            username
+                        </div>
                     </td>
 
                     <td th:text="${#temporals.format(order.createdAt, 'dd/MM/yyyy HH:mm')}">
@@ -110,11 +209,17 @@
                     </td>
 
                     <td>
-                        <span class="status-badge" th:classappend="'status-' + ${order.status.name()}"
-                              th:text="${order.status}">COMPLETED</span>
+                        <span class="status-badge"
+                              th:classappend="'status-' + ${order.status.name()}"
+                              th:text="${order.status}">
+                            COMPLETED
+                        </span>
                     </td>
+
                     <td>
-                        <a th:href="@{'/admin/orders/' + ${order.id}}" class="btn btn-primary">
+                        <a th:href="@{'/admin/orders/' + ${order.id}}"
+                           class="btn btn-primary"
+                           style="padding:5px 10px; font-size:13px;">
                             Chi tiết
                         </a>
                     </td>
@@ -122,38 +227,32 @@
 
                 <tr th:if="${#lists.isEmpty(orders)}">
                     <td colspan="7" style="text-align:center;">
-                        Chưa có hóa đơn nào.
+                        Không tìm thấy hóa đơn phù hợp.
                     </td>
                 </tr>
                 </tbody>
             </table>
 
-            <!-- Pagination -->
-            <div class="pagination-wrapper" th:if="${totalPages != null and totalPages > 1}">
-                <!-- Prev -->
-                <a th:href="${currentPage > 0}
-                        ? @{/admin/orders(page=${currentPage - 1}, status=${selectedStatus}, startDate=${startDate}, endDate=${endDate})}
-                        : '#'"
-                   class="pagination-btn nav-btn"
-                   th:classappend="${currentPage == 0} ? ' disabled-btn' : ''">
-                    ← Trước
+            <div class="pagination" th:if="${totalPages > 1}">
+                <a th:classappend="${currentPage == 0} ? 'disabled'"
+                   th:href="${currentPage > 0}
+                            ? @{/admin/orders(page=${currentPage - 1}, size=${size}, keyword=${keyword}, status=${selectedStatus}, startDate=${startDate}, endDate=${endDate})}
+                            : '#'}">
+                    Trước
                 </a>
 
-                <!-- Page numbers -->
                 <a th:each="i : ${#numbers.sequence(0, totalPages - 1)}"
-                   th:href="@{/admin/orders(page=${i}, status=${selectedStatus}, startDate=${startDate}, endDate=${endDate})}"
                    th:text="${i + 1}"
-                   class="pagination-btn"
-                   th:classappend="${i == currentPage} ? ' active-page' : ''">
+                   th:classappend="${i == currentPage} ? 'active'"
+                   th:href="@{/admin/orders(page=${i}, size=${size}, keyword=${keyword}, status=${selectedStatus}, startDate=${startDate}, endDate=${endDate})}">
+                    1
                 </a>
 
-                <!-- Next -->
-                <a th:href="${currentPage < totalPages - 1}
-                        ? @{/admin/orders(page=${currentPage + 1}, status=${selectedStatus}, startDate=${startDate}, endDate=${endDate})}
-                        : '#'"
-                   class="pagination-btn nav-btn"
-                   th:classappend="${currentPage == totalPages - 1} ? ' disabled-btn' : ''">
-                    Sau →
+                <a th:classappend="${currentPage >= totalPages - 1} ? 'disabled'"
+                   th:href="${currentPage < totalPages - 1}
+                            ? @{/admin/orders(page=${currentPage + 1}, size=${size}, keyword=${keyword}, status=${selectedStatus}, startDate=${startDate}, endDate=${endDate})}
+                            : '#'}">
+                    Sau
                 </a>
             </div>
         </div>

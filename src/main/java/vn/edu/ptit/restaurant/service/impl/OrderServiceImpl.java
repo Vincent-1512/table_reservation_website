@@ -1,6 +1,10 @@
 package vn.edu.ptit.restaurant.service.impl;
 
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import vn.edu.ptit.restaurant.entity.DiningTable;
@@ -10,22 +14,15 @@ import vn.edu.ptit.restaurant.entity.enums.OrderStatus;
 import vn.edu.ptit.restaurant.entity.enums.TableStatus;
 import vn.edu.ptit.restaurant.repository.DiningTableRepository;
 import vn.edu.ptit.restaurant.repository.OrderRepository;
+import vn.edu.ptit.restaurant.repository.ReservationRepository;
 import vn.edu.ptit.restaurant.repository.UserRepository;
 import vn.edu.ptit.restaurant.service.OrderService;
 
-import java.time.LocalDate;
-
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.PageRequest;
-
 import java.math.BigDecimal;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
-
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
 
 @Service
 @RequiredArgsConstructor
@@ -34,7 +31,7 @@ public class OrderServiceImpl implements OrderService {
     private final OrderRepository orderRepository;
     private final DiningTableRepository diningTableRepository;
     private final UserRepository userRepository;
-    private final vn.edu.ptit.restaurant.repository.ReservationRepository reservationRepository;
+    private final ReservationRepository reservationRepository;
 
     @Override
     public List<Order> findAll() {
@@ -56,10 +53,9 @@ public class OrderServiceImpl implements OrderService {
     public Order createOrder(Long tableId, String username) {
         DiningTable table = diningTableRepository.findById(tableId)
                 .orElseThrow(() -> new RuntimeException("Không tìm thấy bàn"));
+
         User staff = userRepository.findByUsername(username)
                 .orElseThrow(() -> new RuntimeException("Không tìm thấy nhân viên"));
-
-        // Không chuyển trạng thái bàn ở đây - chỉ chuyển khi nhấn "Bắt đầu Phục vụ"
 
         Order order = Order.builder()
                 .table(table)
@@ -67,6 +63,7 @@ public class OrderServiceImpl implements OrderService {
                 .totalAmount(BigDecimal.ZERO)
                 .status(OrderStatus.PENDING)
                 .build();
+
         return orderRepository.save(order);
     }
 
@@ -80,10 +77,10 @@ public class OrderServiceImpl implements OrderService {
     public void updateOrderStatus(Long orderId, OrderStatus newStatus) {
         Order order = orderRepository.findById(orderId)
                 .orElseThrow(() -> new RuntimeException("Không tìm thấy hóa đơn"));
+
         order.setStatus(newStatus);
         orderRepository.save(order);
 
-        // Khi chuyển sang SERVING, đánh dấu bàn là OCCUPIED (đang phục vụ)
         if (newStatus == OrderStatus.SERVING && order.getTable() != null) {
             DiningTable table = order.getTable();
             table.setStatus(TableStatus.OCCUPIED);
@@ -96,23 +93,21 @@ public class OrderServiceImpl implements OrderService {
     public void cancelOrder(Long orderId) {
         Order order = orderRepository.findById(orderId)
                 .orElseThrow(() -> new RuntimeException("Không tìm thấy hóa đơn"));
-        
+
         order.setStatus(OrderStatus.CANCELLED);
-        
-        // Giải phóng bàn
+
         DiningTable table = order.getTable();
         if (table != null) {
             table.setStatus(TableStatus.AVAILABLE);
             diningTableRepository.save(table);
         }
-        
-        // Hoàn thành Đặt bàn nếu có (nếu muốn, hoặc để nguyên tùy logic, ở đây hủy luôn reservation nếu có)
+
         if (order.getReservation() != null) {
-            vn.edu.ptit.restaurant.entity.Reservation res = order.getReservation();
-            res.setStatus(vn.edu.ptit.restaurant.entity.enums.ReservationStatus.CANCELLED);
-            reservationRepository.save(res);
+            var reservation = order.getReservation();
+            reservation.setStatus(vn.edu.ptit.restaurant.entity.enums.ReservationStatus.CANCELLED);
+            reservationRepository.save(reservation);
         }
-        
+
         orderRepository.save(order);
     }
 
@@ -121,21 +116,21 @@ public class OrderServiceImpl implements OrderService {
     public void checkout(Long orderId) {
         Order order = orderRepository.findById(orderId)
                 .orElseThrow(() -> new RuntimeException("Không tìm thấy hóa đơn"));
-        
+
         order.setStatus(OrderStatus.COMPLETED);
-        
-        // Hoàn thành Đặt bàn nếu có
+
         if (order.getReservation() != null) {
-            vn.edu.ptit.restaurant.entity.Reservation res = order.getReservation();
-            res.setStatus(vn.edu.ptit.restaurant.entity.enums.ReservationStatus.COMPLETED);
-            reservationRepository.save(res);
+            var reservation = order.getReservation();
+            reservation.setStatus(vn.edu.ptit.restaurant.entity.enums.ReservationStatus.COMPLETED);
+            reservationRepository.save(reservation);
         }
-        
-        // Giải phóng bàn
+
         DiningTable table = order.getTable();
-        table.setStatus(TableStatus.AVAILABLE);
-        diningTableRepository.save(table);
-        
+        if (table != null) {
+            table.setStatus(TableStatus.AVAILABLE);
+            diningTableRepository.save(table);
+        }
+
         orderRepository.save(order);
     }
 
@@ -152,36 +147,52 @@ public class OrderServiceImpl implements OrderService {
     }
 
     @Override
-    public Page<Order> filterOrders(
-            OrderStatus status,
-            LocalDate startDate,
-            LocalDate endDate,
-            int page,
-            int size
-    ) {
+    public Page<Order> filterOrders(OrderStatus status,
+                                    LocalDate startDate,
+                                    LocalDate endDate,
+                                    int page,
+                                    int size) {
+        return searchOrders(null, status, startDate, endDate, page, size);
+    }
+
+    @Override
+    public Page<Order> searchOrders(String keyword,
+                                    OrderStatus status,
+                                    LocalDate startDate,
+                                    LocalDate endDate,
+                                    int page,
+                                    int size) {
         Pageable pageable = PageRequest.of(page, size);
 
-        if (status != null && startDate != null && endDate != null) {
-            return orderRepository.findByStatusAndCreatedAtBetween(
-                    status,
-                    startDate.atStartOfDay(),
-                    endDate.atTime(23,59,59),
-                    pageable
-            );
+        String cleanKeyword = keyword == null ? null : keyword.trim().replace("#", "");
+
+        Long keywordNumber = null;
+        if (cleanKeyword != null && !cleanKeyword.isBlank()) {
+            try {
+                keywordNumber = Long.parseLong(cleanKeyword);
+            } catch (NumberFormatException ignored) {
+                keywordNumber = null;
+            }
         }
 
-        if (status != null) {
-            return orderRepository.findByStatus(status, pageable);
+        LocalDateTime startDateTime = null;
+        LocalDateTime endDateTime = null;
+
+        if (startDate != null) {
+            startDateTime = startDate.atStartOfDay();
         }
 
-        if (startDate != null && endDate != null) {
-            return orderRepository.findByCreatedAtBetween(
-                    startDate.atStartOfDay(),
-                    endDate.atTime(23,59,59),
-                    pageable
-            );
+        if (endDate != null) {
+            endDateTime = endDate.atTime(23, 59, 59);
         }
 
-        return orderRepository.findAll(pageable);
+        return orderRepository.searchOrders(
+                cleanKeyword,
+                keywordNumber,
+                status,
+                startDateTime,
+                endDateTime,
+                pageable
+        );
     }
 }

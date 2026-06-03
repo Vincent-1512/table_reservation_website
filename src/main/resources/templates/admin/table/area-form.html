@@ -2,43 +2,146 @@
 <html lang="vi" xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta charset="UTF-8">
-    <title>Thêm/Sửa Khu vực</title>
+    <title>Khu vực bàn - Lumina Admin</title>
+
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" th:href="@{/css/admin.css}">
+
+    <style>
+        .form-container {
+            max-width: 720px;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 7px;
+            margin-bottom: 18px;
+        }
+
+        .form-group label {
+            font-weight: 600;
+            font-size: 14px;
+            color: #333;
+        }
+
+        .form-group input,
+        .form-group textarea {
+            padding: 12px 14px;
+            border-radius: 10px;
+            border: 1px solid #ddd;
+            font-family: inherit;
+            font-size: 15px;
+            outline: none;
+        }
+
+        .form-group textarea {
+            min-height: 120px;
+            resize: vertical;
+        }
+
+        .form-group input:focus,
+        .form-group textarea:focus {
+            border-color: #cba876;
+            box-shadow: 0 0 0 3px rgba(203, 168, 118, 0.15);
+        }
+
+        .form-actions {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin-top: 24px;
+        }
+
+        .hint {
+            font-size: 13px;
+            color: #777;
+        }
+
+        .note-box {
+            margin-top: 18px;
+            padding: 14px 16px;
+            border-radius: 10px;
+            background: #eff6ff;
+            color: #1e40af;
+            border: 1px solid #bfdbfe;
+            font-size: 14px;
+            line-height: 1.5;
+        }
+    </style>
 </head>
+
 <body>
-    <div class="admin-layout">
-        <div class="sidebar">
-            <h2>Lumina Admin</h2>
-            <a th:href="@{/admin/tables}" class="active">Quản lý Bàn/Khu vực</a>
-        </div>
+<div class="admin-layout">
+    <div class="sidebar">
+        <h2>Lumina Admin</h2>
 
-        <div class="main-content">
-            <div class="card" style="max-width: 600px; margin: 0 auto;">
-                <div class="card-header">
-                    <h3 th:text="${area.id != null ? 'Chỉnh sửa Khu vực' : 'Thêm mới Khu vực'}"></h3>
-                </div>
-                
-                <form th:action="@{/admin/tables/area/save}" th:object="${area}" method="post">
-                    <input type="hidden" th:field="*{id}" />
+        <a th:href="@{/admin/reports}">Dashboard</a>
+        <a th:href="@{/admin/menu}">Quản lý Thực đơn</a>
+        <a th:href="@{/admin/tables}" class="active">Quản lý Bàn/Khu vực</a>
+        <a th:href="@{/admin/reservations}">Quản lý Đặt bàn</a>
+        <a th:href="@{/admin/users}">Quản lý Người dùng</a>
+        <a th:href="@{/admin/orders}">Lịch sử Hóa đơn</a>
+        <a th:href="@{/admin/payments}">Quản lý Thanh toán</a>
 
-                    <div class="form-group">
-                        <label>Tên Khu vực</label>
-                        <input type="text" th:field="*{name}" class="form-control" required placeholder="Ví dụ: Tầng 1, Sân Vườn, VIP...">
-                    </div>
+        <form th:action="@{/logout}" method="post" style="margin:0;">
+            <button type="submit"
+                    style="background:none; border:none; cursor:pointer; font-family:inherit; font-weight:500;
+                           display:block; color:#a0a0a0; text-decoration:none; padding:12px 15px;
+                           margin-bottom:10px; border-radius:8px; transition:0.3s; font-size:16px;">
+                Đăng xuất
+            </button>
+        </form>
+    </div>
 
-                    <div class="form-group">
-                        <label>Mô tả chi tiết</label>
-                        <textarea th:field="*{description}" class="form-control" rows="4" placeholder="Không gian, tầm nhìn, phong cách..."></textarea>
-                    </div>
+    <div class="main-content">
+        <div class="card form-container">
+            <div class="card-header">
+                <h3 th:text="${area.id == null ? 'Thêm khu vực' : 'Cập nhật khu vực'}">
+                    Thêm khu vực
+                </h3>
 
-                    <div style="display:flex; gap:10px; margin-top:30px;">
-                        <button type="submit" class="btn btn-primary">Lưu Khu vực</button>
-                        <a th:href="@{/admin/tables}" class="btn" style="background:#eee; color:#333;">Hủy bỏ</a>
-                    </div>
-                </form>
+                <a th:href="@{/admin/tables}" class="btn btn-secondary">
+                    Quay lại
+                </a>
             </div>
+
+            <form th:action="@{/admin/tables/area/save}" th:object="${area}" method="post">
+                <input type="hidden" th:field="*{id}">
+
+                <div class="form-group">
+                    <label for="name">Tên khu vực *</label>
+                    <input type="text"
+                           id="name"
+                           th:field="*{name}"
+                           required
+                           placeholder="Ví dụ: Tầng 1, Tầng 2, Sân vườn, Phòng VIP">
+                    <span class="hint">Tên khu vực nên ngắn gọn và dễ nhận biết.</span>
+                </div>
+
+                <div class="form-group">
+                    <label for="description">Mô tả</label>
+                    <textarea id="description"
+                              th:field="*{description}"
+                              placeholder="Ví dụ: Khu vực gần cửa sổ, khu vực ngoài trời, khu phòng riêng..."></textarea>
+                </div>
+
+                <div class="note-box">
+                    Chỉ nên xóa khu vực khi không còn bàn nào thuộc khu vực đó. Nếu khu vực tạm thời không dùng, nên chuyển các bàn sang trạng thái bảo trì.
+                </div>
+
+                <div class="form-actions">
+                    <button type="submit" class="btn btn-primary">
+                        Lưu khu vực
+                    </button>
+
+                    <a th:href="@{/admin/tables}" class="btn btn-secondary">
+                        Hủy
+                    </a>
+                </div>
+            </form>
         </div>
     </div>
+</div>
 </body>
 </html>

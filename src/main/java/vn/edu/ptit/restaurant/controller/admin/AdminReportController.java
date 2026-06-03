@@ -16,6 +16,11 @@ import vn.edu.ptit.restaurant.service.ReportService;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 
+import org.springframework.format.annotation.DateTimeFormat;
+import org.springframework.web.bind.annotation.RequestParam;
+
+import java.time.LocalDate;
+
 @Controller
 @RequestMapping("/admin/reports")
 @RequiredArgsConstructor
@@ -26,15 +31,33 @@ public class AdminReportController {
     private final PdfExportService pdfExportService;
 
     @GetMapping
-    public String dashboard(Model model) {
-        model.addAttribute("report", reportService.getGeneralReport());
-        model.addAttribute("totalOrders", reportService.countOrders());
-        model.addAttribute("totalReservations", reportService.countReservations());
+    public String dashboard(
+            @RequestParam(required = false)
+            @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
+            LocalDate startDate,
+
+            @RequestParam(required = false)
+            @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
+            LocalDate endDate,
+
+            Model model
+    ) {
+        model.addAttribute("report", reportService.getGeneralReport(startDate, endDate));
+        model.addAttribute("totalOrders", reportService.countOrders(startDate, endDate));
+        model.addAttribute("totalReservations", reportService.countReservations(startDate, endDate));
+
         model.addAttribute("totalUsers", reportService.countUsers());
         model.addAttribute("totalTables", reportService.countTables());
         model.addAttribute("availableTables", reportService.countAvailableTables());
         model.addAttribute("occupiedTables", reportService.countOccupiedTables());
         model.addAttribute("reservedTables", reportService.countReservedTables());
+
+        model.addAttribute("monthlyRevenue", reportService.getMonthlyRevenue(startDate, endDate));
+        model.addAttribute("topSellingItems", reportService.getTopSellingItems(startDate, endDate));
+
+        model.addAttribute("startDate", startDate);
+        model.addAttribute("endDate", endDate);
+
         return "admin/report/dashboard";
     }
 

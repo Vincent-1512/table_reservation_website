@@ -175,7 +175,7 @@ public class CustomerController {
         if (principal == null) {
             return "redirect:/login";
         }
-        Reservation reservation = reservationService.findById(id);
+        Reservation reservation = reservationService.findById(id).orElseThrow(() -> new RuntimeException("Không tìm thấy đặt bàn với ID: " + id));
         if (!reservation.getUser().getUsername().equals(principal.getName())) {
             return "redirect:/my-reservations";
         }
@@ -192,7 +192,7 @@ public class CustomerController {
         if (principal == null) {
             return "redirect:/login";
         }
-        Reservation reservation = reservationService.findById(id);
+        Reservation reservation = reservationService.findById(id).orElseThrow(() -> new RuntimeException("Không tìm thấy đặt bàn với ID: " + id));
         if (!reservation.getUser().getUsername().equals(principal.getName())) {
             return "redirect:/my-reservations";
         }
@@ -211,7 +211,7 @@ public class CustomerController {
             return "redirect:/login";
         }
         try {
-            Reservation reservation = reservationService.findById(id);
+            Reservation reservation = reservationService.findById(id).orElseThrow(() -> new RuntimeException("Không tìm thấy đặt bàn với ID: " + id));
             if (!reservation.getUser().getUsername().equals(principal.getName())) {
                 redirectAttrs.addFlashAttribute("error", "Không có quyền thanh toán.");
                 return "redirect:/my-reservations";
@@ -246,7 +246,7 @@ public class CustomerController {
         if (principal == null) {
             return "redirect:/login";
         }
-        Reservation reservation = reservationService.findById(id);
+        Reservation reservation = reservationService.findById(id).orElseThrow(() -> new RuntimeException("Không tìm thấy đặt bàn với ID: " + id));
         if (!reservation.getUser().getUsername().equals(principal.getName())) {
             return "redirect:/my-reservations";
         }
@@ -278,7 +278,7 @@ public class CustomerController {
             return "redirect:/login";
         }
         try {
-            Reservation reservation = reservationService.findById(id);
+            Reservation reservation = reservationService.findById(id).orElseThrow(() -> new RuntimeException("Không tìm thấy đặt bàn với ID: " + id));
             if (!reservation.getUser().getUsername().equals(principal.getName())) {
                 redirectAttrs.addFlashAttribute("error", "Không có quyền thanh toán.");
                 return "redirect:/my-reservations";

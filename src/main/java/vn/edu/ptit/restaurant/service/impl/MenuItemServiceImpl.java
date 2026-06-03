@@ -1,6 +1,9 @@
 package vn.edu.ptit.restaurant.service.impl;
 
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import vn.edu.ptit.restaurant.entity.MenuItem;
 import vn.edu.ptit.restaurant.repository.MenuItemRepository;
@@ -26,21 +29,6 @@ public class MenuItemServiceImpl implements MenuItemService {
     }
 
     @Override
-    public Optional<MenuItem> findById(Long id) {
-        return menuItemRepository.findById(id);
-    }
-
-    @Override
-    public MenuItem save(MenuItem menuItem) {
-        return menuItemRepository.save(menuItem);
-    }
-
-    @Override
-    public void deleteById(Long id) {
-        menuItemRepository.deleteById(id);
-    }
-
-    @Override
     public List<MenuItem> searchByName(String keyword) {
         return menuItemRepository.findByNameContainingIgnoreCase(keyword);
     }
@@ -48,6 +36,37 @@ public class MenuItemServiceImpl implements MenuItemService {
     @Override
     public List<MenuItem> findByIsAvailable(Boolean isAvailable) {
         return menuItemRepository.findByIsAvailable(isAvailable);
+    }
+
+    @Override
+    public Page<MenuItem> searchMenuItems(String keyword,
+                                          Integer categoryId,
+                                          Boolean isAvailable,
+                                          int page,
+                                          int size) {
+        Pageable pageable = PageRequest.of(page, size);
+        String cleanKeyword = keyword == null ? null : keyword.trim();
+
+        return menuItemRepository.searchMenuItems(
+                cleanKeyword,
+                categoryId,
+                isAvailable,
+                pageable
+        );
+    }
+
+    @Override
+    public Optional<MenuItem> findById(Long id) {
+        return menuItemRepository.findById(id);
+    }
+
+    @Override
+    public MenuItem save(MenuItem menuItem) {
+        if (menuItem.getIsAvailable() == null) {
+            menuItem.setIsAvailable(true);
+        }
+
+        return menuItemRepository.save(menuItem);
     }
 
     @Override
@@ -62,7 +81,11 @@ public class MenuItemServiceImpl implements MenuItemService {
         }
 
         item.setIsAvailable(!currentStatus);
-
         menuItemRepository.save(item);
+    }
+
+    @Override
+    public void deleteById(Long id) {
+        menuItemRepository.deleteById(id);
     }
 }

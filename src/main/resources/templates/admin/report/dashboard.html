@@ -154,6 +154,123 @@
             }
         }
 
+        .analytics-grid {
+            display: grid;
+            grid-template-columns: 1.2fr 1fr;
+            gap: 22px;
+            margin-bottom: 30px;
+        }
+
+        .analytics-card {
+            background: #ffffff;
+            border-radius: 18px;
+            padding: 24px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.06);
+            border: 1px solid rgba(0, 0, 0, 0.04);
+        }
+
+        .analytics-card h3 {
+            margin: 0 0 6px;
+            color: #1a1a2e;
+            font-size: 20px;
+        }
+
+        .analytics-card p {
+            margin: 0 0 18px;
+            color: #777;
+            font-size: 14px;
+        }
+
+        .analytics-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .analytics-table th,
+        .analytics-table td {
+            padding: 12px 10px;
+            border-bottom: 1px solid #eee;
+            text-align: left;
+            font-size: 14px;
+        }
+
+        .analytics-table th {
+            color: #555;
+            font-weight: 700;
+            background: #fafafa;
+        }
+
+        .analytics-table td strong {
+            color: #1a1a2e;
+        }
+
+        .empty-text {
+            color: #999;
+            font-style: italic;
+            padding: 12px 0;
+        }
+
+        @media (max-width: 1000px) {
+            .analytics-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .filter-card {
+            background: #ffffff;
+            border-radius: 18px;
+            padding: 20px 24px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.06);
+            margin-bottom: 26px;
+        }
+
+        .filter-form {
+            display: flex;
+            gap: 16px;
+            align-items: end;
+            flex-wrap: wrap;
+        }
+
+        .filter-group {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .filter-group label {
+            font-size: 14px;
+            font-weight: 600;
+            color: #555;
+        }
+
+        .filter-group input {
+            padding: 11px 14px;
+            border-radius: 10px;
+            border: 1px solid #ddd;
+            font-family: inherit;
+        }
+
+        .btn-filter {
+            padding: 12px 18px;
+            border-radius: 10px;
+            border: none;
+            background: #1a1a2e;
+            color: white;
+            font-weight: 600;
+            cursor: pointer;
+            font-family: inherit;
+            text-decoration: none;
+        }
+
+        .btn-reset {
+            padding: 12px 18px;
+            border-radius: 10px;
+            background: #f1f1f1;
+            color: #333;
+            font-weight: 600;
+            text-decoration: none;
+        }
+
         
     </style>
 </head>
@@ -165,7 +282,7 @@
         <a th:href="@{/admin/reports}" class="active">Dashboard</a>
         <a th:href="@{/admin/menu}">Quản lý Thực đơn</a>
         <a th:href="@{/admin/tables}">Quản lý Bàn/Khu vực</a>
-        <a th:href="@{/admin/reservations}">Lịch sử Đặt bàn</a>
+        <a th:href="@{/admin/reservations}">Quản lý Đặt bàn</a>
         <a th:href="@{/admin/users}">Quản lý Người dùng</a>
         <a th:href="@{/admin/orders}">Lịch sử Hóa đơn</a>
         <a th:href="@{/admin/payments}">Quản lý Thanh toán</a>
@@ -188,6 +305,34 @@
             <p>Theo dõi nhanh tình hình doanh thu, đặt bàn, hóa đơn và trạng thái bàn.</p>
         </div>
 
+        <div class="filter-card">
+            <form th:action="@{/admin/reports}" method="get" class="filter-form">
+                <div class="filter-group">
+                    <label for="startDate">Từ ngày</label>
+                    <input type="date"
+                        id="startDate"
+                        name="startDate"
+                        th:value="${startDate}">
+                </div>
+
+                <div class="filter-group">
+                    <label for="endDate">Đến ngày</label>
+                    <input type="date"
+                        id="endDate"
+                        name="endDate"
+                        th:value="${endDate}">
+                </div>
+
+                <button type="submit" class="btn-filter">
+                    Lọc báo cáo
+                </button>
+
+                <a th:href="@{/admin/reports}" class="btn-reset">
+                    Xóa lọc
+                </a>
+            </form>
+        </div>
+
         <div class="dashboard-grid">
             <div class="dashboard-card">
                 <div class="card-icon icon-revenue">💰</div>
@@ -196,21 +341,21 @@
                    th:text="${#numbers.formatDecimal(report.totalRevenue, 0, 'COMMA', 0, 'POINT')} + ' đ'">
                     0 đ
                 </p>
-                <div class="sub">Từ các hóa đơn đã hoàn thành</div>
+                <div class="sub">Từ các hóa đơn đã hoàn thành trong khoảng lọc</div>
             </div>
 
             <div class="dashboard-card">
                 <div class="card-icon icon-order">🧾</div>
                 <div class="label">Tổng hóa đơn</div>
                 <p class="value" th:text="${totalOrders}">0</p>
-                <div class="sub">Tất cả hóa đơn trong hệ thống</div>
+                <div class="sub">Số hóa đơn trong khoảng lọc</div>
             </div>
 
             <div class="dashboard-card">
                 <div class="card-icon icon-reservation">📅</div>
                 <div class="label">Tổng đặt bàn</div>
                 <p class="value" th:text="${totalReservations}">0</p>
-                <div class="sub">Bao gồm mọi trạng thái đặt bàn</div>
+                <div class="sub">Số đặt bàn trong khoảng lọc</div>
             </div>
 
             <div class="dashboard-card">
@@ -250,6 +395,69 @@
         </div>
 
         <div class="export-card">
+
+            <div class="analytics-grid">
+    <div class="analytics-card">
+        <h3>Doanh thu theo tháng</h3>
+        <p>Thống kê 6 tháng gần nhất dựa trên các hóa đơn đã hoàn thành.</p>
+
+        <table class="analytics-table" th:if="${!#lists.isEmpty(monthlyRevenue)}">
+            <thead>
+            <tr>
+                <th>Tháng</th>
+                <th>Số hóa đơn</th>
+                <th>Doanh thu</th>
+            </tr>
+            </thead>
+
+            <tbody>
+            <tr th:each="row : ${monthlyRevenue}">
+                <td>
+                    <strong th:text="${row.label}">Tháng 6/2026</strong>
+                </td>
+
+                <td th:text="${row.orderCount}">0</td>
+
+                <td th:text="${#numbers.formatDecimal(row.revenue, 0, 'COMMA', 0, 'POINT')} + ' đ'">
+                    0 đ
+                </td>
+            </tr>
+            </tbody>
+        </table>
+
+        <div class="empty-text" th:if="${#lists.isEmpty(monthlyRevenue)}">
+            Chưa có dữ liệu doanh thu theo tháng.
+        </div>
+    </div>
+
+                <div class="analytics-card">
+                    <h3>Top món bán chạy</h3>
+                    <p>Top 5 món có tổng số lượng bán cao nhất trong các hóa đơn đã hoàn thành.</p>
+
+                    <table class="analytics-table" th:if="${!#lists.isEmpty(topSellingItems)}">
+                        <thead>
+                        <tr>
+                            <th>Món ăn</th>
+                            <th>Số lượng</th>
+                        </tr>
+                        </thead>
+
+                        <tbody>
+                        <tr th:each="item : ${topSellingItems}">
+                            <td>
+                                <strong th:text="${item.itemName}">Tên món</strong>
+                            </td>
+
+                            <td th:text="${item.totalQuantity}">0</td>
+                        </tr>
+                        </tbody>
+                    </table>
+
+                    <div class="empty-text" th:if="${#lists.isEmpty(topSellingItems)}">
+                        Chưa có dữ liệu món bán chạy.
+                    </div>
+                </div>
+            </div>
             <h3>Xuất báo cáo</h3>
             <p>Tải dữ liệu hệ thống để gửi báo cáo hoặc phục vụ phân tích kế toán.</p>
 

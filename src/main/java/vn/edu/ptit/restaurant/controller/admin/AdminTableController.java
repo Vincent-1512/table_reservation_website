@@ -1,15 +1,16 @@
 package vn.edu.ptit.restaurant.controller.admin;
 
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import vn.edu.ptit.restaurant.entity.Area;
 import vn.edu.ptit.restaurant.entity.DiningTable;
+import vn.edu.ptit.restaurant.entity.enums.TableStatus;
 import vn.edu.ptit.restaurant.service.AreaService;
 import vn.edu.ptit.restaurant.service.DiningTableService;
-import vn.edu.ptit.restaurant.entity.enums.TableStatus;
-import java.util.List;
 
 @Controller
 @RequestMapping("/admin/tables")
@@ -19,34 +20,43 @@ public class AdminTableController {
     private final AreaService areaService;
     private final DiningTableService diningTableService;
 
-    // Hiển thị danh sách Khu vực và Bàn
-    @GetMapping()
-    public String index(@RequestParam(required = false) Integer areaId,
+    @GetMapping
+    public String index(@RequestParam(required = false) String keyword,
+                        @RequestParam(required = false) Integer areaId,
                         @RequestParam(required = false) TableStatus status,
+                        @RequestParam(required = false) Integer minCapacity,
+                        @RequestParam(defaultValue = "0") int page,
+                        @RequestParam(defaultValue = "10") int size,
                         Model model) {
 
-        List<DiningTable> tables;
+        Page<DiningTable> tablePage = diningTableService.searchTables(
+                keyword,
+                areaId,
+                status,
+                minCapacity,
+                page,
+                size
+        );
 
-        if (areaId != null && status != null) {
-            tables = diningTableService.findByAreaIdAndStatus(areaId, status);
-        } else if (areaId != null) {
-            tables = diningTableService.findByAreaId(areaId);
-        } else if (status != null) {
-            tables = diningTableService.findByStatus(status);
-        } else {
-            tables = diningTableService.findAll();
-        }
-
-        model.addAttribute("tables", tables);
+        model.addAttribute("tables", tablePage.getContent());
         model.addAttribute("areas", areaService.findAll());
         model.addAttribute("statuses", TableStatus.values());
+
+        model.addAttribute("currentPage", page);
+        model.addAttribute("totalPages", tablePage.getTotalPages());
+        model.addAttribute("totalItems", tablePage.getTotalElements());
+        model.addAttribute("size", size);
+
+        model.addAttribute("keyword", keyword);
         model.addAttribute("selectedAreaId", areaId);
         model.addAttribute("selectedStatus", status);
+        model.addAttribute("minCapacity", minCapacity);
 
         return "admin/table/index";
     }
 
     // ================= AREA ================= //
+
     @GetMapping("/area/add")
     public String showAddAreaForm(Model model) {
         model.addAttribute("area", new Area());
@@ -54,8 +64,14 @@ public class AdminTableController {
     }
 
     @PostMapping("/area/save")
-    public String saveArea(@ModelAttribute Area area) {
-        areaService.save(area);
+    public String saveArea(@ModelAttribute Area area, RedirectAttributes redirectAttrs) {
+        try {
+            areaService.save(area);
+            redirectAttrs.addFlashAttribute("success", "Lưu khu vực thành công");
+        } catch (Exception e) {
+            redirectAttrs.addFlashAttribute("error", "Lỗi: " + e.getMessage());
+        }
+
         return "redirect:/admin/tables";
     }
 
@@ -65,13 +81,20 @@ public class AdminTableController {
         return "admin/table/area-form";
     }
 
-    @GetMapping("/area/delete/{id}")
-    public String deleteArea(@PathVariable Integer id) {
-        areaService.deleteById(id);
+    @PostMapping("/area/delete/{id}")
+    public String deleteArea(@PathVariable Integer id, RedirectAttributes redirectAttrs) {
+        try {
+            areaService.deleteById(id);
+            redirectAttrs.addFlashAttribute("success", "Xóa khu vực thành công");
+        } catch (Exception e) {
+            redirectAttrs.addFlashAttribute("error", "Lỗi: " + e.getMessage());
+        }
+
         return "redirect:/admin/tables";
     }
 
     // ================= TABLE ================= //
+
     @GetMapping("/add")
     public String showAddTableForm(Model model) {
         model.addAttribute("diningTable", new DiningTable());
@@ -81,8 +104,14 @@ public class AdminTableController {
     }
 
     @PostMapping("/save")
-    public String saveTable(@ModelAttribute DiningTable diningTable) {
-        diningTableService.save(diningTable);
+    public String saveTable(@ModelAttribute DiningTable diningTable, RedirectAttributes redirectAttrs) {
+        try {
+            diningTableService.save(diningTable);
+            redirectAttrs.addFlashAttribute("success", "Lưu bàn thành công");
+        } catch (Exception e) {
+            redirectAttrs.addFlashAttribute("error", "Lỗi: " + e.getMessage());
+        }
+
         return "redirect:/admin/tables";
     }
 
@@ -94,9 +123,15 @@ public class AdminTableController {
         return "admin/table/table-form";
     }
 
-    @GetMapping("/delete/{id}")
-    public String deleteTable(@PathVariable Long id) {
-        diningTableService.deleteById(id);
+    @PostMapping("/delete/{id}")
+    public String deleteTable(@PathVariable Long id, RedirectAttributes redirectAttrs) {
+        try {
+            diningTableService.deleteById(id);
+            redirectAttrs.addFlashAttribute("success", "Xóa bàn thành công");
+        } catch (Exception e) {
+            redirectAttrs.addFlashAttribute("error", "Lỗi: " + e.getMessage());
+        }
+
         return "redirect:/admin/tables";
     }
 }

@@ -5,139 +5,357 @@
     <title>Quản lý Bàn và Khu vực - Lumina Admin</title>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" th:href="@{/css/admin.css}">
-</head>
-<body>
-    <div class="admin-layout">
-        <div class="sidebar">
-            <h2>Lumina Admin</h2>
-            <a th:href="@{/admin/reports}">Dashboard</a>
-            <a th:href="@{/admin/menu}">Quản lý Thực đơn</a>
-            <a th:href="@{/admin/tables}" class="active">Quản lý Bàn/Khu vực</a>
-            <a th:href="@{/admin/reservations}">Lịch sử Đặt bàn</a>
-            <a th:href="@{/admin/users}">Quản lý Người dùng</a>
-            <a th:href="@{/admin/orders}">Lịch sử Hóa đơn</a>
-            <a th:href="@{/admin/payments}">Quản lý Thanh toán</a>
-            <form th:action="@{/logout}" method="post" style="margin:0;">
-                <button type="submit" style="background:none; border:none; color:#a0a0a0;; cursor:pointer; font-family:inherit; font-weight:500;
-                            display: block;
-                            color: #a0a0a0;
-                            text-decoration: none;
-                            padding: 12px 15px;
-                            margin-bottom: 10px;
-                            border-radius: 8px;
-                            transition: 0.3s;
-                            font-size: 16px;">Đăng xuất</button>
-            </form>
-        </div>
 
-        <!-- Main Content -->
-        <div class="main-content">
-            
-            <!-- Quản lý Khu vực -->
-            <div class="card">
-                <div class="card-header">
-                    <h3>Danh sách Khu vực (Areas)</h3>
-                    <a th:href="@{/admin/tables/area/add}" class="btn btn-primary">+ Thêm Khu vực</a>
-                </div>
-                <table class="table">
-                    <thead>
-                        <tr>
-                            <th>ID</th>
-                            <th>Tên Khu vực</th>
-                            <th>Mô tả</th>
-                            <th>Hành động</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <tr th:each="area : ${areas}">
-                            <td th:text="${area.id}">1</td>
-                            <td th:text="${area.name}">Sân vườn</td>
-                            <td th:text="${area.description}">Ngoài trời, thoáng mát</td>
-                            <td>
-                                <a th:href="@{'/admin/tables/area/edit/' + ${area.id}}" class="btn btn-primary" style="padding: 5px 10px; font-size: 13px;">Sửa</a>
-                                <a th:href="@{'/admin/tables/area/delete/' + ${area.id}}" class="btn btn-danger" style="padding: 5px 10px; font-size: 13px;" onclick="return confirm('Xóa khu vực này sẽ xóa toàn bộ bàn thuộc khu vực đó. Bạn có chắc chắn?');">Xóa</a>
-                            </td>
-                        </tr>
-                        <tr th:if="${#lists.isEmpty(areas)}">
-                            <td colspan="4" style="text-align:center;">Chưa có khu vực nào.</td>
-                        </tr>
-                    </tbody>
-                </table>
+    <style>
+        .filter-form {
+            margin-bottom: 20px;
+            display: grid;
+            grid-template-columns: 1.5fr 1fr 1fr 1fr auto auto;
+            gap: 12px;
+            align-items: end;
+        }
+
+        .filter-group {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .filter-group label {
+            font-weight: 600;
+            font-size: 14px;
+        }
+
+        .filter-group input,
+        .filter-group select {
+            padding: 10px 14px;
+            border-radius: 8px;
+            border: 1px solid #ddd;
+            font-family: inherit;
+        }
+
+        .alert {
+            padding: 12px 16px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            font-weight: 500;
+        }
+
+        .alert-success {
+            background: #d1fae5;
+            color: #065f46;
+            border: 1px solid #a7f3d0;
+        }
+
+        .alert-error {
+            background: #fee2e2;
+            color: #991b1b;
+            border: 1px solid #fca5a5;
+        }
+
+        .status-badge {
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .status-AVAILABLE {
+            background: #d1e7dd;
+            color: #0a3622;
+        }
+
+        .status-OCCUPIED {
+            background: #f8d7da;
+            color: #842029;
+        }
+
+        .status-RESERVED {
+            background: #fff3cd;
+            color: #856404;
+        }
+
+        .status-MAINTENANCE {
+            background: #e2e3e5;
+            color: #41464b;
+        }
+
+        .action-btns {
+            display: flex;
+            gap: 6px;
+            flex-wrap: wrap;
+        }
+
+        .summary-line {
+            margin-bottom: 12px;
+            color: #666;
+            font-size: 14px;
+        }
+
+        .pagination {
+            display: flex;
+            gap: 6px;
+            margin-top: 20px;
+            align-items: center;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .pagination a,
+        .pagination span {
+            padding: 8px 12px;
+            border-radius: 8px;
+            border: 1px solid #ddd;
+            text-decoration: none;
+            color: #333;
+        }
+
+        .pagination .active {
+            background: #222;
+            color: #fff;
+            border-color: #222;
+        }
+
+        .pagination .disabled {
+            color: #aaa;
+            pointer-events: none;
+            background: #f5f5f5;
+        }
+
+        @media (max-width: 1200px) {
+            .filter-form {
+                grid-template-columns: 1fr 1fr;
+            }
+        }
+    </style>
+</head>
+
+<body>
+<div class="admin-layout">
+    <div class="sidebar">
+        <h2>Lumina Admin</h2>
+        <a th:href="@{/admin/reports}">Dashboard</a>
+        <a th:href="@{/admin/menu}">Quản lý Thực đơn</a>
+        <a th:href="@{/admin/tables}" class="active">Quản lý Bàn/Khu vực</a>
+        <a th:href="@{/admin/reservations}">Quản lý Đặt bàn</a>
+        <a th:href="@{/admin/users}">Quản lý Người dùng</a>
+        <a th:href="@{/admin/orders}">Lịch sử Hóa đơn</a>
+        <a th:href="@{/admin/payments}">Quản lý Thanh toán</a>
+
+        <form th:action="@{/logout}" method="post" style="margin:0;">
+            <button type="submit"
+                    style="background:none; border:none; cursor:pointer; font-family:inherit; font-weight:500;
+                           display:block; color:#a0a0a0; text-decoration:none; padding:12px 15px;
+                           margin-bottom:10px; border-radius:8px; transition:0.3s; font-size:16px;">
+                Đăng xuất
+            </button>
+        </form>
+    </div>
+
+    <div class="main-content">
+
+        <div class="alert alert-success" th:if="${success}" th:text="${success}"></div>
+        <div class="alert alert-error" th:if="${error}" th:text="${error}"></div>
+
+        <!-- Quản lý Khu vực -->
+        <div class="card">
+            <div class="card-header">
+                <h3>Danh sách Khu vực</h3>
+                <a th:href="@{/admin/tables/area/add}" class="btn btn-primary">+ Thêm Khu vực</a>
             </div>
 
-            <!-- Quản lý Bàn ăn -->
-            <div class="card">
-                <div class="card-header">
-                    <h3>Danh sách Bàn ăn (Dining Tables)</h3>
-                    <a th:href="@{/admin/tables/add}" class="btn btn-primary">+ Thêm Bàn ăn</a>
+            <table class="table">
+                <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Tên khu vực</th>
+                    <th>Mô tả</th>
+                    <th>Hành động</th>
+                </tr>
+                </thead>
+
+                <tbody>
+                <tr th:each="area : ${areas}">
+                    <td th:text="${area.id}">1</td>
+                    <td th:text="${area.name}">Sân vườn</td>
+                    <td th:text="${area.description != null ? area.description : '-'}">Ngoài trời</td>
+                    <td>
+                        <div class="action-btns">
+                            <a th:href="@{'/admin/tables/area/edit/' + ${area.id}}"
+                               class="btn btn-primary"
+                               style="padding:5px 10px; font-size:13px;">
+                                Sửa
+                            </a>
+
+                            <form th:action="@{'/admin/tables/area/delete/' + ${area.id}}"
+                                  method="post"
+                                  style="display:inline;"
+                                  onsubmit="return confirm('Chỉ xóa được khu vực khi không còn bàn nào thuộc khu vực này. Bạn muốn tiếp tục?')">
+                                <button type="submit"
+                                        class="btn btn-danger"
+                                        style="padding:5px 10px; font-size:13px;">
+                                    Xóa
+                                </button>
+                            </form>
+                        </div>
+                    </td>
+                </tr>
+
+                <tr th:if="${#lists.isEmpty(areas)}">
+                    <td colspan="4" style="text-align:center;">Chưa có khu vực nào.</td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Quản lý Bàn ăn -->
+        <div class="card">
+            <div class="card-header">
+                <h3>Danh sách Bàn ăn</h3>
+                <a th:href="@{/admin/tables/add}" class="btn btn-primary">+ Thêm Bàn ăn</a>
+            </div>
+
+            <form th:action="@{/admin/tables}" method="get" class="filter-form">
+                <div class="filter-group">
+                    <label for="keyword">Tìm kiếm</label>
+                    <input type="text"
+                           id="keyword"
+                           name="keyword"
+                           placeholder="Tên bàn hoặc khu vực..."
+                           th:value="${keyword}">
                 </div>
 
-                <form th:action="@{/admin/tables}" method="get"
-                    style="margin-bottom: 20px; display:flex; gap:12px; align-items:center; flex-wrap:wrap;">
-
-                    <select name="areaId"
-                            style="padding:10px 14px; border-radius:8px; border:1px solid #ddd; min-width:220px;">
+                <div class="filter-group">
+                    <label for="areaId">Khu vực</label>
+                    <select name="areaId" id="areaId">
                         <option value="">Tất cả khu vực</option>
-
                         <option th:each="area : ${areas}"
                                 th:value="${area.id}"
                                 th:text="${area.name}"
-                                th:selected="${selectedAreaId != null && selectedAreaId == area.id}">
+                                th:selected="${selectedAreaId != null and selectedAreaId == area.id}">
                         </option>
                     </select>
+                </div>
 
-                    <select name="status"
-                            style="padding:10px 14px; border-radius:8px; border:1px solid #ddd; min-width:220px;">
+                <div class="filter-group">
+                    <label for="status">Trạng thái</label>
+                    <select name="status" id="status">
                         <option value="">Tất cả trạng thái</option>
-
-                        <option th:each="status : ${statuses}"
-                                th:value="${status}"
-                                th:text="${status}"
-                                th:selected="${selectedStatus != null && selectedStatus == status}">
+                        <option th:each="st : ${statuses}"
+                                th:value="${st}"
+                                th:text="${st}"
+                                th:selected="${selectedStatus != null and selectedStatus == st}">
                         </option>
                     </select>
+                </div>
 
-                    <button type="submit" class="btn btn-primary">Lọc</button>
+                <div class="filter-group">
+                    <label for="minCapacity">Sức chứa tối thiểu</label>
+                    <input type="number"
+                           id="minCapacity"
+                           name="minCapacity"
+                           min="1"
+                           placeholder="VD: 4"
+                           th:value="${minCapacity}">
+                </div>
 
-                    <a th:href="@{/admin/tables}" class="btn btn-secondary">Xóa lọc</a>
-                </form>
+                <input type="hidden" name="size" th:value="${size}">
 
-                <table class="table">
-                    <thead>
-                        <tr>
-                            <th>ID</th>
-                            <th>Khu vực</th>
-                            <th>Tên/Số Bàn</th>
-                            <th>Số ghế</th>
-                            <th>Trạng thái</th>
-                            <th>Hành động</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <tr th:each="table : ${tables}">
-                            <td th:text="${table.id}">1</td>
-                            <td th:text="${table.area.name}">Tầng 1</td>
-                            <td th:text="${table.tableName}">Bàn 01</td>
-                            <td th:text="${table.capacity}">4</td>
-                            <td>
-                                <span th:if="${table.status.name() == 'AVAILABLE'}" style="color: green; font-weight: 500;">Trống</span>
-                                <span th:if="${table.status.name() == 'OCCUPIED'}" style="color: red; font-weight: 500;">Có khách</span>
-                                <span th:if="${table.status.name() == 'RESERVED'}" style="color: orange; font-weight: 500;">Đã đặt</span>
-                                <span th:if="${table.status.name() == 'MAINTENANCE'}" style="color: gray; font-weight: 500;">Bảo trì</span>
-                            </td>
-                            <td>
-                                <a th:href="@{'/admin/tables/edit/' + ${table.id}}" class="btn btn-primary" style="padding: 5px 10px; font-size: 13px;">Sửa</a>
-                                <a th:href="@{'/admin/tables/delete/' + ${table.id}}" class="btn btn-danger" style="padding: 5px 10px; font-size: 13px;" onclick="return confirm('Bạn có chắc chắn muốn xóa?');">Xóa</a>
-                            </td>
-                        </tr>
-                        <tr th:if="${#lists.isEmpty(tables)}">
-                            <td colspan="6" style="text-align:center;">Chưa có bàn nào.</td>
-                        </tr>
-                    </tbody>
-                </table>
+                <button type="submit" class="btn btn-primary">Lọc</button>
+                <a th:href="@{/admin/tables}" class="btn btn-secondary">Xóa lọc</a>
+            </form>
+
+            <div class="summary-line">
+                Tìm thấy <strong th:text="${totalItems}">0</strong> bàn phù hợp.
             </div>
 
+            <table class="table">
+                <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Khu vực</th>
+                    <th>Tên/Số bàn</th>
+                    <th>Số ghế</th>
+                    <th>Trạng thái</th>
+                    <th>Cập nhật</th>
+                    <th>Hành động</th>
+                </tr>
+                </thead>
+
+                <tbody>
+                <tr th:each="table : ${tables}">
+                    <td th:text="${table.id}">1</td>
+                    <td th:text="${table.area.name}">Tầng 1</td>
+                    <td th:text="${table.tableName}">Bàn 01</td>
+                    <td th:text="${table.capacity}">4</td>
+
+                    <td>
+                        <span class="status-badge"
+                              th:classappend="'status-' + ${table.status.name()}"
+                              th:switch="${table.status.name()}">
+                            <span th:case="'AVAILABLE'">Trống</span>
+                            <span th:case="'OCCUPIED'">Có khách</span>
+                            <span th:case="'RESERVED'">Đã đặt</span>
+                            <span th:case="'MAINTENANCE'">Bảo trì</span>
+                        </span>
+                    </td>
+
+                    <td th:text="${table.updatedAt != null ? #temporals.format(table.updatedAt, 'dd/MM/yyyy HH:mm') : '-'}">
+                        -
+                    </td>
+
+                    <td>
+                        <div class="action-btns">
+                            <a th:href="@{'/admin/tables/edit/' + ${table.id}}"
+                               class="btn btn-primary"
+                               style="padding:5px 10px; font-size:13px;">
+                                Sửa
+                            </a>
+
+                            <form th:action="@{'/admin/tables/delete/' + ${table.id}}"
+                                  method="post"
+                                  style="display:inline;"
+                                  onsubmit="return confirm('Bạn có chắc chắn muốn xóa bàn này?')">
+                                <button type="submit"
+                                        class="btn btn-danger"
+                                        style="padding:5px 10px; font-size:13px;">
+                                    Xóa
+                                </button>
+                            </form>
+                        </div>
+                    </td>
+                </tr>
+
+                <tr th:if="${#lists.isEmpty(tables)}">
+                    <td colspan="7" style="text-align:center;">Không tìm thấy bàn phù hợp.</td>
+                </tr>
+                </tbody>
+            </table>
+
+            <div class="pagination" th:if="${totalPages > 1}">
+                <a th:classappend="${currentPage == 0} ? 'disabled'"
+                   th:href="${currentPage > 0}
+                            ? @{/admin/tables(page=${currentPage - 1}, size=${size}, keyword=${keyword}, areaId=${selectedAreaId}, status=${selectedStatus}, minCapacity=${minCapacity})}
+                            : '#'}">
+                    Trước
+                </a>
+
+                <a th:each="i : ${#numbers.sequence(0, totalPages - 1)}"
+                   th:text="${i + 1}"
+                   th:classappend="${i == currentPage} ? 'active'"
+                   th:href="@{/admin/tables(page=${i}, size=${size}, keyword=${keyword}, areaId=${selectedAreaId}, status=${selectedStatus}, minCapacity=${minCapacity})}">
+                    1
+                </a>
+
+                <a th:classappend="${currentPage >= totalPages - 1} ? 'disabled'"
+                   th:href="${currentPage < totalPages - 1}
+                            ? @{/admin/tables(page=${currentPage + 1}, size=${size}, keyword=${keyword}, areaId=${selectedAreaId}, status=${selectedStatus}, minCapacity=${minCapacity})}
+                            : '#'}">
+                    Sau
+                </a>
+            </div>
         </div>
     </div>
+</div>
 </body>
 </html>

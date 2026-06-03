@@ -2,73 +2,222 @@
 <html lang="vi" xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta charset="UTF-8">
-    <title>Quản lý người dùng - Lumina Admin</title>
+    <title>Quản lý Người dùng - Lumina Admin</title>
+
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" th:href="@{/css/admin.css}">
+
+    <style>
+        .filter-form {
+            margin-bottom: 20px;
+            display: grid;
+            grid-template-columns: 2fr 1fr auto auto;
+            gap: 12px;
+            align-items: end;
+        }
+
+        .filter-group {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .filter-group label {
+            font-weight: 600;
+            font-size: 14px;
+        }
+
+        .filter-group input,
+        .filter-group select {
+            padding: 10px 14px;
+            border-radius: 8px;
+            border: 1px solid #ddd;
+            font-family: inherit;
+        }
+
+        .alert {
+            padding: 12px 16px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            font-weight: 500;
+        }
+
+        .alert-success {
+            background: #d1fae5;
+            color: #065f46;
+            border: 1px solid #a7f3d0;
+        }
+
+        .alert-error {
+            background: #fee2e2;
+            color: #991b1b;
+            border: 1px solid #fca5a5;
+        }
+
+        .role-badge {
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .role-ADMIN {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+
+        .role-STAFF {
+            background: #dbeafe;
+            color: #1e40af;
+        }
+
+        .role-CUSTOMER {
+            background: #d1fae5;
+            color: #065f46;
+        }
+
+        .action-btns {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .role-form {
+            display: flex;
+            gap: 6px;
+            align-items: center;
+        }
+
+        .role-form select {
+            padding: 6px 8px;
+            border-radius: 6px;
+            border: 1px solid #ddd;
+            font-family: inherit;
+        }
+
+        .summary-line {
+            margin-bottom: 12px;
+            color: #666;
+            font-size: 14px;
+        }
+
+        .pagination {
+            display: flex;
+            gap: 6px;
+            margin-top: 20px;
+            align-items: center;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .pagination a,
+        .pagination span {
+            padding: 8px 12px;
+            border-radius: 8px;
+            border: 1px solid #ddd;
+            text-decoration: none;
+            color: #333;
+        }
+
+        .pagination .active {
+            background: #222;
+            color: #fff;
+            border-color: #222;
+        }
+
+        .pagination .disabled {
+            color: #aaa;
+            pointer-events: none;
+            background: #f5f5f5;
+        }
+
+        @media (max-width: 1000px) {
+            .filter-form {
+                grid-template-columns: 1fr 1fr;
+            }
+        }
+    </style>
 </head>
+
 <body>
 <div class="admin-layout">
-        <div class="sidebar">
-            <h2>Lumina Admin</h2>
-            <a th:href="@{/admin/reports}">Dashboard</a>
-            <a th:href="@{/admin/menu}">Quản lý Thực đơn</a>
-            <a th:href="@{/admin/tables}" >Quản lý Bàn/Khu vực</a>
-            <a th:href="@{/admin/reservations}">Lịch sử Đặt bàn</a>
-            <a th:href="@{/admin/users}" class="active">Quản lý Người dùng</a>
-            <a th:href="@{/admin/orders}">Lịch sử Hóa đơn</a>
-            <a th:href="@{/admin/payments}">Quản lý Thanh toán</a>
-            <form th:action="@{/logout}" method="post" style="margin:0;">
-                <button type="submit" style="background:none; border:none; color:#a0a0a0;; cursor:pointer; font-family:inherit; font-weight:500;
-                            display: block;
-                            color: #a0a0a0;
-                            text-decoration: none;
-                            padding: 12px 15px;
-                            margin-bottom: 10px;
-                            border-radius: 8px;
-                            transition: 0.3s;
-                            font-size: 16px;">Đăng xuất</button>
-            </form>
-        </div>
+    <div class="sidebar">
+        <h2>Lumina Admin</h2>
+
+        <a th:href="@{/admin/reports}">Dashboard</a>
+        <a th:href="@{/admin/menu}">Quản lý Thực đơn</a>
+        <a th:href="@{/admin/tables}">Quản lý Bàn/Khu vực</a>
+        <a th:href="@{/admin/reservations}">Quản lý Đặt bàn</a>
+        <a th:href="@{/admin/users}" class="active">Quản lý Người dùng</a>
+        <a th:href="@{/admin/orders}">Lịch sử Hóa đơn</a>
+        <a th:href="@{/admin/payments}">Quản lý Thanh toán</a>
+
+        <form th:action="@{/logout}" method="post" style="margin:0;">
+            <button type="submit"
+                    style="background:none; border:none; cursor:pointer; font-family:inherit; font-weight:500;
+                           display:block; color:#a0a0a0; text-decoration:none; padding:12px 15px;
+                           margin-bottom:10px; border-radius:8px; transition:0.3s; font-size:16px;">
+                Đăng xuất
+            </button>
+        </form>
+    </div>
 
     <div class="main-content">
+
+        <div class="alert alert-success" th:if="${successMessage}" th:text="${successMessage}"></div>
+        <div class="alert alert-error" th:if="${errorMessage}" th:text="${errorMessage}"></div>
+
         <div class="card">
             <div class="card-header">
-                <h3>Danh sách người dùng</h3>
+                <h3>Danh sách Người dùng</h3>
+                <a th:href="@{/admin/users/add}" class="btn btn-primary">+ Tạo tài khoản</a>
             </div>
 
-            <form th:action="@{/admin/users}" method="get"
-                style="margin-bottom: 20px; display:flex; gap:12px; align-items:center; flex-wrap:wrap;">
+            <form th:action="@{/admin/users}" method="get" class="filter-form">
+                <div class="filter-group">
+                    <label for="keyword">Tìm kiếm</label>
+                    <input type="text"
+                           id="keyword"
+                           name="keyword"
+                           placeholder="Username, họ tên, email..."
+                           th:value="${keyword}">
+                </div>
 
-                <input type="text"
-                    name="keyword"
-                    th:value="${keyword}"
-                    placeholder="Tìm username, họ tên, email..."
-                    style="padding:10px 14px; border-radius:8px; border:1px solid #ddd; min-width:260px;">
+                <div class="filter-group">
+                    <label for="role">Vai trò</label>
+                    <select name="role" id="role">
+                        <option value="">Tất cả vai trò</option>
+                        <option th:each="role : ${roles}"
+                                th:value="${role}"
+                                th:text="${role}"
+                                th:selected="${selectedRole != null and selectedRole == role}">
+                        </option>
+                    </select>
+                </div>
 
-                <select name="role"
-                        style="padding:10px 14px; border-radius:8px; border:1px solid #ddd;">
-                    <option value="">Tất cả vai trò</option>
-                    <option th:each="role : ${roles}"
-                            th:value="${role}"
-                            th:text="${role}"
-                            th:selected="${selectedRole != null && selectedRole == role}">
-                    </option>
-                </select>
+                <input type="hidden" name="size" th:value="${size}">
 
                 <button type="submit" class="btn btn-primary">Tìm kiếm</button>
-
                 <a th:href="@{/admin/users}" class="btn btn-secondary">Xóa lọc</a>
             </form>
+
+            <div class="summary-line">
+                Trang <strong th:text="${currentPage + 1}">1</strong>
+                <span th:if="${totalPages > 0}">
+                    / <strong th:text="${totalPages}">1</strong>
+                </span>
+            </div>
+
             <table class="table">
                 <thead>
                 <tr>
                     <th>ID</th>
-                    <th>Username</th>
+                    <th>Tài khoản</th>
                     <th>Họ tên</th>
                     <th>Email</th>
                     <th>SĐT</th>
-                    <th>Role</th>
-                    <th>Ngày tạo</th>
+                    <th>Vai trò</th>
                     <th>Đổi quyền</th>
                     <th>Thao tác</th>
                 </tr>
@@ -77,74 +226,107 @@
                 <tbody>
                 <tr th:each="user : ${users}">
                     <td th:text="${user.id}">1</td>
-                    <td th:text="${user.username}">admin</td>
-                    <td th:text="${user.fullName}">Quản trị viên</td>
-                    <td th:text="${user.email}">admin@gmail.com</td>
-                    <td th:text="${user.phone}">0123456789</td>
 
                     <td>
-                        <span th:text="${user.role}">ADMIN</span>
+                        <strong th:text="${user.username}">admin</strong>
+                        <div th:if="${currentUser != null and currentUser.id == user.id}"
+                             style="font-size:12px; color:#cba876; margin-top:4px;">
+                            Tài khoản hiện tại
+                        </div>
                     </td>
 
-                    <td th:text="${#temporals.format(user.createdAt, 'dd/MM/yyyy HH:mm')}">
-                        13/05/2026 10:00
+                    <td th:text="${user.fullName}">Nguyễn Văn A</td>
+
+                    <td th:text="${user.email != null ? user.email : '-'}">
+                        email@example.com
+                    </td>
+
+                    <td th:text="${user.phone != null ? user.phone : '-'}">
+                        0901234567
                     </td>
 
                     <td>
-                        <form th:action="@{'/admin/users/' + ${user.id} + '/role'}" method="post">
-                            <select name="role">
+                        <span class="role-badge"
+                              th:classappend="'role-' + ${user.role.name()}"
+                              th:text="${user.role}">
+                            ADMIN
+                        </span>
+                    </td>
+
+                    <td>
+                        <form th:action="@{'/admin/users/' + ${user.id} + '/role'}"
+                              method="post"
+                              class="role-form">
+
+                            <select name="role"
+                                    th:disabled="${currentUser != null and currentUser.id == user.id}">
                                 <option th:each="role : ${roles}"
                                         th:value="${role}"
                                         th:text="${role}"
                                         th:selected="${role == user.role}">
                                 </option>
                             </select>
-                            <button type="submit" class="btn btn-primary">Lưu</button>
+
+                            <button type="submit"
+                                    class="btn btn-primary"
+                                    style="padding:5px 10px; font-size:13px;"
+                                    th:disabled="${currentUser != null and currentUser.id == user.id}">
+                                Lưu
+                            </button>
                         </form>
                     </td>
 
                     <td>
-                        <a th:href="@{'/admin/users/' + ${user.id} + '/delete'}"
-                           class="btn btn-danger"
-                           onclick="return confirm('Bạn có chắc muốn xóa người dùng này?')">
-                            Xóa
-                        </a>
+                        <div class="action-btns">
+                            <form th:if="${currentUser == null or currentUser.id != user.id}"
+                                  th:action="@{'/admin/users/' + ${user.id} + '/delete'}"
+                                  method="post"
+                                  onsubmit="return confirm('Bạn có chắc chắn muốn xóa người dùng này?')">
+                                <button type="submit"
+                                        class="btn btn-danger"
+                                        style="padding:5px 10px; font-size:13px;">
+                                    Xóa
+                                </button>
+                            </form>
+
+                            <span th:if="${currentUser != null and currentUser.id == user.id}"
+                                  style="color:#777; font-size:13px;">
+                                Không thể tự xóa
+                            </span>
+                        </div>
                     </td>
                 </tr>
 
                 <tr th:if="${#lists.isEmpty(users)}">
-                    <td colspan="9" style="text-align:center;">
-                        Chưa có người dùng nào.
+                    <td colspan="8" style="text-align:center;">
+                        Không tìm thấy người dùng phù hợp.
                     </td>
                 </tr>
                 </tbody>
             </table>
-        </div>
-        <div class="pagination-wrapper"
-            th:if="${totalPages != null && totalPages > 1}">
 
-            <!-- Prev -->
-            <a th:href="${currentPage > 0} ? @{/admin/users(page=${currentPage - 1})} : '#'"
-            class="pagination-btn nav-btn"
-            th:classappend="${currentPage == 0} ? ' disabled-btn' : ''">
-                ←
-            </a>
+            <div class="pagination" th:if="${totalPages > 1}">
+                <a th:classappend="${currentPage == 0} ? 'disabled'"
+                   th:href="${currentPage > 0}
+                            ? @{/admin/users(page=${currentPage - 1}, size=${size}, keyword=${keyword}, role=${selectedRole})}
+                            : '#'}">
+                    Trước
+                </a>
 
-            <!-- Page Number -->
-            <a th:each="i : ${#numbers.sequence(0, totalPages - 1)}"
-            th:href="@{/admin/users(page=${i})}"
-            th:text="${i + 1}"
-            class="pagination-btn"
-            th:classappend="${currentPage == i} ? ' active-page' : ''">
-            </a>
+                <a th:each="i : ${#numbers.sequence(0, totalPages - 1)}"
+                   th:text="${i + 1}"
+                   th:classappend="${i == currentPage} ? 'active'"
+                   th:href="@{/admin/users(page=${i}, size=${size}, keyword=${keyword}, role=${selectedRole})}">
+                    1
+                </a>
 
-            <!-- Next -->
-            <a th:href="${currentPage < totalPages - 1} ? @{/admin/users(page=${currentPage + 1})} : '#'"
-            class="pagination-btn nav-btn"
-            th:classappend="${currentPage == totalPages - 1} ? ' disabled-btn' : ''">
-                →
-            </a>
-
+                <a th:classappend="${currentPage >= totalPages - 1} ? 'disabled'"
+                   th:href="${currentPage < totalPages - 1}
+                            ? @{/admin/users(page=${currentPage + 1}, size=${size}, keyword=${keyword}, role=${selectedRole})}
+                            : '#'}">
+                    Sau
+                </a>
+            </div>
         </div>
     </div>
 </div>

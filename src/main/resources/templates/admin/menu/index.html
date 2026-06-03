@@ -5,158 +5,357 @@
     <title>Quản lý Thực đơn - Lumina Admin</title>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" th:href="@{/css/admin.css}">
-</head>
-<body>
-    <div class="admin-layout">
-        <div class="sidebar">
-            <h2>Lumina Admin</h2>
-            <a th:href="@{/admin/reports}">Dashboard</a>
-            <a th:href="@{/admin/menu}" class="active">Quản lý Thực đơn</a>
-            <a th:href="@{/admin/tables}">Quản lý Bàn/Khu vực</a>
-            <a th:href="@{/admin/reservations}">Lịch sử Đặt bàn</a>
-            <a th:href="@{/admin/users}">Quản lý Người dùng</a>
-            <a th:href="@{/admin/orders}">Lịch sử Hóa đơn</a>
-            <a th:href="@{/admin/payments}">Quản lý Thanh toán</a>
-            <form th:action="@{/logout}" method="post" style="margin:0;">
-                <button type="submit" style="background:none; border:none; color:#a0a0a0;; cursor:pointer; font-family:inherit; font-weight:500;
-                            display: block;
-                            color: #a0a0a0;
-                            text-decoration: none;
-                            padding: 12px 15px;
-                            margin-bottom: 10px;
-                            border-radius: 8px;
-                            transition: 0.3s;
-                            font-size: 16px;">Đăng xuất</button>
-            </form>
-        </div>
 
-        <!-- Main Content -->
-        <div class="main-content">
-            
-            <!-- Quản lý Danh mục -->
-            <div class="card">
-                <div class="card-header">
-                    <h3>Danh mục Món ăn (Categories)</h3>
-                    <a th:href="@{/admin/menu/category/add}" class="btn btn-primary">+ Thêm Danh mục</a>
-                </div>
-                <table class="table">
-                    <thead>
-                        <tr>
-                            <th>ID</th>
-                            <th>Tên Danh Mục</th>
-                            <th>Mô tả</th>
-                            <th>Hành động</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <tr th:each="cat : ${categories}">
-                            <td th:text="${cat.id}">1</td>
-                            <td th:text="${cat.name}">Khai vị</td>
-                            <td th:text="${cat.description}">Các món ăn nhẹ</td>
-                            <td>
-                                <a th:href="@{'/admin/menu/category/edit/' + ${cat.id}}" class="btn btn-primary" style="padding: 5px 10px; font-size: 13px;">Sửa</a>
-                                <a th:href="@{'/admin/menu/category/delete/' + ${cat.id}}" class="btn btn-danger" style="padding: 5px 10px; font-size: 13px;" onclick="return confirm('Bạn có chắc chắn muốn xóa?');">Xóa</a>
-                            </td>
-                        </tr>
-                        <tr th:if="${#lists.isEmpty(categories)}">
-                            <td colspan="4" style="text-align:center;">Chưa có danh mục nào.</td>
-                        </tr>
-                    </tbody>
-                </table>
+    <style>
+        .alert {
+            padding: 12px 16px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            font-weight: 500;
+        }
+
+        .alert-success {
+            background: #d1fae5;
+            color: #065f46;
+            border: 1px solid #a7f3d0;
+        }
+
+        .alert-error {
+            background: #fee2e2;
+            color: #991b1b;
+            border: 1px solid #fca5a5;
+        }
+
+        .filter-form {
+            margin-bottom: 20px;
+            display: grid;
+            grid-template-columns: 2fr 1fr 1fr auto auto;
+            gap: 12px;
+            align-items: end;
+        }
+
+        .filter-group {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .filter-group label {
+            font-weight: 600;
+            font-size: 14px;
+        }
+
+        .filter-group input,
+        .filter-group select {
+            padding: 10px 14px;
+            border-radius: 8px;
+            border: 1px solid #ddd;
+            font-family: inherit;
+        }
+
+        .summary-line {
+            margin-bottom: 12px;
+            color: #666;
+            font-size: 14px;
+        }
+
+        .status-badge {
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .status-available {
+            background: #d1e7dd;
+            color: #0a3622;
+        }
+
+        .status-hidden {
+            background: #f8d7da;
+            color: #842029;
+        }
+
+        .action-btns {
+            display: flex;
+            gap: 6px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+
+        .pagination {
+            display: flex;
+            gap: 6px;
+            margin-top: 20px;
+            align-items: center;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .pagination a,
+        .pagination span {
+            padding: 8px 12px;
+            border-radius: 8px;
+            border: 1px solid #ddd;
+            text-decoration: none;
+            color: #333;
+        }
+
+        .pagination .active {
+            background: #222;
+            color: #fff;
+            border-color: #222;
+        }
+
+        .pagination .disabled {
+            color: #aaa;
+            pointer-events: none;
+            background: #f5f5f5;
+        }
+
+        @media (max-width: 1100px) {
+            .filter-form {
+                grid-template-columns: 1fr 1fr;
+            }
+        }
+    </style>
+</head>
+
+<body>
+<div class="admin-layout">
+    <div class="sidebar">
+        <h2>Lumina Admin</h2>
+        <a th:href="@{/admin/reports}">Dashboard</a>
+        <a th:href="@{/admin/menu}" class="active">Quản lý Thực đơn</a>
+        <a th:href="@{/admin/tables}">Quản lý Bàn/Khu vực</a>
+        <a th:href="@{/admin/reservations}">Quản lý Đặt bàn</a>
+        <a th:href="@{/admin/users}">Quản lý Người dùng</a>
+        <a th:href="@{/admin/orders}">Lịch sử Hóa đơn</a>
+        <a th:href="@{/admin/payments}">Quản lý Thanh toán</a>
+
+        <form th:action="@{/logout}" method="post" style="margin:0;">
+            <button type="submit"
+                    style="background:none; border:none; cursor:pointer; font-family:inherit; font-weight:500;
+                           display:block; color:#a0a0a0; text-decoration:none; padding:12px 15px;
+                           margin-bottom:10px; border-radius:8px; transition:0.3s; font-size:16px;">
+                Đăng xuất
+            </button>
+        </form>
+    </div>
+
+    <div class="main-content">
+        <div class="alert alert-success" th:if="${success}" th:text="${success}"></div>
+        <div class="alert alert-error" th:if="${error}" th:text="${error}"></div>
+        <!-- Quản lý Danh mục -->
+        <div class="card">
+            <div class="card-header">
+                <h3>Danh mục Món ăn</h3>
+                <a th:href="@{/admin/menu/category/add}" class="btn btn-primary">+ Thêm Danh mục</a>
             </div>
 
-            <!-- Quản lý Món ăn -->
-            <div class="card">
-                <div class="card-header">
-                    <h3>Danh sách Món ăn (Menu Items)</h3>
-                    <a th:href="@{/admin/menu/item/add}" class="btn btn-primary">+ Thêm Món ăn</a>
-                </div>
-                <form th:action="@{/admin/menu}" method="get"
-                    style="margin-bottom: 20px; display:flex; gap:12px; align-items:center; flex-wrap:wrap;">
+            <table class="table">
+                <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Tên danh mục</th>
+                    <th>Mô tả</th>
+                    <th>Hành động</th>
+                </tr>
+                </thead>
 
+                <tbody>
+                <tr th:each="cat : ${categories}">
+                    <td th:text="${cat.id}">1</td>
+                    <td th:text="${cat.name}">Khai vị</td>
+                    <td th:text="${cat.description != null ? cat.description : '-'}">Các món ăn nhẹ</td>
+                    <td>
+                        <div class="action-btns">
+                            <a th:href="@{'/admin/menu/category/edit/' + ${cat.id}}"
+                               class="btn btn-primary"
+                               style="padding:5px 10px; font-size:13px;">
+                                Sửa
+                            </a>
+
+                            <form th:action="@{'/admin/menu/category/delete/' + ${cat.id}}"
+                                method="post"
+                                style="display:inline;"
+                                onsubmit="return confirm('Chỉ xóa được danh mục khi không còn món ăn nào thuộc danh mục này. Bạn muốn tiếp tục?')">
+                                <button type="submit"
+                                        class="btn btn-danger"
+                                        style="padding:5px 10px; font-size:13px;">
+                                    Xóa
+                                </button>
+                            </form>
+                        </div>
+                    </td>
+                </tr>
+
+                <tr th:if="${#lists.isEmpty(categories)}">
+                    <td colspan="4" style="text-align:center;">Chưa có danh mục nào.</td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Quản lý Món ăn -->
+        <div class="card">
+            <div class="card-header">
+                <h3>Danh sách Món ăn</h3>
+                <a th:href="@{/admin/menu/item/add}" class="btn btn-primary">+ Thêm Món ăn</a>
+            </div>
+
+            <form th:action="@{/admin/menu}" method="get" class="filter-form">
+                <div class="filter-group">
+                    <label for="keyword">Tìm kiếm</label>
                     <input type="text"
-                        name="keyword"
-                        th:value="${keyword}"
-                        placeholder="Tìm món ăn theo tên..."
-                        style="padding:10px 14px; border-radius:8px; border:1px solid #ddd; min-width:240px;">
+                           id="keyword"
+                           name="keyword"
+                           th:value="${keyword}"
+                           placeholder="Tên món, mô tả, danh mục...">
+                </div>
 
-                    <select name="categoryId"
-                            style="padding:10px 14px; border-radius:8px; border:1px solid #ddd; min-width:220px;">
+                <div class="filter-group">
+                    <label for="categoryId">Danh mục</label>
+                    <select name="categoryId" id="categoryId">
                         <option value="">Tất cả danh mục</option>
-
                         <option th:each="category : ${categories}"
                                 th:value="${category.id}"
                                 th:text="${category.name}"
-                                th:selected="${selectedCategoryId != null && selectedCategoryId == category.id}">
+                                th:selected="${selectedCategoryId != null and selectedCategoryId == category.id}">
                         </option>
                     </select>
+                </div>
 
-                    <select name="isAvailable"
-                            style="padding:10px 14px; border-radius:8px; border:1px solid #ddd; min-width:180px;">
+                <div class="filter-group">
+                    <label for="isAvailable">Trạng thái</label>
+                    <select name="isAvailable" id="isAvailable">
                         <option value="">Tất cả trạng thái</option>
-                        <option value="true" th:selected="${selectedAvailability != null && selectedAvailability == true}">
+                        <option value="true"
+                                th:selected="${selectedAvailability != null and selectedAvailability == true}">
                             Còn bán
                         </option>
-                        <option value="false" th:selected="${selectedAvailability != null && selectedAvailability == false}">
+                        <option value="false"
+                                th:selected="${selectedAvailability != null and selectedAvailability == false}">
                             Đã ẩn
                         </option>
                     </select>
+                </div>
 
-                    <button type="submit" class="btn btn-primary">Lọc</button>
+                <input type="hidden" name="size" th:value="${size}">
 
-                    <a th:href="@{/admin/menu}" class="btn btn-secondary">Xóa lọc</a>
-                </form>
-                <table class="table">
-                    <thead>
-                        <tr>
-                            <th>Hình ảnh</th>
-                            <th>Tên món</th>
-                            <th>Danh mục</th>
-                            <th>Giá (VNĐ)</th>
-                            <th>Trạng thái</th>
-                            <th>Hành động</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <tr th:each="item : ${menuItems}">
-                            <td>
-                                <img th:if="${item.imageUrl}" th:src="${item.imageUrl}" alt="Ảnh" style="width:50px; height:50px; object-fit:cover; border-radius:4px;">
-                                <span th:unless="${item.imageUrl}">Không có</span>
-                            </td>
-                            <td th:text="${item.name}">Bò Wagyu</td>
-                            <td th:text="${item.category.name}">Món chính</td>
-                            <td th:text="${#numbers.formatDecimal(item.price, 0, 'COMMA', 0, 'POINT')}">500,000</td>
-                            <td>
-                                <span th:if="${item.isAvailable}" style="color: green; font-weight: 600;">
-                                    Còn bán
-                                </span>
+                <button type="submit" class="btn btn-primary">Lọc</button>
+                <a th:href="@{/admin/menu}" class="btn btn-secondary">Xóa lọc</a>
+            </form>
 
-                                <span th:if="${!item.isAvailable}" style="color: red; font-weight: 600;">
-                                    Đã ẩn
-                                </span>
-                            </td>
-                            <td>
-                                <a th:href="@{'/admin/menu/items/' + ${item.id} + '/edit'}"
-                                class="btn btn-warning">
-                                    Sửa
-                                </a>
+            <div class="summary-line">
+                Tìm thấy <strong th:text="${totalItems}">0</strong> món ăn phù hợp.
+            </div>
 
-                                <a th:href="@{'/admin/menu/' + ${item.id} + '/toggle-availability'}"
-                                class="btn"
-                                th:classappend="${item.isAvailable} ? ' btn-danger' : ' btn-success'"
-                                onclick="return confirm('Bạn có chắc muốn thay đổi trạng thái món này?')">
+            <table class="table">
+                <thead>
+                <tr>
+                    <th>Hình ảnh</th>
+                    <th>Tên món</th>
+                    <th>Danh mục</th>
+                    <th>Giá</th>
+                    <th>Trạng thái</th>
+                    <th>Hành động</th>
+                </tr>
+                </thead>
 
+                <tbody>
+                <tr th:each="item : ${menuItems}">
+                    <td>
+                        <img th:if="${item.imageUrl != null and !#strings.isEmpty(item.imageUrl)}"
+                             th:src="${item.imageUrl}"
+                             alt="Ảnh món ăn"
+                             style="width:50px; height:50px; object-fit:cover; border-radius:6px;">
+
+                        <span th:unless="${item.imageUrl != null and !#strings.isEmpty(item.imageUrl)}">
+                            Không có
+                        </span>
+                    </td>
+
+                    <td>
+                        <strong th:text="${item.name}">Bò Wagyu</strong>
+                        <div th:if="${item.description != null and !#strings.isEmpty(item.description)}"
+                             th:text="${item.description}"
+                             style="font-size:13px; color:#777; margin-top:4px;">
+                            Mô tả món ăn
+                        </div>
+                    </td>
+
+                    <td th:text="${item.category.name}">Món chính</td>
+
+                    <td th:text="${#numbers.formatDecimal(item.price, 0, 'COMMA', 0, 'POINT')} + ' VNĐ'">
+                        500,000 VNĐ
+                    </td>
+
+                    <td>
+                        <span th:if="${item.isAvailable}"
+                              class="status-badge status-available">
+                            Còn bán
+                        </span>
+
+                        <span th:if="${!item.isAvailable}"
+                              class="status-badge status-hidden">
+                            Đã ẩn
+                        </span>
+                    </td>
+
+                    <td>
+                        <div class="action-btns">
+                            <a th:href="@{'/admin/menu/items/' + ${item.id} + '/edit'}"
+                               class="btn btn-warning"
+                               style="padding:5px 10px; font-size:13px;">
+                                Sửa
+                            </a>
+
+                            <form th:action="@{'/admin/menu/' + ${item.id} + '/toggle-availability'}"
+                                  method="post"
+                                  style="display:inline;"
+                                  onsubmit="return confirm('Bạn có chắc muốn thay đổi trạng thái món này?')">
+                                <button type="submit"
+                                        class="btn"
+                                        th:classappend="${item.isAvailable} ? ' btn-danger' : ' btn-success'"
+                                        style="padding:5px 10px; font-size:13px;">
                                     <span th:text="${item.isAvailable} ? 'Ẩn' : 'Hiện lại'"></span>
-                                </a>
-                            </td>
-                        </tr>
-                        <tr th:if="${#lists.isEmpty(menuItems)}">
-                            <td colspan="6" style="text-align:center;">Chưa có món ăn nào.</td>
-                        </tr>
-                    </tbody>
-                </table>
+                                </button>
+                            </form>
+                        </div>
+                    </td>
+                </tr>
+
+                <tr th:if="${#lists.isEmpty(menuItems)}">
+                    <td colspan="6" style="text-align:center;">Không tìm thấy món ăn phù hợp.</td>
+                </tr>
+                </tbody>
+            </table>
+
+            <div class="pagination" th:if="${totalPages > 1}">
+                <a th:classappend="${currentPage == 0} ? 'disabled'"
+                   th:href="${currentPage > 0}
+                            ? @{/admin/menu(page=${currentPage - 1}, size=${size}, keyword=${keyword}, categoryId=${selectedCategoryId}, isAvailable=${selectedAvailability})}
+                            : '#'}">
+                    Trước
+                </a>
+
+                <a th:each="i : ${#numbers.sequence(0, totalPages - 1)}"
+                   th:text="${i + 1}"
+                   th:classappend="${i == currentPage} ? 'active'"
+                   th:href="@{/admin/menu(page=${i}, size=${size}, keyword=${keyword}, categoryId=${selectedCategoryId}, isAvailable=${selectedAvailability})}">
+                    1
+                </a>
+
+                <a th:classappend="${currentPage >= totalPages - 1} ? 'disabled'"
+                   th:href="${currentPage < totalPages - 1}
+                            ? @{/admin/menu(page=${currentPage + 1}, size=${size}, keyword=${keyword}, categoryId=${selectedCategoryId}, isAvailable=${selectedAvailability})}
+                            : '#'}">
+                    Sau
+                </a>
             </div>
         </div>
     </div>
+</div>
 </body>
 </html>

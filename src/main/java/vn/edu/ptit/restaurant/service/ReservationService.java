@@ -6,6 +6,8 @@ import vn.edu.ptit.restaurant.entity.enums.ReservationStatus;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
+import org.springframework.data.domain.Page;
+import java.time.LocalDate;
 
 public interface ReservationService {
     Reservation createReservation(Long userId, Long tableId, LocalDateTime reservationTime, Integer numberOfGuests, String note);
@@ -20,7 +22,12 @@ public interface ReservationService {
     void confirmReservation(Long reservationId);
     void adminCancelReservation(Long reservationId);
     void completeReservation(Long reservationId);
-    
-    Reservation findById(Long id);
+    void checkinReservation(Long reservationId, String staffUsername);
     vn.edu.ptit.restaurant.entity.Order createOrderForReservation(Long reservationId, String username);
+    Page<Reservation> searchReservations(String keyword,
+                                      ReservationStatus status,
+                                      LocalDate startDate,
+                                      LocalDate endDate,
+                                      int page,
+                                      int size);
 }
