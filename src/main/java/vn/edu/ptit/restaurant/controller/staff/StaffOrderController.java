@@ -25,6 +25,7 @@ public class StaffOrderController {
     private final DiningTableService diningTableService;
     private final MenuItemService menuItemService;
     private final PaymentService paymentService;
+    private final AreaService areaService;
 
     // Danh sách hóa đơn và bàn hiện tại
     @GetMapping
@@ -43,6 +44,7 @@ public class StaffOrderController {
 
         model.addAttribute("orders", allOrders);
         model.addAttribute("tables", diningTableService.findAll());
+        model.addAttribute("areas", areaService.findAll());
         model.addAttribute("activeOrderByTable", activeOrderByTable);
         return "staff/order/index";
     }

@@ -21,6 +21,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 
 import java.time.LocalDate;
+import org.springframework.scheduling.annotation.Scheduled;
 
 @Service
 @RequiredArgsConstructor
@@ -40,15 +41,17 @@ public class ReservationServiceImpl implements ReservationService {
         User user = userRepository.findById(userId).orElseThrow();
         DiningTable table = diningTableRepository.findById(tableId).orElseThrow();
 
-        // Kiểm tra kẹt bàn (Optimistic Locking sẽ hoạt động ngầm nhờ @Version)
-        // Nếu có 2 transaction cùng cố gắng cập nhật 1 bàn, JPA sẽ ném ra ObjectOptimisticLockingFailureException
-        if (table.getStatus() != TableStatus.AVAILABLE) {
-            throw new RuntimeException("Bàn này không còn trống!");
+        // Kiểm tra xem bàn đã được đặt trong khoảng thời gian này chưa (trước và sau 2 tiếng)
+        LocalDateTime start = reservationTime.minusHours(2);
+        LocalDateTime end = reservationTime.plusHours(2);
+        long overlappingCount = reservationRepository.countOverlappingReservations(
+                tableId, start, end, List.of(ReservationStatus.PENDING, ReservationStatus.CONFIRMED));
+        
+        if (overlappingCount > 0) {
+            throw new RuntimeException("Bàn đã có người đặt trong khoảng thời gian này!");
         }
 
-        // Đặt bàn thành RESERVED
-        table.setStatus(TableStatus.RESERVED);
-        diningTableRepository.save(table);
+        // Bàn sẽ được cập nhật thành RESERVED tự động bởi Scheduled task 1 tiếng trước giờ đến
 
         Reservation reservation = Reservation.builder()
                 .user(user)
@@ -263,7 +266,7 @@ public class ReservationServiceImpl implements ReservationService {
             orderRepository.save(order);
         } else {
             Order order = existingOrder.get();
-            if (order.getStatus() == OrderStatus.PENDING) {
+            if (order.getStatus() == OrderStatus.PENDING || order.getStatus() == OrderStatus.CONFIRMED) {
                 order.setStatus(OrderStatus.SERVING);
                 orderRepository.save(order);
             }
@@ -311,5 +314,50 @@ public class ReservationServiceImpl implements ReservationService {
         cartService.clear();
 
         return savedOrder;
+    }
+
+    @Scheduled(fixedRate = 60000) // Chạy mỗi phút
+    @Transactional
+    public void autoUpdateReservationsAndTables() {
+        LocalDateTime now = LocalDateTime.now();
+        LocalDateTime oneHourLater = now.plusHours(1);
+
+        // 1. Tự động chuyển trạng thái bàn thành RESERVED trước 1 tiếng
+        List<Reservation> upcoming = reservationRepository.findReservationsInTimeWindow(
+                now, 
+                oneHourLater,
+                List.of(ReservationStatus.PENDING, ReservationStatus.CONFIRMED)
+        );
+
+        for (Reservation res : upcoming) {
+            DiningTable table = res.getTable();
+            if (table != null && table.getStatus() == TableStatus.AVAILABLE) {
+                table.setStatus(TableStatus.RESERVED);
+                diningTableRepository.save(table);
+            }
+        }
+        
+        // 2. Tự động hủy các đơn đặt bàn quá hạn (sau 2 tiếng không check-in) và trả lại bàn
+        List<Reservation> expired = reservationRepository.findReservationsInTimeWindow(
+                now.minusDays(1), 
+                now.minusHours(2),
+                List.of(ReservationStatus.PENDING, ReservationStatus.CONFIRMED)
+        );
+        
+        for (Reservation res : expired) {
+            res.setStatus(ReservationStatus.CANCELLED);
+            DiningTable table = res.getTable();
+            if (table != null && table.getStatus() == TableStatus.RESERVED) {
+                table.setStatus(TableStatus.AVAILABLE);
+                diningTableRepository.save(table);
+            }
+            reservationRepository.save(res);
+            
+            // Hủy Order nếu có
+            orderRepository.findByReservationId(res.getId()).ifPresent(order -> {
+                order.setStatus(OrderStatus.CANCELLED);
+                orderRepository.save(order);
+            });
+        }
     }
 }

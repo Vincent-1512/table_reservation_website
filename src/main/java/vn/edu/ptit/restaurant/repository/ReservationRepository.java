@@ -44,6 +44,21 @@ public interface ReservationRepository extends JpaRepository<Reservation, Long> 
     List<Reservation> findAllByOrderByReservationTimeDesc();
     boolean existsByTableId(Long tableId);
 
+    @Query("SELECT COUNT(r) FROM Reservation r WHERE r.table.id = :tableId AND r.status IN :statuses AND r.deleted = false AND r.reservationTime BETWEEN :start AND :end")
+    long countOverlappingReservations(
+            @Param("tableId") Long tableId, 
+            @Param("start") LocalDateTime start, 
+            @Param("end") LocalDateTime end, 
+            @Param("statuses") List<ReservationStatus> statuses
+    );
+
+    @Query("SELECT r FROM Reservation r WHERE r.status IN :statuses AND r.deleted = false AND r.reservationTime BETWEEN :start AND :end")
+    List<Reservation> findReservationsInTimeWindow(
+            @Param("start") LocalDateTime start, 
+            @Param("end") LocalDateTime end, 
+            @Param("statuses") List<ReservationStatus> statuses
+    );
+
     List<Reservation> findByReservationTimeBetweenAndStatusIn(
             LocalDateTime start,
             LocalDateTime end,

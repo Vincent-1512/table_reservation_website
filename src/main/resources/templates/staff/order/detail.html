@@ -137,11 +137,19 @@
                             <div><strong>Giờ vào:</strong> <span th:text="${#temporals.format(order.createdAt, 'HH:mm dd/MM/yyyy')}">10:00</span></div>
                             <div><strong>Trạng thái:</strong> <span th:text="${order.status}">PENDING</span></div>
                             <hr style="margin:15px 0; border-top:1px dashed #ccc;">
-                            <div style="font-size:24px; color:#cba876; text-align:center;">
-                                <strong>Tổng cộng:</strong><br>
-                                <span th:text="${#numbers.formatDecimal(order.totalAmount, 0, 'COMMA', 0, 'POINT')} + ' ₫'">0 ₫</span>
+                                <div style="font-size:24px; color:#cba876; text-align:center;">
+                                    <strong>Tổng cộng:</strong><br>
+                                    <span th:text="${#numbers.formatDecimal(order.totalAmount, 0, 'COMMA', 0, 'POINT')} + ' ₫'">0 ₫</span>
+                                </div>
+                                <div th:if="${order.amountPaid > 0}" style="font-size:16px; color:#51cf66; text-align:center; margin-top: 5px;">
+                                    <strong>Đã thanh toán trước:</strong><br>
+                                    <span th:text="${#numbers.formatDecimal(order.amountPaid, 0, 'COMMA', 0, 'POINT')} + ' ₫'">0 ₫</span>
+                                </div>
+                                <div th:if="${order.amountPaid > 0 and order.totalAmount > order.amountPaid}" style="font-size:20px; color:#e03131; text-align:center; margin-top: 10px; border-top: 1px dashed #ccc; padding-top: 10px;">
+                                    <strong>Cần thanh toán thêm:</strong><br>
+                                    <span th:text="${#numbers.formatDecimal(order.totalAmount - order.amountPaid, 0, 'COMMA', 0, 'POINT')} + ' ₫'">0 ₫</span>
+                                </div>
                             </div>
-                        </div>
 
                         <!-- Nút Bắt đầu Phục vụ (khi PENDING) -->
                         <div th:if="${order.status.name() == 'PENDING'}" style="margin-bottom:12px;">
@@ -165,8 +173,8 @@
                             </form>
                         </div>
 
-                        <!-- Nếu chưa thanh toán → hiện form thanh toán -->
-                        <div th:if="${payment == null and order.status.name() != 'COMPLETED' and order.status.name() != 'CANCELLED'}">
+                        <!-- Nếu chưa thanh toán đủ → hiện form thanh toán -->
+                        <div th:if="${payment == null and order.totalAmount > order.amountPaid and order.status.name() != 'COMPLETED' and order.status.name() != 'CANCELLED'}">
                             <form th:action="@{'/staff/orders/' + ${order.id} + '/pay'}" method="post">
                                 <div style="margin-bottom:15px;">
                                     <label style="font-weight:600; margin-bottom:8px; display:block;">Phương thức thanh toán:</label>
@@ -196,7 +204,7 @@
                                     <p style="font-size: 13px; color: #666; margin-bottom: 10px;">Quét mã để thanh toán chính xác số tiền</p>
                                     <img id="qr-code-image" src="" alt="Mã QR Thanh Toán" style="max-width: 250px; width: 100%; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
                                     <div style="margin-top: 10px; font-size: 14px; color: #333; font-weight: 500;">
-                                        Techcombank - 999999999<br>Vision Guard
+                                        Techcombank - 561668686868<br>Vision Guard
                                     </div>
                                 </div>
 
@@ -205,11 +213,11 @@
                             </form>
                         </div>
 
-                        <!-- Nếu đã thanh toán → hiện thông tin payment và Nút Đóng Bàn -->
-                        <div th:if="${payment != null}">
+                        <!-- Nếu đã thanh toán ĐỦ (hoặc có payment tại quầy) → hiện thông tin payment và Nút Đóng Bàn -->
+                        <div th:if="${payment != null or (order.totalAmount <= order.amountPaid and order.totalAmount > 0)}">
                             <div class="payment-done" style="margin-bottom:15px;">
-                                <span class="badge">✓ ĐÃ THANH TOÁN</span>
-                                <div style="margin-top:12px; font-size:14px; line-height:2;">
+                                <span class="badge">✓ ĐÃ THANH TOÁN ĐỦ</span>
+                                <div th:if="${payment != null}" style="margin-top:12px; font-size:14px; line-height:2;">
                                     <div><strong>Phương thức:</strong> 
                                         <span th:switch="${payment.method.name()}">
                                             <span th:case="'CASH'">💵 Tiền mặt</span>
@@ -218,8 +226,11 @@
                                             <span th:case="'BANK_TRANSFER'">🏦 Chuyển khoản</span>
                                         </span>
                                     </div>
-                                    <div><strong>Số tiền:</strong> <span th:text="${#numbers.formatDecimal(payment.amount, 0, 'COMMA', 0, 'POINT')} + ' ₫'">0 ₫</span></div>
+                                    <div><strong>Thanh toán tại quầy:</strong> <span th:text="${#numbers.formatDecimal(payment.amount, 0, 'COMMA', 0, 'POINT')} + ' ₫'">0 ₫</span></div>
                                     <div><strong>Thời gian:</strong> <span th:text="${#temporals.format(payment.createdAt, 'HH:mm dd/MM/yyyy')}">10:00</span></div>
+                                </div>
+                                <div th:if="${payment == null and order.amountPaid > 0}" style="margin-top:12px; font-size:14px; line-height:2;">
+                                    <div><strong>Phương thức:</strong> 🌐 Thanh toán Online (khi đặt bàn)</div>
                                 </div>
                             </div>
                             
@@ -252,13 +263,15 @@
             const qrImage = document.getElementById('qr-code-image');
             
             if(paymentRadios.length > 0 && qrContainer && qrImage) {
-                // Lấy thông tin hóa đơn từ Thymeleaf
-                const amount = /*[[${order.totalAmount}]]*/ 0;
+                // Lấy số tiền cần thanh toán thay vì tổng tiền
+                const totalAmount = /*[[${order.totalAmount}]]*/ 0;
+                const amountPaid = /*[[${order.amountPaid}]]*/ 0;
+                const amount = Math.max(0, totalAmount - amountPaid);
                 const orderId = /*[[${order.id}]]*/ 0;
                 
                 // Cấu hình ngân hàng (VietQR)
                 const bankName = "techcombank";
-                const accountNumber = "999999999";
+                const accountNumber = "561668686868";
                 const accountName = "Vision Guard";
                 const addInfo = "Thanh toan don hang " + orderId;
                 

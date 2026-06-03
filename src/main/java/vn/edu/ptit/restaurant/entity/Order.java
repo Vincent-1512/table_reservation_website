@@ -35,6 +35,10 @@ public class Order {
     @Builder.Default
     private BigDecimal totalAmount = BigDecimal.ZERO;
 
+    @Column(name = "amount_paid", nullable = false, precision = 10, scale = 2)
+    @Builder.Default
+    private BigDecimal amountPaid = BigDecimal.ZERO;
+
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     @Builder.Default

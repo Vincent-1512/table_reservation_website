@@ -42,12 +42,21 @@ public class PaymentServiceImpl implements PaymentService {
             throw new RuntimeException("Hóa đơn này đã được thanh toán rồi");
         }
 
+        java.math.BigDecimal remainingAmount = order.getTotalAmount().subtract(order.getAmountPaid());
+        if (remainingAmount.compareTo(java.math.BigDecimal.ZERO) < 0) {
+            remainingAmount = java.math.BigDecimal.ZERO;
+        }
+
         Payment payment = Payment.builder()
                 .order(order)
                 .method(method)
                 .status(PaymentStatus.PAID)
-                .amount(order.getTotalAmount())
+                .amount(remainingAmount)
                 .build();
+
+        // Cập nhật lại số tiền đã thanh toán của order
+        order.setAmountPaid(order.getTotalAmount());
+        orderRepository.save(order);
 
         return paymentRepository.save(payment);
     }

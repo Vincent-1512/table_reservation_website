@@ -372,8 +372,10 @@ public class CustomerController {
                 Order order = orderOpt.get();
                 if ("full".equalsIgnoreCase(paymentMode)) {
                     order.setStatus(OrderStatus.CONFIRMED);
+                    order.setAmountPaid(order.getTotalAmount());
                 } else {
                     order.setStatus(OrderStatus.PENDING); // Khách chỉ đặt cọc cọc, tiền ăn sẽ trả sau ở nhà hàng
+                    // Nếu muốn ghi nhận cọc vào amountPaid: order.setAmountPaid(BigDecimal.valueOf(100000));
                 }
                 orderRepository.save(order);
             }
