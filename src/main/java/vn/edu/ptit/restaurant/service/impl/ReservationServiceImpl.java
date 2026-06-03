@@ -79,6 +79,7 @@ public class ReservationServiceImpl implements ReservationService {
                         .menuItem(menuItem)
                         .quantity(item.getQuantity())
                         .priceAtTime(item.getPrice())
+                        .note(item.getNote())
                         .build();
                 orderItemRepository.save(orderItem);
             }
@@ -93,7 +94,8 @@ public class ReservationServiceImpl implements ReservationService {
     @Override
     public List<Reservation> findByUserId(Long userId) {
         java.time.LocalDateTime startOfToday = java.time.LocalDate.now().atStartOfDay();
-        return reservationRepository.findByUserIdAndReservationTimeGreaterThanEqualOrderByReservationTimeDesc(userId, startOfToday);
+        return reservationRepository.findByUserIdAndReservationTimeGreaterThanEqualAndStatusInOrderByReservationTimeDesc(
+                userId, startOfToday, List.of(ReservationStatus.PENDING, ReservationStatus.CONFIRMED));
     }
 
     @Override
@@ -300,6 +302,7 @@ public class ReservationServiceImpl implements ReservationService {
                     .menuItem(menuItem)
                     .quantity(item.getQuantity())
                     .priceAtTime(item.getPrice())
+                    .note(item.getNote())
                     .build();
             orderItemRepository.save(orderItem);
         }

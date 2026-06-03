@@ -1,13 +1,16 @@
 <!DOCTYPE html>
 <html lang="vi" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Thực Đơn - Lumina</title>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
     <link rel="stylesheet" th:href="@{/css/style.css}">
     <link rel="stylesheet" th:href="@{/css/customer/menu.css}">
 </head>
+
 <body>
     <nav class="navbar">
         <a href="/" class="logo">Lumina</a>
@@ -16,7 +19,7 @@
             <a href="/menu" style="color: var(--primary);">Thực đơn</a>
             <a href="/my-reservations">Thông tin đặt bàn</a>
             <a href="/reservation" class="btn-nav-highlight">Đặt bàn ngay</a>
-            
+
             <!-- Hiển thị khi chưa đăng nhập -->
             <div sec:authorize="!isAuthenticated()">
                 <a th:href="@{/login}" class="btn-nav-login">Đăng nhập</a>
@@ -25,9 +28,12 @@
             <!-- Hiển thị khi đã đăng nhập -->
             <div sec:authorize="isAuthenticated()" class="nav-user-dropdown">
                 <button class="nav-avatar-btn" onclick="toggleNavDropdown(event)">
-                    <img th:if="${currentUser != null and currentUser.avatarUrl != null}" th:src="${currentUser.avatarUrl}" class="nav-avatar-img" alt="Avatar">
-                    <div th:unless="${currentUser != null and currentUser.avatarUrl != null}" class="nav-avatar-circle" th:text="${#strings.substring(#authentication.name, 0, 1).toUpperCase()}">U</div>
-                    <span class="d-none d-md-inline nav-username" th:text="${currentUser != null and currentUser.fullName != null and !currentUser.fullName.isEmpty() ? currentUser.fullName : #authentication.name}">Username</span>
+                    <img th:if="${currentUser != null and currentUser.avatarUrl != null}"
+                        th:src="${currentUser.avatarUrl}" class="nav-avatar-img" alt="Avatar">
+                    <div th:unless="${currentUser != null and currentUser.avatarUrl != null}" class="nav-avatar-circle"
+                        th:text="${#strings.substring(#authentication.name, 0, 1).toUpperCase()}">U</div>
+                    <span class="d-none d-md-inline nav-username"
+                        th:text="${currentUser != null and currentUser.fullName != null and !currentUser.fullName.isEmpty() ? currentUser.fullName : #authentication.name}">Username</span>
                     <i class="bi bi-chevron-down nav-chevron"></i>
                 </button>
                 <div class="nav-dropdown-menu" id="navDropdownMenu">
@@ -41,7 +47,8 @@
                         <i class="bi bi-shield-lock"></i> Quản trị (Admin)
                     </a>
                     <form th:action="@{/logout}" method="post" id="navLogoutForm" style="margin: 0;">
-                        <button type="submit" class="nav-logout-btn" onclick="return confirm('Quý khách có chắc chắn muốn đăng xuất?')">
+                        <button type="submit" class="nav-logout-btn"
+                            onclick="return confirm('Quý khách có chắc chắn muốn đăng xuất?')">
                             <i class="bi bi-box-arrow-right"></i> Đăng xuất
                         </button>
                     </form>
@@ -57,7 +64,7 @@
             dropdown.classList.toggle('active');
             menu.classList.toggle('show');
         }
-        document.addEventListener('click', function(event) {
+        document.addEventListener('click', function (event) {
             const dropdown = document.querySelector('.nav-user-dropdown');
             const menu = document.getElementById('navDropdownMenu');
             if (dropdown && menu && !dropdown.contains(event.target)) {
@@ -68,43 +75,70 @@
     </script>
 
     <div class="menu-container">
-        <h1 style="text-align:center; font-size:40px; margin-bottom:10px;">Thực Đơn <span style="color:var(--primary);">Đặc Biệt</span></h1>
-        <p style="text-align:center; color:var(--text-muted); font-size:16px; margin-bottom:30px;">Khám phá các món ăn tinh hoa được chuẩn bị bởi bếp trưởng nhà hàng Lumina</p>
-        
+        <h1 style="text-align:center; font-size:40px; margin-bottom:10px;">Thực Đơn <span
+                style="color:var(--primary);">Đặc Biệt</span></h1>
+        <p style="text-align:center; color:var(--text-muted); font-size:16px; margin-bottom:30px;">Khám phá các món ăn
+            tinh hoa được chuẩn bị bởi bếp trưởng nhà hàng Lumina</p>
+
         <!-- Controls: Tìm kiếm và Lọc Danh mục -->
         <div class="menu-controls">
             <div class="search-box">
                 <span class="search-icon">🔍</span>
                 <input type="text" id="search-input" placeholder="Tìm kiếm món ăn theo tên...">
             </div>
-            
+
             <div class="category-filters">
                 <button class="filter-btn active" data-category="all">Tất cả</button>
-                <button class="filter-btn" th:each="cat : ${categories}" th:data-category="${cat.id}" th:text="${cat.name}">Danh mục</button>
+                <button class="filter-btn" th:each="cat : ${categories}" th:data-category="${cat.id}"
+                    th:text="${cat.name}">Danh mục</button>
             </div>
         </div>
 
         <!-- Lưới món ăn phẳng (Unified Grid) -->
+        <div th:if="${success}" class="menu-alert success-alert" th:text="${success}">Da them mon vao gio hang</div>
+        <div th:if="${error}" class="menu-alert error-alert" th:text="${error}">Co loi xay ra</div>
+        <div id="cart-toast" class="menu-alert success-alert cart-toast" style="display:none;"></div>
+
+        <div class="cart-shortcut-bar">
+            <a th:href="@{/cart(flow=${flow}, reservationId=${reservationId})}" class="cart-shortcut-btn">
+                <i class="bi bi-cart3"></i>
+                <span>Gio hang / Mon da chon</span>
+                <strong class="cart-count" th:text="${cartCount}">0</strong>
+            </a>
+        </div>
+
+        <div class="booking-order-bar" th:if="${flow == 'booking' and reservationId != null}">
+            <div>
+                <div class="booking-order-title">Dang chon mon cho dat ban <span
+                        th:text="'#RES-' + ${reservationId}">#RES-1</span></div>
+                <div class="booking-order-subtitle">Gio hang hien co <strong class="cart-count"
+                        th:text="${cartCount}">0</strong> mon. Hoan tat de chuyen sang thanh toan mon an.</div>
+            </div>
+            <form th:action="@{/reservation/order}" method="post">
+                <input type="hidden" name="reservationId" th:value="${reservationId}">
+                <button type="submit" class="btn-finish-order">Hoan tat chon mon</button>
+            </form>
+        </div>
+
         <div class="menu-grid" id="menu-grid">
-            <div class="menu-item" th:each="item : ${menuItems}" th:if="${item.isAvailable}"
-                 th:data-id="${item.id}"
-                 th:data-category-id="${item.category.id}"
-                 th:data-category-name="${item.category.name}"
-                 th:data-name="${item.name}"
-                 th:data-desc="${item.description}"
-                 th:data-price="${#numbers.formatDecimal(item.price, 0, 'COMMA', 0, 'POINT')} + ' VNĐ'"
-                 th:data-img="${item.imageUrl != null and !item.imageUrl.isEmpty() ? item.imageUrl : '/images/restaurant_bg.png'}">
-                 
+            <div class="menu-item" th:each="item : ${menuItems}" th:if="${item.isAvailable}" th:data-id="${item.id}"
+                th:data-category-id="${item.category.id}" th:data-category-name="${item.category.name}"
+                th:data-name="${item.name}" th:data-desc="${item.description}" th:data-story="${item.story}"
+                th:data-ingredients="${item.ingredients}"
+                th:data-price="${#numbers.formatDecimal(item.price, 0, 'COMMA', 0, 'POINT')} + ' VNĐ'"
+                th:data-img="${item.imageUrl != null and !item.imageUrl.isEmpty() ? item.imageUrl : '/images/restaurant_bg.png'}">
+
                 <!-- Image Container -->
                 <div class="menu-img-container" onclick="openDetailModalFromCard(this)">
-                    <img th:src="${item.imageUrl != null and !item.imageUrl.isEmpty() ? item.imageUrl : '/images/restaurant_bg.png'}" class="menu-img" alt="Món ăn">
+                    <img th:src="${item.imageUrl != null and !item.imageUrl.isEmpty() ? item.imageUrl : '/images/restaurant_bg.png'}"
+                        class="menu-img" alt="Món ăn">
                 </div>
-                
+
                 <!-- Info Section -->
                 <div class="menu-info">
                     <span class="category-tag-card" th:text="${item.category.name}">Danh mục</span>
                     <div class="menu-name" th:text="${item.name}" onclick="openDetailModalFromCard(this)">Tên món</div>
-                    
+
                     <!-- Đánh giá sao -->
                     <div class="menu-rating">
                         <span class="stars">★★★★★</span>
@@ -113,11 +147,26 @@
                     </div>
 
                     <p class="menu-desc" th:text="${item.description}">Mô tả ngắn món ăn.</p>
-                    <div class="menu-price" th:text="${#numbers.formatDecimal(item.price, 0, 'COMMA', 0, 'POINT')} + ' VNĐ'">100,000 VNĐ</div>
-                    <button type="button" class="btn-detail" onclick="openDetailModalFromButton(this)">Chi tiết</button>
+                    <div class="menu-price"
+                        th:text="${#numbers.formatDecimal(item.price, 0, 'COMMA', 0, 'POINT')} + ' VNĐ'">100,000 VNĐ
+                    </div>
+                    <div class="menu-card-actions">
+                        <button type="button" class="btn-detail" onclick="openDetailModalFromButton(this)">Chi
+                            tiết</button>
+                        <form th:action="@{/cart/add}" method="post" class="add-cart-form">
+                            <input type="hidden" name="menuItemId" th:value="${item.id}">
+                            <input type="hidden" name="quantity" value="1">
+                            <input type="hidden" name="flow" th:value="${flow}">
+                            <input type="hidden" name="reservationId" th:value="${reservationId}">
+                            <button type="submit" class="btn-add-cart">
+                                <i class="bi bi-cart-plus"></i>
+                                <span>Them gio</span>
+                            </button>
+                        </form>
+                    </div>
                 </div>
             </div>
-            
+
             <!-- Thông báo khi không tìm thấy kết quả -->
             <div class="no-results" id="no-results" style="display: none;">
                 Không tìm thấy món ăn nào khớp với lựa chọn của bạn.
@@ -136,7 +185,7 @@
                 <div class="modal-details">
                     <span id="modal-category" class="modal-category-tag">Danh mục</span>
                     <h2 id="modal-title">Tên món ăn</h2>
-                    
+
                     <!-- Đánh giá sao trong modal (Ẩn theo yêu cầu UI) -->
                     <div class="modal-rating-row" style="display: none !important;">
                         <span id="modal-stars" class="modal-stars">★★★★★</span>
@@ -145,6 +194,14 @@
                     </div>
 
                     <p id="modal-desc">Mô tả món ăn.</p>
+                    <div id="modal-story-wrap" class="modal-story-wrap" style="display:none;">
+                        <h4><span class="modal-section-icon">✨</span>Về món ăn</h4>
+                        <p id="modal-story"></p>
+                    </div>
+                    <div id="modal-ingredients-wrap" class="modal-ingredients-wrap" style="display:none;">
+                        <h4>Nguyên liệu</h4>
+                        <div id="modal-ingredients" class="ingredient-chips"></div>
+                    </div>
                     <div class="modal-price-row">
                         <span class="modal-price-label">Giá bán:</span>
                         <div id="modal-price">100,000 VNĐ</div>
@@ -156,28 +213,28 @@
 
     <script>
         // Client-side Lọc và Tìm kiếm
-        document.addEventListener('DOMContentLoaded', function() {
+        document.addEventListener('DOMContentLoaded', function () {
             const searchInput = document.getElementById('search-input');
             const filterButtons = document.querySelectorAll('.filter-btn');
             const menuItems = document.querySelectorAll('.menu-item');
             const noResults = document.getElementById('no-results');
-            
+
             // Khởi tạo rating và review ngẫu nhiên nhưng ổn định cho mỗi món ăn
             menuItems.forEach(item => {
                 const id = parseInt(item.dataset.id) || 1;
                 const rating = (4.5 + (id % 6) * 0.1).toFixed(1);
                 const reviews = (id * 23) % 185 + 15;
-                
+
                 item.dataset.rating = rating;
                 item.dataset.reviews = reviews;
-                
+
                 const ratingValEl = item.querySelector('.rating-val');
                 const reviewCountEl = item.querySelector('.review-count');
                 const starsEl = item.querySelector('.stars');
-                
+
                 if (ratingValEl) ratingValEl.textContent = rating;
                 if (reviewCountEl) reviewCountEl.textContent = `(${reviews} đánh giá)`;
-                
+
                 if (starsEl) {
                     let starsStr = '';
                     const ratingNum = parseFloat(rating);
@@ -186,23 +243,23 @@
                     starsEl.textContent = starsStr;
                 }
             });
-            
+
             let currentCategory = 'all';
             let searchQuery = '';
-            
+
             function filterMenu() {
                 let visibleCount = 0;
-                
+
                 menuItems.forEach(item => {
                     const itemName = item.dataset.name.toLowerCase();
                     const itemCategoryId = item.dataset.categoryId;
-                    
+
                     // Thực hiện so sánh không dấu và có dấu cơ bản
-                    const matchesSearch = removeVietnameseTones(itemName).includes(removeVietnameseTones(searchQuery)) || 
-                                          itemName.includes(searchQuery);
-                                          
+                    const matchesSearch = removeVietnameseTones(itemName).includes(removeVietnameseTones(searchQuery)) ||
+                        itemName.includes(searchQuery);
+
                     const matchesCategory = (currentCategory === 'all' || itemCategoryId === currentCategory);
-                    
+
                     if (matchesSearch && matchesCategory) {
                         item.style.display = 'flex';
                         visibleCount++;
@@ -210,38 +267,38 @@
                         item.style.display = 'none';
                     }
                 });
-                
+
                 if (visibleCount === 0) {
                     noResults.style.display = 'block';
                 } else {
                     noResults.style.display = 'none';
                 }
             }
-            
-            searchInput.addEventListener('input', function(e) {
+
+            searchInput.addEventListener('input', function (e) {
                 searchQuery = e.target.value.toLowerCase().trim();
                 filterMenu();
             });
-            
+
             filterButtons.forEach(btn => {
-                btn.addEventListener('click', function() {
+                btn.addEventListener('click', function () {
                     filterButtons.forEach(b => b.classList.remove('active'));
                     this.classList.add('active');
-                    
+
                     currentCategory = this.dataset.category;
                     filterMenu();
                 });
             });
-            
+
             // Hàm chuyển đổi Tiếng Việt không dấu hỗ trợ tìm kiếm tốt hơn
             function removeVietnameseTones(str) {
-                str = str.replace(/à|á|ạ|ả|ã|â|ầ|ấ|ậ|ẩ|ẫ|ă|ằ|ắ|ặ|ẳ|ẵ/g,"a"); 
-                str = str.replace(/è|é|ẹ|ẻ|ẽ|ê|ề|ế|ệ|ể|ễ/g,"e"); 
-                str = str.replace(/ì|í|ị|ỉ|ĩ/g,"i"); 
-                str = str.replace(/ò|ó|ọ|ỏ|ã|ô|ồ|ố|ộ|ổ|ỗ|ơ|ờ|ớ|ợ|ở|ỡ/g,"o"); 
-                str = str.replace(/ù|ú|ụ|ủ|ũ|ư|ừ|ứ|ự|ử|ữ/g,"u"); 
-                str = str.replace(/ỳ|ý|ỵ|ỷ|ỹ/g,"y"); 
-                str = str.replace(/đ/g,"d");
+                str = str.replace(/à|á|ạ|ả|ã|â|ầ|ấ|ậ|ẩ|ẫ|ă|ằ|ắ|ặ|ẳ|ẵ/g, "a");
+                str = str.replace(/è|é|ẹ|ẻ|ẽ|ê|ề|ế|ệ|ể|ễ/g, "e");
+                str = str.replace(/ì|í|ị|ỉ|ĩ/g, "i");
+                str = str.replace(/ò|ó|ọ|ỏ|ã|ô|ồ|ố|ộ|ổ|ỗ|ơ|ờ|ớ|ợ|ở|ỡ/g, "o");
+                str = str.replace(/ù|ú|ụ|ủ|ũ|ư|ừ|ứ|ự|ử|ữ/g, "u");
+                str = str.replace(/ỳ|ý|ỵ|ỷ|ỹ/g, "y");
+                str = str.replace(/đ/g, "d");
                 str = str.replace(/À|Á|Ạ|Ả|Ã|Â|Ầ|Ấ|Ậ|Ẩ|Ẫ|Ă|Ằ|Ắ|Ặ|Ẳ|Ẵ/g, "A");
                 str = str.replace(/È|É|Ẹ|Ẻ|Ẽ|Ê|Ề|Ế|Ệ|Ể|Ễ/g, "E");
                 str = str.replace(/Ì|Í|Ị|Ỉ|Ĩ/g, "I");
@@ -254,6 +311,88 @@
                 str = str.replace(/\u02C6|\u0306|\u031B/g, ""); // Â, Ă, Ơ, Ư
                 return str;
             }
+
+            // Hàm hiển thị Toast thông báo đẹp mắt
+            function showToast(message, type = 'success') {
+                const toast = document.getElementById('cart-toast');
+                if (!toast) return;
+                
+                toast.textContent = message;
+                toast.style.display = 'block';
+                
+                // Đổi style dựa trên loại thông báo
+                if (type === 'error') {
+                    toast.className = 'menu-alert error-alert cart-toast';
+                } else {
+                    toast.className = 'menu-alert success-alert cart-toast';
+                }
+                
+                requestAnimationFrame(() => {
+                    toast.classList.add('show-toast');
+                });
+
+                if (window.cartToastTimeout) {
+                    clearTimeout(window.cartToastTimeout);
+                }
+                window.cartToastTimeout = setTimeout(() => {
+                    toast.classList.remove('show-toast');
+                    setTimeout(() => {
+                        toast.style.display = 'none';
+                    }, 300);
+                }, 2500); // Tự động ẩn sau 2.5 giây
+            }
+
+            // Kiểm tra và hiển thị các thông báo chuyển hướng từ Controller nếu có
+            const initSuccessMsg = document.getElementById('init-success-msg');
+            const initErrorMsg = document.getElementById('init-error-msg');
+            if (initSuccessMsg && initSuccessMsg.textContent.trim()) {
+                let msg = initSuccessMsg.textContent.trim();
+                if (msg.includes('giỏ hàng')) {
+                    msg = '✓ Đã thêm vào giỏ hàng';
+                }
+                showToast(msg, 'success');
+            } else if (initErrorMsg && initErrorMsg.textContent.trim()) {
+                showToast(initErrorMsg.textContent.trim(), 'error');
+            }
+
+            // AJAX xử lý thêm vào giỏ hàng không gây giật/reload trang
+            const addCartForms = document.querySelectorAll('.add-cart-form');
+            addCartForms.forEach(form => {
+                form.addEventListener('submit', function (e) {
+                    e.preventDefault(); // Ngăn chặn reload trang mặc định
+
+                    const formData = new FormData(this);
+                    const searchParams = new URLSearchParams(formData);
+
+                    fetch('/api/cart/add', {
+                        method: 'POST',
+                        body: searchParams
+                    })
+                        .then(response => {
+                            if (!response.ok) {
+                                throw new Error('Yêu cầu không thành công');
+                            }
+                            return response.json();
+                        })
+                        .then(data => {
+                            if (data.success) {
+                                // Cập nhật tất cả các phần tử hiển thị số lượng giỏ hàng trên trang (kể cả trên Navbar)
+                                document.querySelectorAll('.cart-count').forEach(el => {
+                                    el.textContent = data.count;
+                                });
+
+                                // Hiển thị thông báo Toast thành công dạng gọn gàng
+                                showToast('✓ Đã thêm vào giỏ hàng', 'success');
+                            } else {
+                                showToast(data.message || 'Có lỗi xảy ra khi thêm vào giỏ hàng.', 'error');
+                            }
+                        })
+                        .catch(error => {
+                            console.error('Lỗi khi thêm vào giỏ hàng:', error);
+                            showToast('Có lỗi xảy ra khi kết nối tới hệ thống.', 'error');
+                        });
+                });
+            });
         });
 
         // Hàm điều khiển Modal chi tiết
@@ -270,27 +409,56 @@
         function fillAndShowModal(itemCard) {
             const name = itemCard.dataset.name;
             const desc = itemCard.dataset.desc;
+            const story = itemCard.dataset.story;
+            const ingredients = itemCard.dataset.ingredients;
             const price = itemCard.dataset.price;
             const img = itemCard.dataset.img;
             const category = itemCard.dataset.categoryName;
             const rating = itemCard.dataset.rating;
             const reviews = itemCard.dataset.reviews;
-            
+
             document.getElementById('modal-title').textContent = name;
             document.getElementById('modal-desc').textContent = desc || "Không có mô tả chi tiết cho món ăn này.";
+            const storyWrap = document.getElementById('modal-story-wrap');
+            const storyText = document.getElementById('modal-story');
+            if (story && story.trim()) {
+                storyText.textContent = story;
+                storyWrap.style.display = 'block';
+            } else {
+                storyText.textContent = '';
+                storyWrap.style.display = 'none';
+            }
+            const ingredientsWrap = document.getElementById('modal-ingredients-wrap');
+            const ingredientsList = document.getElementById('modal-ingredients');
+            if (ingredients && ingredients.trim()) {
+                ingredientsList.innerHTML = '';
+                ingredients.split(',')
+                    .map(ingredient => ingredient.trim())
+                    .filter(Boolean)
+                    .forEach(ingredient => {
+                        const chip = document.createElement('span');
+                        chip.className = 'ingredient-chip';
+                        chip.textContent = ingredient;
+                        ingredientsList.appendChild(chip);
+                    });
+                ingredientsWrap.style.display = 'block';
+            } else {
+                ingredientsList.innerHTML = '';
+                ingredientsWrap.style.display = 'none';
+            }
             document.getElementById('modal-price').textContent = price;
             document.getElementById('modal-img').src = img;
             document.getElementById('modal-category').textContent = category;
             document.getElementById('modal-rating-val').textContent = rating;
             document.getElementById('modal-review-count').textContent = `(${reviews} đánh giá)`;
-            
+
             const modalStars = document.getElementById('modal-stars');
             if (modalStars) {
                 const ratingNum = parseFloat(rating);
                 if (ratingNum >= 4.8) modalStars.textContent = '★★★★★';
                 else modalStars.textContent = '★★★★☆';
             }
-            
+
             const modal = document.getElementById('detail-modal');
             modal.style.display = 'flex';
             // Force redraw/reflow for transition
@@ -309,19 +477,20 @@
         }
 
         // Đóng khi click ngoài vùng modal content
-        window.addEventListener('click', function(event) {
+        window.addEventListener('click', function (event) {
             const modal = document.getElementById('detail-modal');
             if (event.target === modal) {
                 closeDetailModal();
             }
         });
-        
+
         // Đóng bằng phím Escape
-        document.addEventListener('keydown', function(event) {
+        document.addEventListener('keydown', function (event) {
             if (event.key === 'Escape') {
                 closeDetailModal();
             }
         });
     </script>
 </body>
+
 </html>

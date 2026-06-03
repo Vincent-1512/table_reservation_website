@@ -36,6 +36,7 @@ public interface ReservationRepository extends JpaRepository<Reservation, Long> 
         LocalDateTime end
 );
 
+    List<Reservation> findByUserIdAndReservationTimeGreaterThanEqualAndStatusInOrderByReservationTimeDesc(Long userId, java.time.LocalDateTime start, List<ReservationStatus> statuses);
     List<Reservation> findByStatus(ReservationStatus status);
 
     List<Reservation> findByStatusOrderByReservationTimeAsc(ReservationStatus status);

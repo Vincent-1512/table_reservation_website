@@ -12,13 +12,16 @@ import vn.edu.ptit.restaurant.entity.MenuItem;
 import vn.edu.ptit.restaurant.entity.User;
 import vn.edu.ptit.restaurant.entity.Reservation;
 import vn.edu.ptit.restaurant.entity.Order;
+import vn.edu.ptit.restaurant.entity.DiningTable;
 import vn.edu.ptit.restaurant.entity.enums.OrderStatus;
+import vn.edu.ptit.restaurant.entity.enums.TableStatus;
 import vn.edu.ptit.restaurant.repository.OrderRepository;
 import vn.edu.ptit.restaurant.repository.OrderItemRepository;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import vn.edu.ptit.restaurant.service.*;
 
 import java.security.Principal;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.HashMap;
@@ -48,10 +51,15 @@ public class CustomerController {
 
     // ================== MENU & CART ================== //
     @GetMapping("/menu")
-    public String viewMenu(Model model, Principal principal) {
+    public String viewMenu(@RequestParam(required = false) String flow,
+                           @RequestParam(required = false) Long reservationId,
+                           Model model,
+                           Principal principal) {
         model.addAttribute("categories", categoryService.findAll());
         model.addAttribute("menuItems", menuItemService.findAll());
         model.addAttribute("cartCount", cartService.getCount());
+        model.addAttribute("flow", flow);
+        model.addAttribute("reservationId", reservationId);
         
         if (principal != null) {
             User user = userService.findByUsername(principal.getName()).orElse(null);
@@ -65,7 +73,12 @@ public class CustomerController {
     }
 
     @PostMapping("/cart/add")
-    public String addToCart(@RequestParam Long menuItemId, @RequestParam(defaultValue = "1") Integer quantity, RedirectAttributes redirectAttrs) {
+    public String addToCart(@RequestParam Long menuItemId,
+                            @RequestParam(defaultValue = "1") Integer quantity,
+                            @RequestParam(required = false) String flow,
+                            @RequestParam(required = false) Long reservationId,
+                            @RequestParam(required = false) String note,
+                            RedirectAttributes redirectAttrs) {
         MenuItem item = menuItemService.findById(menuItemId).orElseThrow();
         CartItem cartItem = CartItem.builder()
                 .menuItemId(item.getId())
@@ -73,28 +86,72 @@ public class CustomerController {
                 .price(item.getPrice())
                 .imageUrl(item.getImageUrl())
                 .quantity(quantity)
+                .note(note)
                 .build();
         cartService.add(cartItem);
         redirectAttrs.addFlashAttribute("success", "Đã thêm " + item.getName() + " vào giỏ hàng");
+        if ("booking".equals(flow) && reservationId != null) {
+            return "redirect:/menu?flow=booking&reservationId=" + reservationId;
+        }
         return "redirect:/menu";
     }
 
+    @PostMapping("/api/cart/add")
+    @ResponseBody
+    public ResponseEntity<Map<String, Object>> addToCartApi(@RequestParam Long menuItemId,
+                                                            @RequestParam(defaultValue = "1") Integer quantity,
+                                                            @RequestParam(required = false) String note) {
+        MenuItem item = menuItemService.findById(menuItemId).orElseThrow();
+        CartItem cartItem = CartItem.builder()
+                .menuItemId(item.getId())
+                .name(item.getName())
+                .price(item.getPrice())
+                .imageUrl(item.getImageUrl())
+                .quantity(quantity)
+                .note(note)
+                .build();
+        cartService.add(cartItem);
+
+        Map<String, Object> response = new HashMap<>();
+        response.put("success", true);
+        response.put("message", "Da them " + item.getName() + " vao gio hang");
+        response.put("count", cartService.getCount());
+        response.put("totalAmount", cartService.getAmount());
+        return ResponseEntity.ok(response);
+    }
+
     @GetMapping("/cart")
-    public String viewCart(Model model) {
+    public String viewCart(@RequestParam(required = false) String flow,
+                           @RequestParam(required = false) Long reservationId,
+                           Model model) {
         model.addAttribute("cartItems", cartService.getItems());
         model.addAttribute("totalAmount", cartService.getAmount());
+        model.addAttribute("flow", flow);
+        model.addAttribute("reservationId", reservationId);
         return "customer/cart";
     }
 
     @GetMapping("/cart/remove/{id}")
-    public String removeFromCart(@PathVariable Long id) {
+    public String removeFromCart(@PathVariable Long id,
+                                 @RequestParam(required = false) String flow,
+                                 @RequestParam(required = false) Long reservationId) {
         cartService.remove(id);
+        if ("booking".equals(flow) && reservationId != null) {
+            return "redirect:/cart?flow=" + flow + "&reservationId=" + reservationId;
+        }
         return "redirect:/cart";
     }
 
     @PostMapping("/cart/update")
-    public String updateCart(@RequestParam Long menuItemId, @RequestParam Integer quantity) {
-        cartService.update(menuItemId, quantity);
+    public String updateCart(@RequestParam Long menuItemId,
+                             @RequestParam Integer quantity,
+                             @RequestParam(required = false) String note,
+                             @RequestParam(required = false) String flow,
+                             @RequestParam(required = false) Long reservationId) {
+        cartService.update(menuItemId, quantity, note);
+        if ("booking".equals(flow) && reservationId != null) {
+            return "redirect:/cart?flow=" + flow + "&reservationId=" + reservationId;
+        }
         return "redirect:/cart";
     }
 
@@ -129,6 +186,24 @@ public class CustomerController {
             User user = userService.findByUsername(principal.getName()).orElseThrow();
 
             // Đồng bộ thông tin cá nhân của người dùng nếu có thay đổi
+            LocalDate bookingDate = LocalDate.parse(reservationDate);
+            LocalDate today = LocalDate.now();
+            if (bookingDate.isBefore(today)) {
+                redirectAttrs.addFlashAttribute("error", "Ngày đặt bàn không hợp lệ.");
+                return cartService.getItems().isEmpty() ? "redirect:/reservation" : "redirect:/menu";
+            }
+            if (bookingDate.isAfter(today.plusDays(14))) {
+                redirectAttrs.addFlashAttribute("error", "Nhà hàng hiện chỉ nhận đặt bàn trước tối đa 14 ngày.");
+                return cartService.getItems().isEmpty() ? "redirect:/reservation" : "redirect:/menu";
+            }
+
+            DiningTable selectedTable = diningTableService.findById(tableId)
+                    .orElseThrow(() -> new RuntimeException("Không tìm thấy bàn đã chọn."));
+            if (selectedTable.getStatus() != TableStatus.AVAILABLE || selectedTable.getCapacity() < numberOfGuests) {
+                redirectAttrs.addFlashAttribute("error", "Hiện không còn bàn phù hợp cho số lượng khách và khung giờ bạn đã chọn.");
+                return cartService.getItems().isEmpty() ? "redirect:/reservation" : "redirect:/menu";
+            }
+
             boolean profileChanged = false;
             if (!fullName.equals(user.getFullName())) {
                 user.setFullName(fullName);
@@ -151,11 +226,11 @@ public class CustomerController {
             DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
             LocalDateTime resDateTime = LocalDateTime.parse(dateTimeStr, formatter);
 
+            boolean hasCart = !cartService.getItems().isEmpty();
             Reservation reservation = reservationService.createReservation(user.getId(), tableId, resDateTime, numberOfGuests, note);
 
             // Tự động giữ món trong giỏ hàng nếu có
-            if (!cartService.getItems().isEmpty()) {
-                reservationService.createOrderForReservation(reservation.getId(), user.getUsername());
+            if (hasCart) {
                 return "redirect:/reservation/payment/food?id=" + reservation.getId();
             }
 
@@ -233,6 +308,10 @@ public class CustomerController {
             return "redirect:/login";
         }
         try {
+            if (cartService.getItems().isEmpty()) {
+                redirectAttrs.addFlashAttribute("error", "Vui lòng chọn ít nhất một món ăn trước khi hoàn tất.");
+                return "redirect:/menu?flow=booking&reservationId=" + reservationId;
+            }
             reservationService.createOrderForReservation(reservationId, principal.getName());
             return "redirect:/reservation/payment/food?id=" + reservationId;
         } catch (Exception e) {
@@ -318,12 +397,16 @@ public class CustomerController {
         
         // Truy vấn danh sách đơn món ăn
         List<Order> orders = orderRepository.findByUserIdOrderByCreatedAtDesc(user.getId());
+        Map<Long, Order> reservationOrderMap = new HashMap<>();
         Map<Long, List<OrderItem>> orderItemsMap = new HashMap<>();
         for (Order order : orders) {
+            if (order.getReservation() != null) {
+                reservationOrderMap.put(order.getReservation().getId(), order);
+            }
             orderItemsMap.put(order.getId(), orderItemRepository.findByOrderId(order.getId()));
         }
         
-        model.addAttribute("orders", orders);
+        model.addAttribute("reservationOrderMap", reservationOrderMap);
         model.addAttribute("orderItemsMap", orderItemsMap);
         
         return "customer/my-reservations";

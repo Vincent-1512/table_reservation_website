@@ -85,19 +85,30 @@
                 <form th:action="@{/cart/update}" method="post" style="display:flex; align-items:center; gap:15px;">
                     <input type="hidden" name="menuItemId" th:value="${item.menuItemId}">
                     <input type="number" name="quantity" class="qty-input" th:value="${item.quantity}" min="1">
+                    <input type="hidden" name="flow" th:value="${flow}">
+                    <input type="hidden" name="reservationId" th:value="${reservationId}">
                     <button type="submit" class="btn-primary" style="padding:8px; width:auto;">Cập nhật</button>
                 </form>
 
-                <a th:href="@{'/cart/remove/' + ${item.menuItemId}}" style="color:#ff4757; text-decoration:none; margin-left:30px; font-weight:500;">Xóa</a>
+                <a th:href="@{/cart/remove/{id}(id=${item.menuItemId}, flow=${flow}, reservationId=${reservationId})}" style="color:#ff4757; text-decoration:none; margin-left:30px; font-weight:500;">Xóa</a>
             </div>
 
             <div class="total-box">
                 Tổng cộng: <span style="color:var(--primary);" th:text="${#numbers.formatDecimal(totalAmount, 0, 'COMMA', 0, 'POINT')} + ' VNĐ'"></span>
             </div>
 
-            <div style="display:flex; justify-content:space-between; margin-top:40px;">
-                <a href="/menu" class="btn-outline">Gọi thêm món</a>
-                <a href="/reservation" class="btn-solid">Chuyển sang Đặt Bàn</a>
+            <div style="display:flex; justify-content:space-between; align-items: center; margin-top:40px;">
+                <a th:href="@{/menu(flow=${flow}, reservationId=${reservationId})}" class="btn-outline">Gọi thêm món</a>
+                
+                <div th:if="${flow == 'booking' and reservationId != null}">
+                    <form th:action="@{/reservation/order}" method="post" style="display: inline-block; margin: 0;">
+                        <input type="hidden" name="reservationId" th:value="${reservationId}">
+                        <button type="submit" class="btn-solid" style="border: none; cursor: pointer; font-family: inherit; font-size: inherit;">Hoàn tất chọn món</button>
+                    </form>
+                </div>
+                <div th:unless="${flow == 'booking' and reservationId != null}">
+                    <a href="/reservation" class="btn-solid">Chuyển sang Đặt Bàn</a>
+                </div>
             </div>
         </div>
     </div>

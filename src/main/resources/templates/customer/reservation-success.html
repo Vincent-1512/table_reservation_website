@@ -307,7 +307,7 @@
             <!-- Choice Action Cards -->
             <div class="options-grid">
                 <!-- Choice 1: Đặt món sau -->
-                <div class="option-card" id="btn-order-later">
+                <div class="option-card" id="btn-order-later" th:if="${reservation.status.name() == 'PENDING'}">
                     <div class="option-icon">
                         <i class="bi bi-credit-card"></i>
                     </div>
