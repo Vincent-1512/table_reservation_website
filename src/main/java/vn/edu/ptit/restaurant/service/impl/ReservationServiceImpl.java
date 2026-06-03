@@ -222,6 +222,11 @@ public class ReservationServiceImpl implements ReservationService {
     }
 
     @Override
+    public List<Reservation> searchReservations(ReservationStatus status, java.time.LocalDate date, String phone) {
+        return reservationRepository.searchReservations(status, date, phone);
+    }
+
+    @Override
     @Transactional
     public void checkinReservation(Long reservationId, String staffUsername) {
         Reservation res = reservationRepository.findById(reservationId)
