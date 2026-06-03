@@ -98,63 +98,75 @@
                 </div>
 
                 <!-- Filter -->
-                <form th:action="@{/staff/tables}" method="get" class="filter-bar">
-                    <div class="form-group">
+                <form th:action="@{/staff/tables}" method="get" class="filter-bar" style="display:flex; gap:15px; align-items:flex-end;">
+                    <div class="form-group" style="margin:0;">
+                        <label>Lọc theo khu vực</label>
+                        <select name="areaFilter" class="form-control">
+                            <option value="">-- Tất cả khu vực --</option>
+                            <option th:each="a : ${areas}" th:value="${a.id}" 
+                                    th:text="${a.name}"
+                                    th:selected="${selectedArea != null and selectedArea == a.id}"></option>
+                        </select>
+                    </div>
+                    <div class="form-group" style="margin:0;">
                         <label>Lọc theo trạng thái</label>
                         <select name="statusFilter" class="form-control">
-                            <option value="">-- Tất cả --</option>
+                            <option value="">-- Tất cả trạng thái --</option>
                             <option th:each="s : ${statuses}" th:value="${s}" 
                                     th:text="${s.name() == 'AVAILABLE' ? 'Trống' : (s.name() == 'OCCUPIED' ? 'Đang dùng' : (s.name() == 'RESERVED' ? 'Đã đặt' : 'Bảo trì'))}"
                                     th:selected="${selectedStatus != null and selectedStatus == s.name()}">STATUS</option>
                         </select>
                     </div>
-                    <button type="submit" class="btn btn-primary" style="height:40px;">Lọc</button>
-                    <a th:href="@{/staff/tables}" class="btn btn-secondary" style="height:40px; line-height:20px;">Xóa lọc</a>
+                    <button type="submit" class="btn btn-primary" style="height:42px;">Lọc</button>
+                    <a th:href="@{/staff/tables}" class="btn btn-secondary" style="height:42px; line-height:20px;">Xóa lọc</a>
                 </form>
 
-                <!-- Table Grid -->
-                <div class="table-grid">
-                    <div th:each="table : ${tables}"
-                         class="table-card"
-                         th:classappend="'status-' + ${table.status.name()}">
-                        <h4 th:text="${table.tableName}">Bàn 01</h4>
-                        <p th:text="${table.area.name} + ' · ' + ${table.capacity} + ' người'">Tầng 1 · 4 người</p>
+                <!-- Table Grid Grouped by Area -->
+                <div th:each="area : ${areas}" th:if="${#lists.contains(tables.![area.id], area.id)}">
+                    <h4 style="margin-top: 25px; margin-bottom: 15px; color: #cba876; border-bottom: 2px solid #eee; padding-bottom: 8px; font-size: 20px;" th:text="${area.name}">Khu vực</h4>
+                    <div class="table-grid">
+                        <div th:each="table : ${tables}" th:if="${table.area.id == area.id}"
+                             class="table-card"
+                             th:classappend="'status-' + ${table.status.name()}">
+                            <h4 th:text="${table.tableName}">Bàn 01</h4>
+                            <p th:text="${table.capacity} + ' người'">4 người</p>
 
-                        <!-- AVAILABLE: Xem bàn -->
-                        <div th:if="${table.status.name() == 'AVAILABLE'}">
-                            <span class="status-label" style="color:#51cf66;">⬤ Trống</span>
-                            <form th:action="@{/staff/orders/create}" method="post">
-                                <input type="hidden" name="tableId" th:value="${table.id}" />
-                                <button type="submit" class="btn btn-primary" style="width:100%; padding:8px;">Xem Bàn</button>
-                            </form>
-                        </div>
+                            <!-- AVAILABLE: Xem bàn -->
+                            <div th:if="${table.status.name() == 'AVAILABLE'}">
+                                <span class="status-label" style="color:#51cf66;">⬤ Trống</span>
+                                <form th:action="@{/staff/orders/create}" method="post">
+                                    <input type="hidden" name="tableId" th:value="${table.id}" />
+                                    <button type="submit" class="btn btn-primary" style="width:100%; padding:8px;">Xem Bàn</button>
+                                </form>
+                            </div>
 
-                        <!-- OCCUPIED: Link tới order -->
-                        <div th:if="${table.status.name() == 'OCCUPIED'}">
-                            <span class="status-label" style="color:#ff6b6b;">⬤ Đang phục vụ</span>
-                            <a th:if="${activeOrderByTable != null and activeOrderByTable[table.id] != null}"
-                               th:href="@{'/staff/orders/' + ${activeOrderByTable[table.id].id}}"
-                               class="btn btn-primary" style="width:100%; padding:8px; display:inline-block;">
-                                Xem Order →
-                            </a>
-                            <span th:unless="${activeOrderByTable != null and activeOrderByTable[table.id] != null}"
-                                  style="font-size:12px; color:#888;">Đang xử lý...</span>
-                        </div>
+                            <!-- OCCUPIED: Link tới order -->
+                            <div th:if="${table.status.name() == 'OCCUPIED'}">
+                                <span class="status-label" style="color:#ff6b6b;">⬤ Đang phục vụ</span>
+                                <a th:if="${activeOrderByTable != null and activeOrderByTable[table.id] != null}"
+                                   th:href="@{'/staff/orders/' + ${activeOrderByTable[table.id].id}}"
+                                   class="btn btn-primary" style="width:100%; padding:8px; display:inline-block;">
+                                    Xem Order →
+                                </a>
+                                <span th:unless="${activeOrderByTable != null and activeOrderByTable[table.id] != null}"
+                                      style="font-size:12px; color:#888;">Đang xử lý...</span>
+                            </div>
 
-                        <!-- RESERVED: Khách đến -->
-                        <div th:if="${table.status.name() == 'RESERVED'}">
-                            <span class="status-label" style="color:#fcc419;">⬤ Đã đặt trước</span>
-                            <form th:action="@{/staff/orders/create}" method="post">
-                                <input type="hidden" name="tableId" th:value="${table.id}" />
-                                <button type="submit" class="btn btn-warning"
-                                        style="width:100%; padding:8px;"
-                                        onclick="return confirm('Mở bàn cho khách đến?')">Khách Đến</button>
-                            </form>
-                        </div>
+                            <!-- RESERVED: Khách đến -->
+                            <div th:if="${table.status.name() == 'RESERVED'}">
+                                <span class="status-label" style="color:#fcc419;">⬤ Đã đặt trước</span>
+                                <form th:action="@{/staff/orders/create}" method="post">
+                                    <input type="hidden" name="tableId" th:value="${table.id}" />
+                                    <button type="submit" class="btn btn-warning"
+                                            style="width:100%; padding:8px;"
+                                            onclick="return confirm('Mở bàn cho khách đến?')">Khách Đến</button>
+                                </form>
+                            </div>
 
-                        <!-- MAINTENANCE -->
-                        <div th:if="${table.status.name() == 'MAINTENANCE'}">
-                            <span class="status-label" style="color:#adb5bd;">⬤ Bảo trì</span>
+                            <!-- MAINTENANCE -->
+                            <div th:if="${table.status.name() == 'MAINTENANCE'}">
+                                <span class="status-label" style="color:#adb5bd;">⬤ Bảo trì</span>
+                            </div>
                         </div>
                     </div>
                 </div>

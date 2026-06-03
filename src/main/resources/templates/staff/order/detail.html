@@ -181,14 +181,25 @@
                                         </label>
                                         <label>
                                             <input type="radio" name="paymentMethod" value="E_WALLET">
-                                            <span>📱 Ví điện tử</span>
+                                            <span>📱 Ví điện tử / Momo / ZaloPay</span>
                                         </label>
                                         <label>
                                             <input type="radio" name="paymentMethod" value="BANK_TRANSFER">
-                                            <span>🏦 Chuyển khoản</span>
+                                            <span>🏦 Chuyển khoản ngân hàng</span>
                                         </label>
                                     </div>
                                 </div>
+                                
+                                <!-- Container mã QR -->
+                                <div id="qr-code-container" style="display: none; text-align: center; margin-bottom: 20px; padding: 15px; border: 1px dashed #cba876; border-radius: 8px; background-color: #faf6ef;">
+                                    <h4 style="margin-top: 0; color: #333; font-size: 16px;">Mã QR Thanh Toán</h4>
+                                    <p style="font-size: 13px; color: #666; margin-bottom: 10px;">Quét mã để thanh toán chính xác số tiền</p>
+                                    <img id="qr-code-image" src="" alt="Mã QR Thanh Toán" style="max-width: 250px; width: 100%; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
+                                    <div style="margin-top: 10px; font-size: 14px; color: #333; font-weight: 500;">
+                                        Techcombank - 999999999<br>Vision Guard
+                                    </div>
+                                </div>
+
                                 <button type="submit" class="btn btn-primary" style="width:100%; font-size:18px; padding:15px;"
                                         onclick="return confirm('Xác nhận thanh toán cho hóa đơn này?');">Thanh Toán</button>
                             </form>
@@ -233,5 +244,45 @@
             </div>
         </div>
     </div>
+
+    <script th:inline="javascript">
+        document.addEventListener("DOMContentLoaded", function() {
+            const paymentRadios = document.querySelectorAll('input[name="paymentMethod"]');
+            const qrContainer = document.getElementById('qr-code-container');
+            const qrImage = document.getElementById('qr-code-image');
+            
+            if(paymentRadios.length > 0 && qrContainer && qrImage) {
+                // Lấy thông tin hóa đơn từ Thymeleaf
+                const amount = /*[[${order.totalAmount}]]*/ 0;
+                const orderId = /*[[${order.id}]]*/ 0;
+                
+                // Cấu hình ngân hàng (VietQR)
+                const bankName = "techcombank";
+                const accountNumber = "999999999";
+                const accountName = "Vision Guard";
+                const addInfo = "Thanh toan don hang " + orderId;
+                
+                // Tạo URL mã QR
+                const qrUrl = `https://img.vietqr.io/image/${bankName}-${accountNumber}-compact2.png?amount=${amount}&addInfo=${encodeURIComponent(addInfo)}&accountName=${encodeURIComponent(accountName)}`;
+                
+                function updateQRCodeVisibility() {
+                    const selectedMethod = document.querySelector('input[name="paymentMethod"]:checked').value;
+                    if (selectedMethod === 'BANK_TRANSFER' || selectedMethod === 'E_WALLET') {
+                        qrImage.src = qrUrl;
+                        qrContainer.style.display = 'block';
+                    } else {
+                        qrContainer.style.display = 'none';
+                    }
+                }
+                
+                paymentRadios.forEach(radio => {
+                    radio.addEventListener('change', updateQRCodeVisibility);
+                });
+                
+                // Kiểm tra trạng thái ban đầu
+                updateQRCodeVisibility();
+            }
+        });
+    </script>
 </body>
 </html>

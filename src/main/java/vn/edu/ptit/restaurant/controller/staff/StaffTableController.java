@@ -26,10 +26,18 @@ public class StaffTableController {
     private final OrderService orderService;
 
     @GetMapping
-    public String index(@RequestParam(required = false) String statusFilter, Model model) {
+    public String index(@RequestParam(required = false) String statusFilter,
+                        @RequestParam(required = false) Integer areaFilter,
+                        Model model) {
         List<DiningTable> tables;
-        if (statusFilter != null && !statusFilter.isEmpty()) {
-            tables = diningTableService.findByStatus(TableStatus.valueOf(statusFilter));
+        TableStatus status = (statusFilter != null && !statusFilter.isEmpty()) ? TableStatus.valueOf(statusFilter) : null;
+
+        if (areaFilter != null && status != null) {
+            tables = diningTableService.findByAreaIdAndStatus(areaFilter, status);
+        } else if (areaFilter != null) {
+            tables = diningTableService.findByAreaId(areaFilter);
+        } else if (status != null) {
+            tables = diningTableService.findByStatus(status);
         } else {
             tables = diningTableService.findAll();
         }
@@ -55,6 +63,7 @@ public class StaffTableController {
         model.addAttribute("areas", areaService.findAll());
         model.addAttribute("statuses", TableStatus.values());
         model.addAttribute("selectedStatus", statusFilter);
+        model.addAttribute("selectedArea", areaFilter);
         model.addAttribute("activeOrderByTable", activeOrderByTable);
         model.addAttribute("availableCount", availableCount);
         model.addAttribute("occupiedCount", occupiedCount);
