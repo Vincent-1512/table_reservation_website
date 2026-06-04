@@ -25,6 +25,9 @@ public interface ReservationService {
     void completeReservation(Long reservationId);
     void checkinReservation(Long reservationId, String staffUsername);
     vn.edu.ptit.restaurant.entity.Order createOrderForReservation(Long reservationId, String username);
+    Reservation findByIdForUser(Long id, String username);
+    void processDepositPayment(Long reservationId, String username);
+    void processFoodPayment(Long reservationId, String username, String paymentMode);
     Page<Reservation> searchReservations(String keyword,
                                       ReservationStatus status,
                                       LocalDate startDate,

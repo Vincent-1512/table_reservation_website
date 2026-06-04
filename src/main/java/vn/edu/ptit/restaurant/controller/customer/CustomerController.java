@@ -1,27 +1,29 @@
 package vn.edu.ptit.restaurant.controller.customer;
 
 import lombok.RequiredArgsConstructor;
+import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.orm.ObjectOptimisticLockingFailureException;
+import org.springframework.validation.BindingResult;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import vn.edu.ptit.restaurant.dto.CartItem;
+import vn.edu.ptit.restaurant.dto.request.ChangePasswordRequest;
+import vn.edu.ptit.restaurant.dto.request.ProfileUpdateRequest;
+import vn.edu.ptit.restaurant.dto.request.ReservationRequest;
 import vn.edu.ptit.restaurant.entity.MenuItem;
 import vn.edu.ptit.restaurant.entity.User;
 import vn.edu.ptit.restaurant.entity.Reservation;
 import vn.edu.ptit.restaurant.entity.Order;
-import vn.edu.ptit.restaurant.entity.DiningTable;
-import vn.edu.ptit.restaurant.entity.enums.OrderStatus;
-import vn.edu.ptit.restaurant.entity.enums.TableStatus;
 import vn.edu.ptit.restaurant.repository.OrderRepository;
 import vn.edu.ptit.restaurant.repository.OrderItemRepository;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import vn.edu.ptit.restaurant.service.*;
+import vn.edu.ptit.restaurant.validator.customer.CustomerProfileValidator;
 
 import java.security.Principal;
-import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.HashMap;
@@ -48,6 +50,7 @@ public class CustomerController {
     private final OrderRepository orderRepository;
     private final OrderItemRepository orderItemRepository;
     private final PasswordEncoder passwordEncoder;
+    private final CustomerProfileValidator customerProfileValidator;
 
     // ================== MENU & CART ================== //
     @GetMapping("/menu")
@@ -168,14 +171,8 @@ public class CustomerController {
     }
 
     @PostMapping("/reservation")
-    public String submitReservation(@RequestParam Long tableId,
-                                    @RequestParam String reservationDate,
-                                    @RequestParam String reservationTime,
-                                    @RequestParam Integer numberOfGuests,
-                                    @RequestParam String note,
-                                    @RequestParam String fullName,
-                                    @RequestParam String phone,
-                                    @RequestParam String email,
+    public String submitReservation(@Valid @ModelAttribute ReservationRequest request,
+                                    BindingResult bindingResult,
                                     Principal principal,
                                     RedirectAttributes redirectAttrs) {
         if (principal == null) {
@@ -183,38 +180,25 @@ public class CustomerController {
         }
 
         try {
+            if (bindingResult.hasErrors()) {
+                redirectAttrs.addFlashAttribute("error", bindingResult.getAllErrors().get(0).getDefaultMessage());
+                return reservationRetryRedirect();
+            }
+
             User user = userService.findByUsername(principal.getName()).orElseThrow();
 
             // Đồng bộ thông tin cá nhân của người dùng nếu có thay đổi
-            LocalDate bookingDate = LocalDate.parse(reservationDate);
-            LocalDate today = LocalDate.now();
-            if (bookingDate.isBefore(today)) {
-                redirectAttrs.addFlashAttribute("error", "Ngày đặt bàn không hợp lệ.");
-                return cartService.getItems().isEmpty() ? "redirect:/reservation" : "redirect:/menu";
-            }
-            if (bookingDate.isAfter(today.plusDays(14))) {
-                redirectAttrs.addFlashAttribute("error", "Nhà hàng hiện chỉ nhận đặt bàn trước tối đa 14 ngày.");
-                return cartService.getItems().isEmpty() ? "redirect:/reservation" : "redirect:/menu";
-            }
-
-            DiningTable selectedTable = diningTableService.findById(tableId)
-                    .orElseThrow(() -> new RuntimeException("Không tìm thấy bàn đã chọn."));
-            if (selectedTable.getStatus() != TableStatus.AVAILABLE || selectedTable.getCapacity() < numberOfGuests) {
-                redirectAttrs.addFlashAttribute("error", "Hiện không còn bàn phù hợp cho số lượng khách và khung giờ bạn đã chọn.");
-                return cartService.getItems().isEmpty() ? "redirect:/reservation" : "redirect:/menu";
-            }
-
             boolean profileChanged = false;
-            if (!fullName.equals(user.getFullName())) {
-                user.setFullName(fullName);
+            if (request.getFullName() != null && !request.getFullName().equals(user.getFullName())) {
+                user.setFullName(request.getFullName());
                 profileChanged = true;
             }
-            if (phone != null && !phone.equals(user.getPhone())) {
-                user.setPhone(phone);
+            if (request.getPhone() != null && !request.getPhone().equals(user.getPhone())) {
+                user.setPhone(request.getPhone());
                 profileChanged = true;
             }
-            if (email != null && !email.equals(user.getEmail())) {
-                user.setEmail(email);
+            if (request.getEmail() != null && !request.getEmail().equals(user.getEmail())) {
+                user.setEmail(request.getEmail());
                 profileChanged = true;
             }
             if (profileChanged) {
@@ -222,12 +206,18 @@ public class CustomerController {
             }
 
             // Parse datetime
-            String dateTimeStr = reservationDate + " " + reservationTime;
+            String dateTimeStr = request.getReservationDate() + " " + request.getReservationTime();
             DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
             LocalDateTime resDateTime = LocalDateTime.parse(dateTimeStr, formatter);
 
             boolean hasCart = !cartService.getItems().isEmpty();
-            Reservation reservation = reservationService.createReservation(user.getId(), tableId, resDateTime, numberOfGuests, note);
+            Reservation reservation = reservationService.createReservation(
+                    user.getId(),
+                    request.getTableId(),
+                    resDateTime,
+                    request.getNumberOfGuests(),
+                    request.getNote()
+            );
 
             // Tự động giữ món trong giỏ hàng nếu có
             if (hasCart) {
@@ -238,11 +228,15 @@ public class CustomerController {
 
         } catch (ObjectOptimisticLockingFailureException e) {
             redirectAttrs.addFlashAttribute("error", "Bàn bạn chọn vừa có người khác đặt. Vui lòng chọn bàn khác!");
-            return cartService.getItems().isEmpty() ? "redirect:/reservation" : "redirect:/menu";
+            return reservationRetryRedirect();
         } catch (Exception e) {
             redirectAttrs.addFlashAttribute("error", "Lỗi: " + e.getMessage());
-            return cartService.getItems().isEmpty() ? "redirect:/reservation" : "redirect:/menu";
+            return reservationRetryRedirect();
         }
+    }
+
+    private String reservationRetryRedirect() {
+        return cartService.getItems().isEmpty() ? "redirect:/reservation" : "redirect:/menu";
     }
 
     @GetMapping("/reservation/success")
@@ -250,11 +244,12 @@ public class CustomerController {
         if (principal == null) {
             return "redirect:/login";
         }
-        Reservation reservation = reservationService.findById(id).orElseThrow(() -> new RuntimeException("Không tìm thấy đặt bàn với ID: " + id));
-        if (!reservation.getUser().getUsername().equals(principal.getName())) {
+        Reservation reservation;
+        try {
+            reservation = reservationService.findByIdForUser(id, principal.getName());
+        } catch (Exception e) {
             return "redirect:/my-reservations";
         }
-
         long depositAmount = 100000L;
         model.addAttribute("reservation", reservation);
         model.addAttribute("depositAmount", depositAmount);
@@ -267,8 +262,10 @@ public class CustomerController {
         if (principal == null) {
             return "redirect:/login";
         }
-        Reservation reservation = reservationService.findById(id).orElseThrow(() -> new RuntimeException("Không tìm thấy đặt bàn với ID: " + id));
-        if (!reservation.getUser().getUsername().equals(principal.getName())) {
+        Reservation reservation;
+        try {
+            reservation = reservationService.findByIdForUser(id, principal.getName());
+        } catch (Exception e) {
             return "redirect:/my-reservations";
         }
 
@@ -286,14 +283,7 @@ public class CustomerController {
             return "redirect:/login";
         }
         try {
-            Reservation reservation = reservationService.findById(id).orElseThrow(() -> new RuntimeException("Không tìm thấy đặt bàn với ID: " + id));
-            if (!reservation.getUser().getUsername().equals(principal.getName())) {
-                redirectAttrs.addFlashAttribute("error", "Không có quyền thanh toán.");
-                return "redirect:/my-reservations";
-            }
-
-            // Thanh toán thành công -> chuyển sang CONFIRMED
-            reservationService.confirmReservation(id);
+            reservationService.processDepositPayment(id, principal.getName());
             redirectAttrs.addFlashAttribute("success", "Thanh toán đặt cọc thành công!");
             return "redirect:/reservation/success?id=" + id;
         } catch (Exception e) {
@@ -308,10 +298,6 @@ public class CustomerController {
             return "redirect:/login";
         }
         try {
-            if (cartService.getItems().isEmpty()) {
-                redirectAttrs.addFlashAttribute("error", "Vui lòng chọn ít nhất một món ăn trước khi hoàn tất.");
-                return "redirect:/menu?flow=booking&reservationId=" + reservationId;
-            }
             reservationService.createOrderForReservation(reservationId, principal.getName());
             return "redirect:/reservation/payment/food?id=" + reservationId;
         } catch (Exception e) {
@@ -325,8 +311,10 @@ public class CustomerController {
         if (principal == null) {
             return "redirect:/login";
         }
-        Reservation reservation = reservationService.findById(id).orElseThrow(() -> new RuntimeException("Không tìm thấy đặt bàn với ID: " + id));
-        if (!reservation.getUser().getUsername().equals(principal.getName())) {
+        Reservation reservation;
+        try {
+            reservation = reservationService.findByIdForUser(id, principal.getName());
+        } catch (Exception e) {
             return "redirect:/my-reservations";
         }
 
@@ -357,28 +345,7 @@ public class CustomerController {
             return "redirect:/login";
         }
         try {
-            Reservation reservation = reservationService.findById(id).orElseThrow(() -> new RuntimeException("Không tìm thấy đặt bàn với ID: " + id));
-            if (!reservation.getUser().getUsername().equals(principal.getName())) {
-                redirectAttrs.addFlashAttribute("error", "Không có quyền thanh toán.");
-                return "redirect:/my-reservations";
-            }
-
-            // Thanh toán thành công -> chuyển sang CONFIRMED
-            reservationService.confirmReservation(id);
-
-            // Cập nhật trạng thái Order liên kết
-            Optional<Order> orderOpt = orderRepository.findByReservationId(id);
-            if (orderOpt.isPresent()) {
-                Order order = orderOpt.get();
-                if ("full".equalsIgnoreCase(paymentMode)) {
-                    order.setStatus(OrderStatus.CONFIRMED);
-                    order.setAmountPaid(order.getTotalAmount());
-                } else {
-                    order.setStatus(OrderStatus.PENDING); // Khách chỉ đặt cọc cọc, tiền ăn sẽ trả sau ở nhà hàng
-                    // Nếu muốn ghi nhận cọc vào amountPaid: order.setAmountPaid(BigDecimal.valueOf(100000));
-                }
-                orderRepository.save(order);
-            }
+            reservationService.processFoodPayment(id, principal.getName(), paymentMode);
 
             redirectAttrs.addFlashAttribute("success", "Thanh toán thành công đơn đặt món ăn!");
             return "redirect:/my-reservations";
@@ -431,32 +398,21 @@ public class CustomerController {
     }
 
     @PostMapping("/profile/update")
-    public String updateProfile(@RequestParam String fullName,
-                                @RequestParam String phone,
-                                @RequestParam String email,
+    public String updateProfile(@Valid @ModelAttribute ProfileUpdateRequest request,
+                                BindingResult bindingResult,
                                 Principal principal,
                                 RedirectAttributes redirectAttrs) {
         if (principal == null) return "redirect:/login";
         try {
-            User user = userService.findByUsername(principal.getName()).orElseThrow();
-            
-            // Validate
-            if (fullName.trim().isEmpty()) {
-                redirectAttrs.addFlashAttribute("error", "Họ tên không được để trống.");
-                return "redirect:/profile";
-            }
-            if (phone.trim().isEmpty() || !phone.matches("^[0-9]{9,11}$")) {
-                redirectAttrs.addFlashAttribute("error", "Số điện thoại không hợp lệ (phải gồm 9-11 chữ số).");
-                return "redirect:/profile";
-            }
-            if (email.trim().isEmpty() || !email.matches("^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,6}$")) {
-                redirectAttrs.addFlashAttribute("error", "Địa chỉ email không hợp lệ.");
+            if (bindingResult.hasErrors()) {
+                redirectAttrs.addFlashAttribute("error", bindingResult.getAllErrors().get(0).getDefaultMessage());
                 return "redirect:/profile";
             }
 
-            user.setFullName(fullName.trim());
-            user.setPhone(phone.trim());
-            user.setEmail(email.trim());
+            User user = userService.findByUsername(principal.getName()).orElseThrow();
+            user.setFullName(request.getFullName().trim());
+            user.setPhone(request.getPhone().trim());
+            user.setEmail(request.getEmail().trim());
             userService.save(user);
 
             redirectAttrs.addFlashAttribute("success", "Đã cập nhật thông tin cá nhân thành công.");
@@ -467,35 +423,23 @@ public class CustomerController {
     }
 
     @PostMapping("/profile/change-password")
-    public String changePassword(@RequestParam String currentPassword,
-                                 @RequestParam String newPassword,
-                                 @RequestParam String confirmPassword,
+    public String changePassword(@Valid @ModelAttribute ChangePasswordRequest request,
+                                 BindingResult bindingResult,
                                  Principal principal,
                                  RedirectAttributes redirectAttrs) {
         if (principal == null) return "redirect:/login";
         try {
+            if (bindingResult.hasErrors()) {
+                redirectAttrs.addFlashAttribute("error", bindingResult.getAllErrors().get(0).getDefaultMessage());
+                return "redirect:/profile";
+            }
+
             User user = userService.findByUsername(principal.getName()).orElseThrow();
 
-            // Validate current password
-            if (!passwordEncoder.matches(currentPassword, user.getPassword())) {
-                redirectAttrs.addFlashAttribute("error", "Mật khẩu hiện tại không chính xác.");
-                return "redirect:/profile";
-            }
-
-            // Validate new password length
-            if (newPassword == null || newPassword.length() < 6) {
-                redirectAttrs.addFlashAttribute("error", "Mật khẩu mới phải có ít nhất 6 ký tự.");
-                return "redirect:/profile";
-            }
-
-            // Validate match
-            if (!newPassword.equals(confirmPassword)) {
-                redirectAttrs.addFlashAttribute("error", "Mật khẩu mới và mật khẩu xác nhận không khớp.");
-                return "redirect:/profile";
-            }
+            customerProfileValidator.validatePasswordChange(user, request, passwordEncoder);
 
             // Save new password
-            user.setPassword(passwordEncoder.encode(newPassword));
+            user.setPassword(passwordEncoder.encode(request.getNewPassword()));
             userService.save(user);
 
             redirectAttrs.addFlashAttribute("success", "Đã thay đổi mật khẩu thành công.");
@@ -508,20 +452,10 @@ public class CustomerController {
     @PostMapping("/profile/avatar/upload")
     public String uploadAvatar(@RequestParam("avatar") MultipartFile file, Principal principal, RedirectAttributes redirectAttrs) {
         if (principal == null) return "redirect:/login";
-        if (file.isEmpty()) {
-            redirectAttrs.addFlashAttribute("error", "File tải lên không được để trống.");
-            return "redirect:/profile";
-        }
-        
         try {
             User user = userService.findByUsername(principal.getName()).orElseThrow();
             
-            // Validate file type
-            String contentType = file.getContentType();
-            if (contentType == null || !contentType.startsWith("image/")) {
-                redirectAttrs.addFlashAttribute("error", "Chỉ cho phép tải lên các file định dạng hình ảnh.");
-                return "redirect:/profile";
-            }
+            customerProfileValidator.validateAvatar(file);
             
             // Create target directory if it doesn't exist
             String uploadDir = "src/main/resources/static/uploads/avatars/";

@@ -10,9 +10,13 @@ import vn.edu.ptit.restaurant.entity.enums.ReservationStatus;
 import vn.edu.ptit.restaurant.entity.enums.TableStatus;
 import vn.edu.ptit.restaurant.repository.*;
 import vn.edu.ptit.restaurant.service.CartService;
+import vn.edu.ptit.restaurant.service.MailService;
 import vn.edu.ptit.restaurant.service.ReservationService;
+import vn.edu.ptit.restaurant.validator.customer.CartValidator;
+import vn.edu.ptit.restaurant.validator.customer.ReservationValidator;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
@@ -34,6 +38,9 @@ public class ReservationServiceImpl implements ReservationService {
     private final OrderItemRepository orderItemRepository;
     private final MenuItemRepository menuItemRepository;
     private final CartService cartService;
+    private final ReservationValidator reservationValidator;
+    private final CartValidator cartValidator;
+    private final MailService mailService;
 
     @Override
     @Transactional
@@ -42,6 +49,9 @@ public class ReservationServiceImpl implements ReservationService {
         DiningTable table = diningTableRepository.findById(tableId).orElseThrow();
 
         // Kiểm tra xem bàn đã được đặt trong khoảng thời gian này chưa (trước và sau 2 tiếng)
+        reservationValidator.validateBookingDate(reservationTime);
+        reservationValidator.validateTableAvailable(table, numberOfGuests);
+
         LocalDateTime start = reservationTime.minusHours(2);
         LocalDateTime end = reservationTime.plusHours(2);
         long overlappingCount = reservationRepository.countOverlappingReservations(
@@ -65,6 +75,9 @@ public class ReservationServiceImpl implements ReservationService {
         Reservation savedReservation = reservationRepository.save(reservation);
 
         // Nếu khách có đặt món trước (có giỏ hàng) -> Tạo luôn Order (PENDING)
+        Order savedOrder = null;
+        List<OrderItem> savedOrderItems = new ArrayList<>();
+
         if (cartService.getCount() > 0) {
             Order order = Order.builder()
                     .table(table)
@@ -73,7 +86,7 @@ public class ReservationServiceImpl implements ReservationService {
                     .totalAmount(cartService.getAmount())
                     .status(OrderStatus.PENDING)
                     .build();
-            Order savedOrder = orderRepository.save(order);
+            savedOrder = orderRepository.save(order);
 
             for (CartItem item : cartService.getItems()) {
                 MenuItem menuItem = menuItemRepository.findById(item.getMenuItemId()).orElseThrow();
@@ -84,12 +97,14 @@ public class ReservationServiceImpl implements ReservationService {
                         .priceAtTime(item.getPrice())
                         .note(item.getNote())
                         .build();
-                orderItemRepository.save(orderItem);
+                savedOrderItems.add(orderItemRepository.save(orderItem));
             }
             
             // Xóa giỏ hàng sau khi đặt bàn thành công
             cartService.clear();
         }
+
+        mailService.sendReservationConfirmation(savedReservation, savedOrder, savedOrderItems);
 
         return savedReservation;
     }
@@ -171,9 +186,7 @@ public class ReservationServiceImpl implements ReservationService {
     public void confirmReservation(Long reservationId) {
         Reservation res = reservationRepository.findById(reservationId)
                 .orElseThrow(() -> new RuntimeException("Không tìm thấy đặt bàn"));
-        if (res.getStatus() != ReservationStatus.PENDING) {
-            throw new RuntimeException("Chỉ có thể xác nhận đặt bàn ở trạng thái PENDING");
-        }
+        reservationValidator.validatePending(res);
         res.setStatus(ReservationStatus.CONFIRMED);
         reservationRepository.save(res);
     }
@@ -215,6 +228,42 @@ public class ReservationServiceImpl implements ReservationService {
     @Override
     public Optional<Reservation> findById(Long id) {
         return reservationRepository.findById(id);
+    }
+
+    @Override
+    public Reservation findByIdForUser(Long id, String username) {
+        Reservation reservation = reservationRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy đặt bàn với ID: " + id));
+        reservationValidator.validateOwner(reservation, username);
+        return reservation;
+    }
+
+    @Override
+    @Transactional
+    public void processDepositPayment(Long reservationId, String username) {
+        Reservation reservation = findByIdForUser(reservationId, username);
+        reservationValidator.validatePending(reservation);
+        reservation.setStatus(ReservationStatus.CONFIRMED);
+        reservationRepository.save(reservation);
+    }
+
+    @Override
+    @Transactional
+    public void processFoodPayment(Long reservationId, String username, String paymentMode) {
+        Reservation reservation = findByIdForUser(reservationId, username);
+        reservationValidator.validatePending(reservation);
+        reservation.setStatus(ReservationStatus.CONFIRMED);
+        reservationRepository.save(reservation);
+
+        Order order = orderRepository.findByReservationId(reservationId)
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy đơn đặt món cho đặt bàn này."));
+        if ("full".equalsIgnoreCase(paymentMode)) {
+            order.setStatus(OrderStatus.CONFIRMED);
+            order.setAmountPaid(order.getTotalAmount());
+        } else {
+            order.setStatus(OrderStatus.PENDING);
+        }
+        orderRepository.save(order);
     }
 
     @Override
@@ -276,12 +325,16 @@ public class ReservationServiceImpl implements ReservationService {
     @Override
     @Transactional
     public Order createOrderForReservation(Long reservationId, String username) {
+        cartValidator.validateNotEmpty(cartService);
+
         Reservation reservation = reservationRepository.findById(reservationId)
                 .orElseThrow(() -> new RuntimeException("Không tìm thấy đặt bàn với ID: " + reservationId));
         User user = userRepository.findByUsername(username)
                 .orElseThrow(() -> new RuntimeException("Không tìm thấy người dùng với username: " + username));
 
         // Hủy/xóa Order cũ đã liên kết với reservation này nếu có
+        reservationValidator.validateOwner(reservation, username);
+
         orderRepository.findByReservationId(reservationId).ifPresent(existingOrder -> {
             List<OrderItem> items = orderItemRepository.findByOrderId(existingOrder.getId());
             orderItemRepository.deleteAll(items);
